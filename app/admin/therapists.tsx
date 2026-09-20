@@ -31,6 +31,7 @@ import { SaveButton } from "@/components/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardContent,
@@ -1046,7 +1047,13 @@ const TherapistShowView = () => {
           </Button>
         </CardHeader>
         <CardContent className="pt-3 p-0">
-          {payoutsHistory.length === 0 ? (
+          {loadingPayouts ? (
+            <div className="p-4 space-y-2.5">
+              <Skeleton className="h-8 w-full rounded-md" />
+              <Skeleton className="h-8 w-full rounded-md" />
+              <Skeleton className="h-8 w-full rounded-md" />
+            </div>
+          ) : payoutsHistory.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-xs">
               <ReceiptText className="w-8 h-8 mx-auto mb-2 opacity-40 text-muted-foreground" />
               <p className="font-medium">{isEn ? "No payout slips issued yet." : "Belum ada riwayat slip bagi hasil untuk terapis ini."}</p>

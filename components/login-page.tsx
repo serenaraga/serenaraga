@@ -63,23 +63,23 @@ export const LoginPage = (props: { redirectTo?: string }) => {
   };
 
   return (
-    <div className="min-h-screen flex relative bg-background">
+    <div className="min-h-screen flex relative bg-background overflow-hidden items-center justify-center">
+      {/* Animated Fireworks Background (Visible on Both Mobile & Desktop) */}
+      <FireworksBackground
+        className="absolute inset-0 z-0 pointer-events-none opacity-60 dark:opacity-75"
+        color={["#8b5e3c", "#d49b6a", "#c4916a", "#b07d56", "#f59e0b", "#e2b170"]}
+        population={1.2}
+      />
+
       {/* Top right quick controls */}
       <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
         <LocalesMenuButton />
         <ThemeModeToggle />
       </div>
 
-      <div className="container relative grid flex-col items-center justify-center sm:max-w-none lg:grid-cols-2 lg:px-0">
-        {/* Left Side: Clean Branding Panel with Animated Fireworks Background */}
-        <div className="relative hidden h-full flex-col bg-muted/30 p-12 text-foreground border-r border-border lg:flex justify-between overflow-hidden">
-          {/* Animated Fireworks Canvas */}
-          <FireworksBackground
-            className="absolute inset-0 z-0 pointer-events-none opacity-50 dark:opacity-75"
-            color={["#8b5e3c", "#d49b6a", "#c4916a", "#b07d56", "#f59e0b", "#e2b170"]}
-            population={1.2}
-          />
-
+      <div className="relative z-10 w-full min-h-screen grid items-stretch lg:grid-cols-2">
+        {/* Left Side: Clean Branding Panel (Desktop) */}
+        <div className="relative hidden h-full flex-col bg-muted/20 backdrop-blur-[2px] p-12 text-foreground border-r border-border/60 lg:flex justify-between overflow-hidden">
           {/* Brand Header */}
           <div className="relative z-10 flex items-center">
             <BrandLogo variant="full" className="h-9 w-auto" />
@@ -87,7 +87,7 @@ export const LoginPage = (props: { redirectTo?: string }) => {
 
           {/* Center Information */}
           <div className="relative z-10 my-auto max-w-md space-y-4">
-            <blockquote className="space-y-3 backdrop-blur-md bg-background/50 dark:bg-background/60 p-6 rounded-2xl border border-border/50 shadow-sm">
+            <blockquote className="space-y-3 backdrop-blur-md bg-background/60 dark:bg-background/65 p-6 rounded-2xl border border-border/60 shadow-sm">
               <p className="text-xl font-medium text-foreground leading-relaxed">
                 &ldquo;Kenyamanan dan relaksasi profesional langsung di rumah Anda.&rdquo;
               </p>
@@ -104,11 +104,11 @@ export const LoginPage = (props: { redirectTo?: string }) => {
           </div>
         </div>
 
-        {/* Right Side: Sign-in Form */}
-        <div className="p-6 lg:p-12">
-          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[360px]">
+        {/* Right Side: Sign-in Form (Responsive on Mobile & Desktop) */}
+        <div className="flex items-center justify-center p-4 sm:p-6 lg:p-12">
+          <div className="w-full max-w-[380px] p-6 sm:p-8 rounded-2xl backdrop-blur-md bg-background/80 dark:bg-background/80 border border-border/70 shadow-sm space-y-6">
             <div className="flex flex-col space-y-2 text-center">
-              <div className="lg:hidden mx-auto flex items-center justify-center p-2 mb-2">
+              <div className="lg:hidden mx-auto flex items-center justify-center p-2 mb-1">
                 <BrandLogo variant="full" className="h-8 w-auto" />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">

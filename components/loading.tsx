@@ -1,41 +1,22 @@
 "use client";
 
-import { Translate, useTimeout } from "ra-core";
-import { Spinner } from "./spinner";
+import * as React from "react";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 /**
- * Loading indicator used for slow element or page loads.
- *
- * Displays a spinner and customizable loading messages.
- * Automatically shown by the default Layout when page loading takes more than 1 second.
- * Works as a fallback for React Suspense boundaries.
- *
- * @see {@link https://marmelab.com/shadcn-admin-kit/docs/loading/ Loading documentation}
+ * High-fidelity Skeleton Page Loading fallback for Suspense and route transitions.
  */
 export const Loading = (props: LoadingProps) => {
-  const {
-    loadingPrimary = "ra.page.loading",
-    loadingSecondary = "ra.message.loading",
-    delay = 1000,
-    ...rest
-  } = props;
-  const oneSecondHasPassed = useTimeout(delay);
-  return oneSecondHasPassed ? (
-    <div className="flex flex-col justify-center items-center h-full" {...rest}>
-      <div className="text-center font-sans color-muted pt-1 pb-1">
-        <Spinner size="large" className="width-9 height-9" />
-        <h5 className="mt-3 text-2xl text-secondary-foreground">
-          <Translate i18nKey={loadingPrimary}>{loadingPrimary}</Translate>
-        </h5>
-        <p className="text-primary">
-          <Translate i18nKey={loadingSecondary}>{loadingSecondary}</Translate>
-        </p>
-      </div>
+  const { className, ...rest } = props;
+
+  return (
+    <div className="w-full space-y-4 py-2 animate-in fade-in-50 duration-200" {...rest}>
+      <TableSkeleton rows={8} columns={5} hasToolbar={true} className={className} />
     </div>
-  ) : null;
+  );
 };
 
-export interface LoadingProps {
+export interface LoadingProps extends React.HTMLAttributes<HTMLDivElement> {
   loadingPrimary?: string;
   loadingSecondary?: string;
   delay?: number;

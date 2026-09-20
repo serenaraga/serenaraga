@@ -21,6 +21,7 @@ import {
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { EditButton } from "@/components/edit-button";
+import { Skeleton, CardSkeleton, AvatarSkeleton } from "@/components/ui/skeleton";
 
 export interface ShowProps
   extends ShowViewProps, Omit<ShowBaseProps, "children"> {}
@@ -142,12 +143,29 @@ export const ShowView = ({
 
   if (context.isPending || context.isLoading) {
     return (
-      <div className="space-y-4 my-4 animate-pulse">
-        <div className="h-6 w-40 bg-muted rounded-md" />
-        <div className="h-44 w-full bg-muted/60 rounded-xl" />
+      <div className="space-y-4 my-4 animate-in fade-in-50 duration-200">
+        <div className="flex items-center justify-between pb-2">
+          <Skeleton className="h-7 w-48 rounded-md" />
+          <Skeleton className="h-9 w-24 rounded-md" />
+        </div>
+
+        {/* Profile / Main Dossier Header Skeleton */}
+        <div className="rounded-xl border border-border/80 bg-card p-5 space-y-4 shadow-2xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <AvatarSkeleton size="lg" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-28 rounded-md" />
+              <Skeleton className="h-8 w-28 rounded-md" />
+            </div>
+          </div>
+        </div>
+
+        {/* 2 Grid Cards Skeletons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="h-52 bg-muted/40 rounded-xl" />
-          <div className="h-52 bg-muted/40 rounded-xl" />
+          <CardSkeleton lines={4} />
+          <CardSkeleton lines={4} />
+          <CardSkeleton lines={4} />
+          <CardSkeleton lines={4} />
         </div>
       </div>
     );

@@ -53,6 +53,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 export const Dashboard = () => {
@@ -64,11 +65,11 @@ export const Dashboard = () => {
   const [timeRange, setTimeRange] = React.useState<string>("30d");
 
   // Fetch real data from Supabase backend
-  const { data: bookings = [] } = useGetList("bookings", {
+  const { data: bookings = [], isPending: loadingBookings } = useGetList("bookings", {
     pagination: { page: 1, perPage: 200 },
     sort: { field: "id", order: "DESC" },
   });
-  const { data: therapists = [] } = useGetList("therapists", {
+  const { data: therapists = [], isPending: loadingTherapists } = useGetList("therapists", {
     pagination: { page: 1, perPage: 100 },
   });
   const { data: services = [] } = useGetList("services", {
@@ -81,6 +82,10 @@ export const Dashboard = () => {
     pagination: { page: 1, perPage: 100 },
     sort: { field: "id", order: "DESC" },
   });
+
+  if (loadingBookings && loadingTherapists) {
+    return <DashboardSkeleton />;
+  }
 
   // Calculate Metrics
   const totalRevenue = React.useMemo(() => {

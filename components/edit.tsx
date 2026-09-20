@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ShowButton } from "@/components/show-button";
 import { DeleteButton } from "./delete-button";
+import { Skeleton, FormSkeleton } from "@/components/ui/skeleton";
 
 export interface EditProps extends EditViewProps, EditBaseProps {}
 
@@ -113,9 +114,17 @@ export const EditView = ({
 
   if (context.isPending || context.isLoading) {
     return (
-      <div className="space-y-4 my-4 animate-pulse">
-        <div className="h-6 w-40 bg-muted rounded-md" />
-        <div className="h-64 w-full bg-muted/50 rounded-xl" />
+      <div className="space-y-6 my-4 animate-in fade-in-50 duration-200">
+        <div className="flex items-center justify-between pb-2">
+          <Skeleton className="h-7 w-48 rounded-md" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-9 w-20 rounded-md" />
+            <Skeleton className="h-9 w-20 rounded-md" />
+          </div>
+        </div>
+        <div className="rounded-xl border border-border/80 bg-card p-6 shadow-2xs">
+          <FormSkeleton fields={6} columns={2} />
+        </div>
       </div>
     );
   }

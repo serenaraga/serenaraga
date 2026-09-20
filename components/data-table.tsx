@@ -55,6 +55,7 @@ import {
   ColumnsSelectorItem,
 } from "@/components/columns-button";
 import { NumberField } from "@/components/number-field";
+import { TableSkeleton } from "@/components/ui/skeleton";
 import {
   BulkActionsToolbar,
   BulkActionsToolbarChildren,
@@ -158,7 +159,7 @@ export function DataTable<RecordType extends RaRecord = RaRecord>(
   return (
     <DataTableBase<RecordType>
       hasBulkActions={hasBulkActions}
-      loading={null}
+      loading={<TableSkeleton rows={6} columns={5} hasToolbar={false} />}
       empty={<DataTableEmpty />}
       {...rest}
     >
