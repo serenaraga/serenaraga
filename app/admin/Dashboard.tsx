@@ -83,10 +83,6 @@ export const Dashboard = () => {
     sort: { field: "id", order: "DESC" },
   });
 
-  if (loadingBookings && loadingTherapists) {
-    return <DashboardSkeleton />;
-  }
-
   // Calculate Metrics
   const totalRevenue = React.useMemo(() => {
     return bookings.reduce((acc, b) => {
@@ -194,6 +190,10 @@ export const Dashboard = () => {
       color: "#d49b6a",
     },
   } satisfies ChartConfig;
+
+  if (loadingBookings && loadingTherapists) {
+    return <DashboardSkeleton />;
+  }
 
   // Stagger container animation variants
   const containerVariants: Variants = {
