@@ -141,6 +141,7 @@ export const ShowView = ({
 
   const { hasEdit } = useResourceDefinition({ resource });
   const hasDashboard = useHasDashboard();
+  const parent = useResourceParent(resource);
 
   if (context.isPending || context.isLoading) {
     return (
@@ -184,8 +185,6 @@ export const ShowView = ({
       </div>
     );
   }
-
-  const parent = useResourceParent(resource);
 
   return (
     <>

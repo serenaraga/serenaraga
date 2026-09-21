@@ -6,16 +6,17 @@ import { cn } from "@/lib/utils";
 interface BrandLogoProps extends React.SVGProps<SVGSVGElement> {
   variant?: "full" | "icon";
   className?: string;
+  forceWhite?: boolean;
 }
 
 /**
  * Authentic Serena Raga Brand Logo component rendered from BrandAssets/SerenaSVG/2.svg
- * Features the signature brown (#8b5e3c / #d49b6a in dark mode) symbol and "RAGA" accent,
- * with light/dark adaptive "SERENA" text (#18181b in light mode, #f4f4f5 in dark mode).
+ * Use `forceWhite` prop to render all paths in white (for dark backgrounds).
  */
 export const BrandLogo = ({
   variant = "full",
   className,
+  forceWhite = false,
   ...props
 }: BrandLogoProps) => {
   if (variant === "icon") {
@@ -26,8 +27,7 @@ export const BrandLogo = ({
         className={cn("shrink-0", className)}
         {...props}
       >
-        {/* Serena Icon Symbol - Authentic Brown with Dark Mode bronze glow */}
-        <g className="fill-[#8b5e3c] dark:fill-[#d49b6a] transition-colors">
+        <g className={forceWhite ? "fill-white" : "fill-[#8b5e3c] dark:fill-[#d49b6a] transition-colors"}>
           <path
             d="M 95.3125 855.527344 C 131.660156 845.808594 172.097656 849.09375 216.457031 864.730469 C 262.976562 881.144531 268.746094 881.65625 310.886719 859.035156 C 336.074219 845.503906 362.039062 834.925781 392.230469 840.402344 C 418.679688 845.199219 426.027344 856.898438 450.300781 835.328125 C 497.210938 793.660156 527.417969 825.917969 512.683594 874.558594 C 540.046875 833.832031 502.882812 767.515625 442.496094 828.355469 C 425.515625 845.460938 412.554688 834.636719 393.089844 829.839844 C 362.425781 822.296875 331.417969 831.238281 300.269531 846.253906 C 261.246094 865.0625 261.703125 866.046875 217.871094 853.171875 C 166.136719 837.992188 126.75 840.945312 95.3125 855.527344 "
           />
@@ -58,8 +58,8 @@ export const BrandLogo = ({
       className={cn("shrink-0", className)}
       {...props}
     >
-      {/* 1. Serena Icon Symbol - Authentic Brown (#8b5e3c) */}
-      <g className="fill-[#8b5e3c] dark:fill-[#d49b6a] transition-colors">
+      {/* 1. Serena Icon Symbol */}
+      <g className={forceWhite ? "fill-white" : "fill-[#8b5e3c] dark:fill-[#d49b6a] transition-colors"}>
         <path
           d="M 95.3125 855.527344 C 131.660156 845.808594 172.097656 849.09375 216.457031 864.730469 C 262.976562 881.144531 268.746094 881.65625 310.886719 859.035156 C 336.074219 845.503906 362.039062 834.925781 392.230469 840.402344 C 418.679688 845.199219 426.027344 856.898438 450.300781 835.328125 C 497.210938 793.660156 527.417969 825.917969 512.683594 874.558594 C 540.046875 833.832031 502.882812 767.515625 442.496094 828.355469 C 425.515625 845.460938 412.554688 834.636719 393.089844 829.839844 C 362.425781 822.296875 331.417969 831.238281 300.269531 846.253906 C 261.246094 865.0625 261.703125 866.046875 217.871094 853.171875 C 166.136719 837.992188 126.75 840.945312 95.3125 855.527344 "
         />
@@ -80,8 +80,8 @@ export const BrandLogo = ({
         />
       </g>
 
-      {/* 2. "SERENA" Text - Dark / Light Adaptive (#18181b in light, #f4f4f5 in dark) */}
-      <g className="fill-[#18181b] dark:fill-[#f4f4f5] transition-colors">
+      {/* 2. "SERENA" Text */}
+      <g className={forceWhite ? "fill-white" : "fill-[#18181b] dark:fill-[#f4f4f5] transition-colors"}>
         {/* S */}
         <g transform="translate(545.32897, 810.393414)">
           <path
@@ -120,8 +120,8 @@ export const BrandLogo = ({
         </g>
       </g>
 
-      {/* 3. "RAGA" Text - Authentic Brown Accent (#8b5e3c / #d49b6a in dark) */}
-      <g className="fill-[#8b5e3c] dark:fill-[#d49b6a] transition-colors">
+      {/* 3. "RAGA" Text - Brown Accent */}
+      <g className={forceWhite ? "fill-white" : "fill-[#8b5e3c] dark:fill-[#d49b6a] transition-colors"}>
         {/* R */}
         <g transform="translate(1045.942215, 811.820526)">
           <path

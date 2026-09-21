@@ -67,7 +67,7 @@ const InvoiceWatermark = () => {
       className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0"
     >
       <svg
-        className="w-full h-full opacity-[0.065] dark:opacity-[0.085]"
+        className="w-full h-full opacity-[0.055] dark:opacity-[0.075]"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
@@ -78,9 +78,9 @@ const InvoiceWatermark = () => {
             patternUnits="userSpaceOnUse"
             patternTransform="rotate(-25)"
           >
-            {/* Authentic Serena Raga Logo rendered in monochrome black */}
+            {/* Authentic Serena Raga Logo rendered in signature brown */}
             <g transform="translate(10, 15) scale(0.048)">
-              <g transform="translate(-90, -590)" fill="#000000">
+              <g transform="translate(-90, -590)" fill="#8b5e3c" className="dark:fill-[#d49b6a]">
                 {/* 1. Serena Icon Emblem */}
                 <g>
                   <path d="M 95.3125 855.527344 C 131.660156 845.808594 172.097656 849.09375 216.457031 864.730469 C 262.976562 881.144531 268.746094 881.65625 310.886719 859.035156 C 336.074219 845.503906 362.039062 834.925781 392.230469 840.402344 C 418.679688 845.199219 426.027344 856.898438 450.300781 835.328125 C 497.210938 793.660156 527.417969 825.917969 512.683594 874.558594 C 540.046875 833.832031 502.882812 767.515625 442.496094 828.355469 C 425.515625 845.460938 412.554688 834.636719 393.089844 829.839844 C 362.425781 822.296875 331.417969 831.238281 300.269531 846.253906 C 261.246094 865.0625 261.703125 866.046875 217.871094 853.171875 C 166.136719 837.992188 126.75 840.945312 95.3125 855.527344 " />
@@ -304,15 +304,22 @@ export const InvoiceCard = ({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Top Action Bar (Flat shadcn styling matching Dashboard) */}
+      {/* Top Action Bar (Flat shadcn styling matching Dashboard with subtle Serena accents) */}
       {showShareActions && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-muted/40 border border-border/70 rounded-xl shadow-none print:hidden">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-semibold text-foreground px-2 py-0.5 rounded-md border border-border bg-background shadow-none">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-muted/40 border border-[#8b5e3c]/20 dark:border-[#d49b6a]/20 rounded-xl shadow-none print:hidden">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs font-mono font-semibold text-foreground">
               {invoice.invoice_number}
             </span>
-            <span className="text-[11px] font-medium tracking-wide uppercase px-2 py-0.5 rounded-md border border-border bg-background text-muted-foreground shadow-none">
-              {isPaid ? (isEn ? "Paid" : "Lunas") : isEn ? "Unpaid" : "Belum Lunas"}
+            <span
+              className={cn(
+                "text-[11px] font-semibold tracking-wider uppercase",
+                isPaid
+                  ? "text-[#8b5e3c] dark:text-[#d49b6a]"
+                  : "text-muted-foreground"
+              )}
+            >
+              {isPaid ? (isEn ? "PAID" : "LUNAS") : isEn ? "UNPAID" : "BELUM LUNAS"}
             </span>
           </div>
 
@@ -322,9 +329,9 @@ export const InvoiceCard = ({
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              className="h-8 text-xs gap-1.5 shadow-none border-border"
+              className="h-8 text-xs gap-1.5 shadow-none border-border hover:border-[#8b5e3c]/30 hover:text-[#8b5e3c] dark:hover:text-[#d49b6a]"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-foreground" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" /> : <Copy className="w-3.5 h-3.5" />}
               {isEn ? "Copy Link" : "Salin Link"}
             </Button>
 
@@ -334,10 +341,10 @@ export const InvoiceCard = ({
               size="sm"
               onClick={handleDownloadPng}
               disabled={isDownloading}
-              className="h-8 text-xs gap-1.5 shadow-none border-border"
+              className="h-8 text-xs gap-1.5 shadow-none border-border hover:border-[#8b5e3c]/30 hover:text-[#8b5e3c] dark:hover:text-[#d49b6a]"
             >
               {isDownloading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8b5e3c] dark:text-[#d49b6a]" />
               ) : (
                 <Download className="w-3.5 h-3.5" />
               )}
@@ -350,7 +357,7 @@ export const InvoiceCard = ({
               type="button"
               size="sm"
               onClick={handleShareWhatsApp}
-              className="h-8 text-xs gap-1.5 bg-foreground hover:bg-foreground/90 text-background font-medium shadow-none"
+              className="h-8 text-xs gap-1.5 bg-[#8b5e3c] hover:bg-[#785033] dark:bg-[#d49b6a] dark:hover:bg-[#c28a5a] text-white dark:text-zinc-950 font-medium shadow-none transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
               {isEn ? "Share WA" : "Kirim WhatsApp"}
@@ -359,10 +366,10 @@ export const InvoiceCard = ({
         </div>
       )}
 
-      {/* Clean Minimalist Nota Card (Shadow-none flat shadcn Card) */}
+      {/* Clean Minimalist Nota Card (Shadow-none flat shadcn Card with subtle luxury brown/cream borders) */}
       <Card
         id="invoice-document"
-        className="relative bg-card text-card-foreground border border-border/70 rounded-xl p-6 sm:p-8 shadow-none overflow-hidden print:border-none print:shadow-none print:p-0"
+        className="relative bg-card text-card-foreground border border-[#8b5e3c]/20 dark:border-[#d49b6a]/25 rounded-xl p-6 sm:p-8 shadow-none overflow-hidden print:border-none print:shadow-none print:p-0"
       >
         {/* Subtle Watermark Background */}
         <InvoiceWatermark />
@@ -370,7 +377,7 @@ export const InvoiceCard = ({
         {/* Content Container (z-10 over watermark) */}
         <div className="relative z-10 space-y-6">
           {/* Header Section */}
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-5 border-b border-border/60">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-5 border-b border-[#8b5e3c]/15 dark:border-[#d49b6a]/15">
             <div>
               <div className="flex items-center gap-2 mb-1.5">
                 <BrandLogo variant="full" className="h-7 w-auto text-foreground" />
@@ -388,7 +395,7 @@ export const InvoiceCard = ({
             </div>
 
             <div className="sm:text-right space-y-0.5">
-              <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase block">
+              <span className="text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase block">
                 {isEn ? "INVOICE NUMBER" : "NOMOR INVOICE"}
               </span>
               <div className="text-base font-bold tracking-tight text-foreground">
@@ -405,7 +412,7 @@ export const InvoiceCard = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
             {/* Left: Client */}
             <div className="space-y-1">
-              <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+              <span className="text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
                 {isEn ? "CLIENT" : "PELANGGAN"}
               </span>
               <p className="text-sm font-semibold text-foreground pt-0.5">
@@ -425,7 +432,7 @@ export const InvoiceCard = ({
 
             {/* Right: Appointment Schedule */}
             <div className="space-y-1 sm:text-right">
-              <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+              <span className="text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
                 {isEn ? "APPOINTMENT DETAILS" : "DETAIL JADWAL"}
               </span>
               <p className="text-sm font-semibold text-foreground pt-0.5">
@@ -438,7 +445,7 @@ export const InvoiceCard = ({
           <div>
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-border/60 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+                <tr className="border-b border-[#8b5e3c]/20 dark:border-[#d49b6a]/20 text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
                   <th className="pb-2.5">{isEn ? "ITEM DESCRIPTION" : "RINCIAN LAYANAN"}</th>
                   <th className="pb-2.5 text-right">{isEn ? "AMOUNT" : "JUMLAH"}</th>
                 </tr>
@@ -464,10 +471,10 @@ export const InvoiceCard = ({
           </div>
 
           {/* Pricing Summary & Payment Details */}
-          <div className="pt-4 border-t border-border/60 flex flex-col sm:flex-row justify-between items-start gap-6 text-xs">
+          <div className="pt-4 border-t border-[#8b5e3c]/15 dark:border-[#d49b6a]/15 flex flex-col sm:flex-row justify-between items-start gap-6 text-xs">
             {/* Payment Method & Compact Status */}
             <div className="space-y-1">
-              <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
+              <span className="text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
                 {isEn ? "PAYMENT METHOD" : "METODE PEMBAYARAN"}
               </span>
               <p className="text-xs font-medium text-foreground capitalize">
@@ -479,7 +486,7 @@ export const InvoiceCard = ({
               </p>
               <p className="text-[10.5px] text-muted-foreground pt-0.5">
                 <span className="opacity-75">{isEn ? "Status:" : "Status:"}</span>{" "}
-                <span className="font-medium tracking-wide uppercase text-foreground/80">
+                <span className="font-semibold tracking-wide uppercase text-[#8b5e3c] dark:text-[#d49b6a]">
                   {isPaid ? (isEn ? "Paid" : "Lunas") : isEn ? "Unpaid" : "Belum Lunas"}
                 </span>
               </p>
@@ -506,15 +513,15 @@ export const InvoiceCard = ({
                 </div>
               )}
 
-              <div className="flex justify-between items-baseline pt-2.5 border-t border-border text-sm font-bold text-foreground">
+              <div className="flex justify-between items-baseline pt-2.5 border-t border-[#8b5e3c]/20 dark:border-[#d49b6a]/20 text-sm font-bold text-foreground">
                 <span className="text-xs uppercase tracking-wider">{isEn ? "Total" : "Total Biaya"}</span>
-                <span className="text-base text-foreground font-bold">{formattedTotal}</span>
+                <span className="text-base text-[#8b5e3c] dark:text-[#d49b6a] font-bold">{formattedTotal}</span>
               </div>
             </div>
           </div>
 
           {/* Minimalist Footer */}
-          <div className="pt-5 border-t border-border/40 text-center space-y-1">
+          <div className="pt-5 border-t border-[#8b5e3c]/15 dark:border-[#d49b6a]/15 text-center space-y-1">
             <p className="text-[11px] font-medium text-foreground">
               {displayFooterNote}
             </p>

@@ -16,6 +16,12 @@ import {
 } from "@/components/ui/card";
 import { Rating02 } from "@/components/shadcn-space/rating/rating-02";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   MessageCircle,
   ShieldCheck,
   Loader2,
@@ -27,6 +33,7 @@ import {
   Moon,
   Globe,
   Home,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -44,8 +51,8 @@ export default function PublicInvoicePage() {
   const [invoice, setInvoice] = React.useState<InvoiceData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Theme state: "light" | "dark" (Strictly default light mode)
-  const [theme, setTheme] = React.useState<"light" | "dark">("light");
+  // Theme state: "light" | "dark" | "system" (Default light mode)
+  const [theme, setTheme] = React.useState<"light" | "dark" | "system">("light");
 
   // Locale state: "id" | "en" (Default en)
   const [locale, setLocale] = React.useState<"id" | "en">("en");
@@ -62,19 +69,18 @@ export default function PublicInvoicePage() {
     setMounted(true);
   }, []);
 
-  // Apply theme to document and ensure light mode on load
+  // Synchronize theme with document element
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       const root = document.documentElement;
-      root.classList.remove("dark");
-      root.classList.add("light");
-    }
-  }, []);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const root = document.documentElement;
+      let effectiveDark = false;
       if (theme === "dark") {
+        effectiveDark = true;
+      } else if (theme === "system") {
+        effectiveDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      }
+
+      if (effectiveDark) {
         root.classList.remove("light");
         root.classList.add("dark");
       } else {
@@ -83,14 +89,6 @@ export default function PublicInvoicePage() {
       }
     }
   }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-  };
-
-  const toggleLocale = () => {
-    setLocale((prev) => (prev === "en" ? "id" : "en"));
-  };
 
   React.useEffect(() => {
     async function fetchInvoice() {
@@ -274,7 +272,7 @@ export default function PublicInvoicePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground py-5 sm:py-8 px-3.5 sm:px-6 lg:px-8">
-      {/* Top Header Navigation Bar (Matches Dashboard Header Bar) */}
+      {/* Top Header Navigation Bar (Matches Dashboard Header Bar with Shadcn UI Primitives) */}
       <div className="max-w-3xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
         {/* Left: Brand Logo */}
         <Link
@@ -285,48 +283,76 @@ export default function PublicInvoicePage() {
           <BrandLogo variant="full" className="h-6 sm:h-7 w-auto text-foreground" />
         </Link>
 
-        {/* Right: Actions (Home, Language Switcher, Theme Switcher, CS Help) */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        {/* Right: Actions (Home, Shadcn LocalesMenu, Shadcn ThemeModeToggle, CS Support) */}
+        <div className="flex items-center gap-1 sm:gap-1.5">
           {/* Home Button */}
           <Link href="/">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-8 text-xs gap-1.5 shadow-none border-border"
+              className="h-8 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
             >
               <Home className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{isEn ? "Home" : "Beranda"}</span>
             </Button>
           </Link>
 
-          {/* Language Switcher */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={toggleLocale}
-            className="h-8 text-xs gap-1.5 shadow-none border-border"
-            title={isEn ? "Ganti ke Bahasa Indonesia" : "Switch to English"}
-          >
-            <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="font-semibold">{isEn ? "EN" : "ID"}</span>
-          </Button>
+          {/* Official Shadcn Locales Switcher Dropdown (Matches Dashboard LocalesMenuButton) */}
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                />
+              }
+            >
+              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>{locale.toUpperCase()}</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={() => setLocale("en")}>
+                English
+                <Check className={cn("ml-auto text-[#8b5e3c] dark:text-[#d49b6a]", locale !== "en" && "hidden")} />
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLocale("id")}>
+                Bahasa Indonesia
+                <Check className={cn("ml-auto text-[#8b5e3c] dark:text-[#d49b6a]", locale !== "id" && "hidden")} />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          {/* Theme Switcher */}
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={toggleTheme}
-            className="h-8 w-8 shadow-none border-border"
-            title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
-          >
-            {theme === "light" ? (
-              <Moon className="w-3.5 h-3.5 text-foreground" />
-            ) : (
-              <Sun className="w-3.5 h-3.5 text-amber-500" />
-            )}
-          </Button>
+          {/* Official Shadcn Theme Mode Toggle Dropdown (Matches Dashboard ThemeModeToggle) */}
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                />
+              }
+            >
+              <Sun className="h-[1.1rem] w-[1.1rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-foreground" />
+              <Moon className="absolute h-[1.1rem] w-[1.1rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-foreground" />
+              <span className="sr-only">Toggle theme</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                Light
+                <Check className={cn("ml-auto text-[#8b5e3c] dark:text-[#d49b6a]", theme !== "light" && "hidden")} />
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                Dark
+                <Check className={cn("ml-auto text-[#8b5e3c] dark:text-[#d49b6a]", theme !== "dark" && "hidden")} />
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("system")}>
+                System
+                <Check className={cn("ml-auto text-[#8b5e3c] dark:text-[#d49b6a]", theme !== "system" && "hidden")} />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* WhatsApp Support Button */}
           <a
@@ -346,7 +372,7 @@ export default function PublicInvoicePage() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 text-xs gap-1.5 shadow-none border-border cursor-pointer hover:border-emerald-500/50"
+              className="h-8 text-xs gap-1.5 shadow-none border-border/80 hover:border-emerald-500/50 hover:bg-emerald-500/5 text-foreground cursor-pointer"
             >
               <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />
               <span>{isEn ? "Support" : "Bantuan CS"}</span>

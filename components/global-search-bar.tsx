@@ -318,16 +318,7 @@ export function GlobalSearchBar({ className }: { className?: string }) {
         {isDashboard ? (
           <>
             <DropdownMenu modal={false}>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1.5 sm:px-2 gap-1 text-[11px] font-medium text-foreground hover:bg-muted rounded-md shrink-0 focus-visible:ring-0 focus-visible:outline-none"
-                  />
-                }
-              >
+              <DropdownMenuTrigger className="inline-flex items-center h-6 px-1.5 sm:px-2 gap-1 text-[11px] font-medium text-foreground hover:bg-muted rounded-md shrink-0 focus-visible:ring-0 focus-visible:outline-none transition-colors select-none cursor-pointer">
                 <ActiveIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 <span className="hidden sm:inline-block max-w-[100px] truncate">
                   {activeName}
