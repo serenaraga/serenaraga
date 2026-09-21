@@ -18,6 +18,7 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbPage,
+  useResourceParent,
 } from "@/components/breadcrumb";
 import { cn } from "@/lib/utils";
 import { ShowButton } from "@/components/show-button";
@@ -142,6 +143,8 @@ export const EditView = ({
     );
   }
 
+  const parent = useResourceParent(resource);
+
   return (
     <>
       {!disableBreadcrumb && (
@@ -153,10 +156,17 @@ export const EditView = ({
               </LinkBase>
             </BreadcrumbItem>
           )}
+          {parent && (
+            <BreadcrumbItem>
+              <LinkBase to={parent.path}>{parent.label}</LinkBase>
+            </BreadcrumbItem>
+          )}
           <BreadcrumbItem>
             <LinkBase to={listLink}>{listLabel}</LinkBase>
           </BreadcrumbItem>
-          <BreadcrumbPage>{recordRepresentation}</BreadcrumbPage>
+          <BreadcrumbItem>
+            <BreadcrumbPage>{recordRepresentation}</BreadcrumbPage>
+          </BreadcrumbItem>
         </Breadcrumb>
       )}
       <div

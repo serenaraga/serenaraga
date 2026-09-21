@@ -23,8 +23,53 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Translate } from "ra-core";
+import { LinkBase, Translate, useGetResourceLabel } from "ra-core";
 import { cn } from "@/lib/utils";
+
+/**
+ * Declarative Parent-Child Resource Hierarchy Map
+ */
+export const RESOURCE_PARENT_MAP: Record<
+  string,
+  { parentResource: string; parentPath?: string }
+> = {
+  consumables: { parentResource: "services", parentPath: "/services" },
+  payouts: { parentResource: "therapists", parentPath: "/therapists" },
+};
+
+/**
+ * Hook to retrieve hierarchical parent resource configuration and labels
+ */
+export const useResourceParent = (resource?: string) => {
+  const getResourceLabel = useGetResourceLabel();
+  if (!resource) return null;
+
+  const parentConfig = RESOURCE_PARENT_MAP[resource];
+  if (!parentConfig) return null;
+
+  return {
+    label: getResourceLabel(parentConfig.parentResource, 2),
+    path: parentConfig.parentPath || `/${parentConfig.parentResource}`,
+  };
+};
+
+/**
+ * Standard Hierarchical Parent Breadcrumb Items
+ */
+export const ResourceParentBreadcrumbItems = ({
+  resource,
+}: {
+  resource?: string;
+}) => {
+  const parent = useResourceParent(resource);
+  if (!parent) return null;
+
+  return (
+    <BreadcrumbItem>
+      <LinkBase to={parent.path}>{parent.label}</LinkBase>
+    </BreadcrumbItem>
+  );
+};
 
 /**
  * A breadcrumb navigation component with mobile drawer support.
@@ -57,6 +102,22 @@ import { cn } from "@/lib/utils";
  *   </Edit>
  * );
  */
+/**
+ * Recursively flattens children and unboxes React.Fragments
+ */
+const flattenChildren = (children: React.ReactNode): React.ReactNode[] => {
+  const result: React.ReactNode[] = [];
+  React.Children.forEach(children, (child) => {
+    if (child === null || child === undefined || child === false || child === "") return;
+    if (React.isValidElement(child) && child.type === React.Fragment) {
+      result.push(...flattenChildren((child.props as any).children));
+    } else {
+      result.push(child);
+    }
+  });
+  return result;
+};
+
 export const Breadcrumb = ({ children, ref }: BreadcrumbProps) => {
   const [portalElement, setPortalElement] = React.useState<HTMLElement | null>(null);
   const isMobile = useIsMobile();
@@ -67,6 +128,9 @@ export const Breadcrumb = ({ children, ref }: BreadcrumbProps) => {
   }, []);
 
   if (!portalElement) return null;
+
+  const items = flattenChildren(children);
+
   return createPortal(
     <>
       <Separator
@@ -75,7 +139,7 @@ export const Breadcrumb = ({ children, ref }: BreadcrumbProps) => {
       />
       <BaseBreadcrumb ref={ref}>
         <BreadcrumbList>
-          {isMobile && React.Children.count(children) > 2 ? (
+          {isMobile && items.length > 2 ? (
             <React.Fragment>
               <BreadcrumbItem>
                 <Drawer open={open} onOpenChange={setOpen}>
@@ -96,9 +160,9 @@ export const Breadcrumb = ({ children, ref }: BreadcrumbProps) => {
                       </DrawerDescription>
                     </DrawerHeader>
                     <ol className="grid gap-1 px-4">
-                      {React.Children.toArray(children)
-                        .slice(0, -1)
-                        .map((item) => item)}
+                      {items.slice(0, -1).map((item, idx) => (
+                        <React.Fragment key={idx}>{item}</React.Fragment>
+                      ))}
                     </ol>
                     <DrawerFooter className="pt-4">
                       <DrawerClose
@@ -111,21 +175,15 @@ export const Breadcrumb = ({ children, ref }: BreadcrumbProps) => {
                 </Drawer>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
-              {React.Children.toArray(children).slice(-1)}
+              {items.slice(-1)}
             </React.Fragment>
           ) : (
-            React.Children.map(
-              children,
-              (child, index) =>
-                child && (
-                  <React.Fragment key={index}>
-                    {child}
-                    {index < React.Children.count(children) - 1 ? (
-                      <BreadcrumbSeparator />
-                    ) : null}
-                  </React.Fragment>
-                ),
-            )
+            items.map((child, index) => (
+              <React.Fragment key={index}>
+                {child}
+                {index < items.length - 1 ? <BreadcrumbSeparator /> : null}
+              </React.Fragment>
+            ))
           )}
         </BreadcrumbList>
       </BaseBreadcrumb>

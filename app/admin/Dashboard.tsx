@@ -38,6 +38,11 @@ import {
   Calendar,
   Phone,
   MessageSquareQuote,
+  Check,
+  Wallet,
+  Package,
+  AlertCircle,
+  CreditCard,
 } from "lucide-react";
 import {
   BarChart,
@@ -53,19 +58,40 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn, formatIDR } from "@/lib/utils";
+import {
+  format,
+  subDays,
+  startOfDay,
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+} from "date-fns";
 
 export const Dashboard = () => {
   const translate = useTranslate();
   const [locale] = useLocaleState();
   const isEn = locale === "en";
 
-  // Filter state: "7d" | "30d" | "all"
-  const [timeRange, setTimeRange] = React.useState<string>("30d");
+  // Filter state with "today" as default
+  const [timeRange, setTimeRange] = React.useState<string>("today");
 
   // Fetch real data from Supabase backend
   const { data: bookings = [], isPending: loadingBookings } = useGetList("bookings", {
+    pagination: { page: 1, perPage: 200 },
+    sort: { field: "id", order: "DESC" },
+  });
+  const { data: invoices = [], isPending: loadingInvoices } = useGetList("invoices", {
     pagination: { page: 1, perPage: 200 },
     sort: { field: "id", order: "DESC" },
   });
@@ -83,34 +109,207 @@ export const Dashboard = () => {
     sort: { field: "id", order: "DESC" },
   });
 
-  // Calculate Metrics
-  const totalRevenue = React.useMemo(() => {
-    return bookings.reduce((acc, b) => {
-      if (b.payment_status === "paid") {
-        return acc + (Number(b.total_price) || 0);
-      }
-      return acc;
-    }, 0);
-  }, [bookings]);
+  // Calculate synchronized date interval based on timeRange
+  const filterDateRange = React.useMemo(() => {
+    const now = new Date();
+    const todayStart = startOfDay(now);
+    const todayEnd = endOfDay(now);
 
+    if (timeRange === "today") {
+      return { start: todayStart, end: todayEnd, labelId: "Hari Ini", labelEn: "Today" };
+    }
+    if (timeRange === "yesterday") {
+      const yesterday = subDays(now, 1);
+      return { start: startOfDay(yesterday), end: endOfDay(yesterday), labelId: "Kemarin", labelEn: "Yesterday" };
+    }
+    if (timeRange === "7d") {
+      return { start: startOfDay(subDays(now, 6)), end: todayEnd, labelId: "7 Hari Terakhir", labelEn: "Last 7 Days" };
+    }
+    if (timeRange === "30d") {
+      return { start: startOfDay(subDays(now, 29)), end: todayEnd, labelId: "30 Hari Terakhir", labelEn: "Last 30 Days" };
+    }
+    if (timeRange === "this_month") {
+      return { start: startOfMonth(now), end: endOfMonth(now), labelId: "Bulan Ini", labelEn: "This Month" };
+    }
+    if (timeRange === "this_year") {
+      return { start: startOfYear(now), end: endOfYear(now), labelId: "Tahun Ini", labelEn: "This Year" };
+    }
+    return { start: new Date(2020, 0, 1), end: new Date(2040, 0, 1), labelId: "Semua Waktu", labelEn: "All Time" };
+  }, [timeRange]);
+
+  // Helper to check if a record falls within the active timeframe
+  const isInRange = React.useCallback(
+    (dateStr?: string | null, createdAtStr?: string | null) => {
+      if (timeRange === "all") return true;
+      let targetDate: Date | null = null;
+      if (dateStr) {
+        try {
+          targetDate = new Date(dateStr);
+        } catch (e) {
+          // ignore
+        }
+      }
+      if (!targetDate || isNaN(targetDate.getTime())) {
+        if (createdAtStr) {
+          try {
+            targetDate = new Date(createdAtStr);
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+      if (!targetDate || isNaN(targetDate.getTime())) return false;
+      return targetDate >= filterDateRange.start && targetDate <= filterDateRange.end;
+    },
+    [timeRange, filterDateRange]
+  );
+
+  // Synchronized Filtered Datasets
+  const filteredBookings = React.useMemo(() => {
+    return bookings.filter((b) => isInRange(b.booking_date, b.created_at));
+  }, [bookings, isInRange]);
+
+  const filteredInvoices = React.useMemo(() => {
+    return invoices.filter((inv) => isInRange(inv.booking_date, inv.created_at));
+  }, [invoices, isInRange]);
+
+  const filteredReviews = React.useMemo(() => {
+    return reviews.filter((rev) => isInRange(null, rev.created_at));
+  }, [reviews, isInRange]);
+
+  // 1. Booking Status Metrics for the Period
+  const pendingBookings = filteredBookings.filter((b) => b.status === "pending").length;
+  const confirmedBookings = filteredBookings.filter((b) => b.status === "confirmed").length;
+  const completedBookings = filteredBookings.filter((b) => b.status === "completed").length;
+  const totalBookingsCount = filteredBookings.length;
+
+  // 2. Financial Metrics for the Period
+  const grossRevenue = React.useMemo(() => {
+    if (filteredInvoices.length > 0) {
+      return filteredInvoices.reduce((sum, inv) => {
+        if (inv.payment_status === "paid") {
+          return sum + (Number(inv.total_amount) || 0);
+        }
+        return sum;
+      }, 0);
+    }
+    return filteredBookings.reduce((sum, b) => {
+      if (b.payment_status === "paid") {
+        return sum + (Number(b.total_price) || 0);
+      }
+      return sum;
+    }, 0);
+  }, [filteredInvoices, filteredBookings]);
+
+  // Paid orders count
+  const paidOrdersCount = React.useMemo(() => {
+    if (filteredInvoices.length > 0) {
+      return filteredInvoices.filter((i) => i.payment_status === "paid").length;
+    }
+    return filteredBookings.filter((b) => b.payment_status === "paid").length;
+  }, [filteredInvoices, filteredBookings]);
+
+  // Therapist Fee Cost (Calculated based on therapist commission rate, default 60%)
+  const therapistFeeCost = React.useMemo(() => {
+    let total = 0;
+    if (filteredInvoices.length > 0) {
+      filteredInvoices.forEach((inv) => {
+        if (inv.payment_status === "paid") {
+          const therapist = therapists.find((t) => t.id === inv.therapist_id);
+          const rate = therapist?.commission_rate ? Number(therapist.commission_rate) / 100 : 0.6;
+          const serviceAmt = Number(inv.subtotal) || Number(inv.total_amount) || 0;
+          total += serviceAmt * rate;
+        }
+      });
+    } else {
+      filteredBookings.forEach((b) => {
+        if (b.payment_status === "paid") {
+          const therapist = therapists.find((t) => t.id === b.therapist_id);
+          const rate = therapist?.commission_rate ? Number(therapist.commission_rate) / 100 : 0.6;
+          const serviceAmt = Number(b.total_price) || 0;
+          total += serviceAmt * rate;
+        }
+      });
+    }
+    return Math.round(total);
+  }, [filteredInvoices, filteredBookings, therapists]);
+
+  // Consumables / Supplies Cost (BHP: Akumulasi biaya bahan riil dari master service yang dipesan)
+  const bhpCost = React.useMemo(() => {
+    let total = 0;
+    if (filteredInvoices.length > 0) {
+      filteredInvoices.forEach((inv) => {
+        if (inv.payment_status === "paid") {
+          const service = services.find((s) => s.id === inv.service_id);
+          total += Number(service?.consumables_cost) || 0;
+        }
+      });
+    } else {
+      filteredBookings.forEach((b) => {
+        if (b.payment_status === "paid") {
+          const service = services.find((s) => s.id === b.service_id);
+          total += Number(service?.consumables_cost) || 0;
+        }
+      });
+    }
+    return Math.round(total);
+  }, [filteredInvoices, filteredBookings, services]);
+
+  // Net Profit & Net Margin (%)
+  const netProfit = Math.max(0, grossRevenue - therapistFeeCost - bhpCost);
+  const netMarginPercent = grossRevenue > 0 ? ((netProfit / grossRevenue) * 100).toFixed(1) : "0.0";
+
+  // 3. Operational Roster & Performance Metrics
   const availableTherapists = therapists.filter((t) => t.status === "available").length;
   const onDutyTherapists = therapists.filter((t) => t.status === "on_duty").length;
   const offDutyTherapists = therapists.filter((t) => t.status === "off_duty").length;
-  const pendingBookings = bookings.filter((b) => b.status === "pending").length;
-  const confirmedBookings = bookings.filter((b) => b.status === "confirmed").length;
-  const completedBookings = bookings.filter((b) => b.status === "completed").length;
 
+  // Average Rating
   const averageRating = React.useMemo(() => {
-    if (reviews.length === 0) return "5.0";
-    const total = reviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
-    return (total / reviews.length).toFixed(1);
-  }, [reviews]);
+    const targetReviews = filteredReviews.length > 0 ? filteredReviews : reviews;
+    if (targetReviews.length === 0) return "-";
+    const total = targetReviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+    return (total / targetReviews.length).toFixed(1);
+  }, [filteredReviews, reviews]);
 
-  // Generate Chart Data based on actual bookings
+  // Payment Breakdown for the Period
+  const paymentStats = React.useMemo(() => {
+    const list = filteredInvoices.length > 0 ? filteredInvoices : (invoices.length > 0 ? invoices : []);
+    let qris = 0;
+    let transfer = 0;
+    let cash = 0;
+
+    list.forEach((inv) => {
+      const method = (inv.payment_method || "").toLowerCase();
+      if (method.includes("qris")) {
+        qris++;
+      } else if (method.includes("transfer") || method.includes("bca") || method.includes("mandiri") || method.includes("bank")) {
+        transfer++;
+      } else {
+        cash++;
+      }
+    });
+
+    const total = qris + transfer + cash || 1;
+    return {
+      qris: Math.round((qris / total) * 100),
+      transfer: Math.round((transfer / total) * 100),
+      cash: Math.round((cash / total) * 100),
+      totalTransactions: qris + transfer + cash,
+    };
+  }, [filteredInvoices, invoices]);
+
+  // Urgent Action items (Global across all bookings & invoices)
+  const urgentPendingBookings = bookings.filter((b) => b.status === "pending").length;
+  const urgentUnpaidInvoices = invoices.filter((i) => i.payment_status !== "paid").length;
+
+  // 4. Generate Daily Chart Data (Always Daily, showing Net Profit only)
   const chartData = React.useMemo(() => {
-    const days = timeRange === "7d" ? 7 : timeRange === "30d" ? 14 : 30;
-    const data = [];
+    const data: { date: string; profit: number; bookings: number }[] = [];
     const now = new Date();
+
+    // Determine number of daily bars to show (7 days for today/yesterday/7d, 14 for 30d/month, 30 for year/all)
+    const days = timeRange === "30d" || timeRange === "this_month" ? 14 : timeRange === "this_year" || timeRange === "all" ? 30 : 7;
 
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(now);
@@ -126,35 +325,43 @@ export const Dashboard = () => {
         return b.booking_date.startsWith(dateKey);
       });
 
-      const dayRevenue = dayBookings.reduce((sum, b) => {
+      let dayRevenue = 0;
+      let dayTherapistFee = 0;
+      let dayBhpCost = 0;
+
+      dayBookings.forEach((b) => {
         if (b.payment_status === "paid") {
-          return sum + (Number(b.total_price) || 0);
+          const srv = services.find((s) => s.id === b.service_id);
+          const th = therapists.find((t) => t.id === b.therapist_id);
+          const price = Number(b.total_price) || 0;
+          const commissionRate = th?.commission_rate ? Number(th.commission_rate) / 100 : 0.6;
+
+          dayRevenue += price;
+          dayTherapistFee += Math.round(price * commissionRate);
+          dayBhpCost += Number(srv?.consumables_cost) || 0;
         }
-        return sum;
-      }, 0);
+      });
+
+      const dayProfit = Math.max(0, dayRevenue - dayTherapistFee - dayBhpCost);
 
       data.push({
         date: label,
-        revenue: dayRevenue,
+        profit: dayProfit,
         bookings: dayBookings.length,
       });
     }
     return data;
-  }, [bookings, timeRange, isEn]);
+  }, [bookings, services, therapists, timeRange, isEn]);
 
-  // Total in filtered chart
-  const periodTotalRevenue = React.useMemo(() => {
-    return chartData.reduce((acc, d) => acc + d.revenue, 0);
+  const totalPeriodProfit = React.useMemo(() => {
+    return chartData.reduce((acc, d) => acc + d.profit, 0);
   }, [chartData]);
 
-  const peakDayRevenue = React.useMemo(() => {
-    return Math.max(...chartData.map((d) => d.revenue), 0);
-  }, [chartData]);
-
-  // Real Service Stats
+  // Real Service Stats for top popular rankings
   const serviceStats = React.useMemo(() => {
+    const targetBookings = filteredBookings.length > 0 ? filteredBookings : bookings;
     const map: Record<number, number> = {};
-    bookings.forEach((b) => {
+    targetBookings.forEach((b) => {
       if (b.service_id) {
         map[Number(b.service_id)] = (map[Number(b.service_id)] || 0) + 1;
       }
@@ -173,7 +380,7 @@ export const Dashboard = () => {
 
     entries.sort((a, b) => b.count - a.count);
     return entries;
-  }, [bookings, services]);
+  }, [filteredBookings, bookings, services]);
 
   const maxServiceCount = React.useMemo(() => {
     if (serviceStats.length === 0) return 1;
@@ -181,17 +388,13 @@ export const Dashboard = () => {
   }, [serviceStats]);
 
   const chartConfig = {
-    revenue: {
-      label: isEn ? "Revenue" : "Pendapatan",
+    profit: {
+      label: isEn ? "Net Profit" : "Laba Bersih",
       color: "#8b5e3c",
-    },
-    bookings: {
-      label: isEn ? "Bookings" : "Pesanan",
-      color: "#d49b6a",
     },
   } satisfies ChartConfig;
 
-  if (loadingBookings && loadingTherapists) {
+  if (loadingBookings && loadingTherapists && loadingInvoices) {
     return <DashboardSkeleton />;
   }
 
@@ -201,14 +404,14 @@ export const Dashboard = () => {
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08,
+        staggerChildren: 0.05,
       },
     },
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 12 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+    hidden: { opacity: 0, y: 8 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
   };
 
   return (
@@ -218,54 +421,63 @@ export const Dashboard = () => {
       animate="show"
       className="space-y-6 pb-14 pt-1"
     >
-      {/* 1. Header Bar: Title, Live Status & Quick Action Buttons */}
+      {/* 1. Clean Header Bar */}
       <motion.div
         variants={itemVariants}
         className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-border/60 pb-5"
       >
         <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              {isEn ? "Operational Dashboard" : "Dashboard Operasional"}
-            </h1>
-            <Badge
-              variant="outline"
-              className="gap-1.5 px-2.5 py-0.5 text-[11px] font-medium border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{isEn ? "Live Realtime" : "Realtime Aktif"}</span>
-            </Badge>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            {isEn ? "Operational & Financial Dashboard" : "Dashboard Operasional & Keuangan"}
+          </h1>
           <p className="text-xs text-muted-foreground">
             {isEn
-              ? "Live overview of client appointments, therapist assignments, and revenue."
-              : "Ringkasan data pemesanan pelanggan, penugasan terapis, ulasan, dan omzet."}
+              ? "Live overview of bookings, gross revenue, therapist fees, supply costs, and net profit."
+              : "Ringkasan data transaksi, omset kotor, komisi terapis, biaya bahan (BHP), dan laba bersih."}
           </p>
         </div>
 
         {/* Header Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Time Range Filter */}
-          <div className="flex items-center gap-1.5 bg-background border border-border/80 rounded-lg px-2.5 h-9 shadow-2xs">
-            <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+          {/* Synchronized Timeframe Filter (Defaults to Today) */}
+          <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-2.5 h-9 shadow-none">
+            <Filter className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <Select
               value={timeRange}
-              onValueChange={(val) => setTimeRange(val || "30d")}
+              onValueChange={(val) => setTimeRange(val || "today")}
             >
-              <SelectTrigger className="h-8 border-0 bg-transparent text-xs font-medium focus:ring-0 w-28 px-1 shadow-none">
+              <SelectTrigger className="h-8 border-0 bg-transparent text-xs font-medium focus:ring-0 min-w-[130px] px-1 shadow-none">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent align="end" className="z-50 bg-popover border border-border">
-                <SelectItem value="7d" className="text-xs">{isEn ? "Last 7 Days" : "7 Hari Terakhir"}</SelectItem>
-                <SelectItem value="30d" className="text-xs">{isEn ? "Last 30 Days" : "30 Hari Terakhir"}</SelectItem>
-                <SelectItem value="all" className="text-xs">{isEn ? "All Time" : "Semua Waktu"}</SelectItem>
+              <SelectContent align="end" className="z-50 bg-popover border border-border text-xs shadow-md">
+                <SelectItem value="today" className="text-xs font-medium">
+                  {isEn ? "Today (Default)" : "Hari Ini (Default)"}
+                </SelectItem>
+                <SelectItem value="yesterday" className="text-xs">
+                  {isEn ? "Yesterday" : "Kemarin"}
+                </SelectItem>
+                <SelectItem value="7d" className="text-xs">
+                  {isEn ? "Last 7 Days" : "7 Hari Terakhir"}
+                </SelectItem>
+                <SelectItem value="30d" className="text-xs">
+                  {isEn ? "Last 30 Days" : "30 Hari Terakhir"}
+                </SelectItem>
+                <SelectItem value="this_month" className="text-xs">
+                  {isEn ? "This Month" : "Bulan Ini"}
+                </SelectItem>
+                <SelectItem value="this_year" className="text-xs">
+                  {isEn ? "This Year" : "Tahun Ini"}
+                </SelectItem>
+                <SelectItem value="all" className="text-xs">
+                  {isEn ? "All Time" : "Semua Waktu"}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Button
             variant="outline"
-            className="h-9 px-3.5 gap-2 text-xs font-medium border-border/80 hover:bg-muted/80"
+            className="h-9 px-3.5 gap-2 text-xs font-medium border-border hover:bg-muted/60 shadow-none"
             asChild
           >
             <a href="#/invoices/create" className="cursor-pointer">
@@ -275,7 +487,7 @@ export const Dashboard = () => {
           </Button>
 
           <Button
-            className="h-9 px-4 gap-2 text-xs font-semibold bg-[#8b5e3c] hover:bg-[#785033] text-white dark:bg-[#d49b6a] dark:hover:bg-[#c28a5a] dark:text-zinc-950 shadow-xs"
+            className="h-9 px-4 gap-2 text-xs font-medium bg-[#8b5e3c] hover:bg-[#785033] dark:bg-[#d49b6a] dark:hover:bg-[#c28a5a] text-white dark:text-zinc-950 shadow-none transition-colors"
             asChild
           >
             <a href="#/bookings/create" className="cursor-pointer">
@@ -286,148 +498,124 @@ export const Dashboard = () => {
         </div>
       </motion.div>
 
-      {/* 2. 4 Clean Metrics KPI Cards */}
+      {/* 2. Clean Primary Row: 5 Core Financial & Order Metrics Cards */}
       <motion.div
         variants={itemVariants}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5"
       >
-        {/* Card 1: Revenue (with Serena Warm Brown Accent) */}
-        <Card className="relative overflow-hidden border border-border/70 shadow-none bg-card hover:border-[#8b5e3c]/40 dark:hover:border-[#d49b6a]/40 transition-colors">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#8b5e3c] to-[#d49b6a]" />
+        {/* Card 1: Incoming Bookings */}
+        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
             <span className="text-xs font-medium text-muted-foreground">
-              {isEn ? "Paid Revenue" : "Pendapatan Lunas"}
+              {isEn ? "Incoming Bookings" : "Booking Masuk"}
             </span>
-            <div className="p-1.5 rounded-lg bg-[#8b5e3c]/10 text-[#8b5e3c] dark:bg-[#d49b6a]/15 dark:text-[#d49b6a]">
-              <DollarSign className="w-4 h-4" />
-            </div>
+            <CalendarCheck className="w-4 h-4 text-[#8b5e3c] dark:text-[#d49b6a]" />
           </CardHeader>
           <CardContent className="space-y-1.5">
             <div className="text-2xl font-bold text-foreground tracking-tight">
-              {new Intl.NumberFormat("id-ID", {
-                style: "currency",
-                currency: "IDR",
-                maximumFractionDigits: 0,
-              }).format(totalRevenue)}
+              {totalBookingsCount}
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>
-                {isEn
-                  ? `${completedBookings} orders completed & paid`
-                  : `${completedBookings} pesanan lunas terbayar`}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 2: Total Bookings */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-foreground/20 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              {isEn ? "Total Bookings" : "Total Pemesanan"}
-            </span>
-            <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
-              <CalendarCheck className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1.5">
-            <div className="text-2xl font-bold text-foreground tracking-tight">
-              {bookings.length}
-            </div>
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-              <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
-                {pendingBookings} {isEn ? "pending" : "menunggu"}
-              </Badge>
-              <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
-                {confirmedBookings} {isEn ? "active" : "dikonfirmasi"}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 3: Therapists Readiness */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-foreground/20 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              {isEn ? "Therapist Readiness" : "Kesiapan Terapis"}
-            </span>
-            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <UserCheck className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1.5">
-            <div className="text-2xl font-bold text-foreground tracking-tight flex items-baseline gap-1.5">
-              <span>{availableTherapists}</span>
-              <span className="text-xs font-normal text-muted-foreground">
-                / {therapists.length} {isEn ? "total registered" : "terdaftar"}
-              </span>
-            </div>
-            <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
-              <span>{availableTherapists} {isEn ? "Ready" : "Siap"}</span>
-              <span className="text-muted-foreground/40">•</span>
-              <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
-              <span>{onDutyTherapists} {isEn ? "On Duty" : "Bertugas"}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 4: Clients & Customer Rating */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-foreground/20 transition-colors">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              {isEn ? "Clients & Rating" : "Pelanggan & Kepuasan"}
-            </span>
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <Star className="w-4 h-4 fill-amber-500" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1.5">
-            <div className="text-2xl font-bold text-foreground tracking-tight flex items-center justify-between">
-              <span>{customers.length}</span>
-              <div className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400">
-                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                <span>{averageRating}</span>
-              </div>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              {reviews.length > 0
-                ? `${reviews.length} ${isEn ? "verified client reviews" : "ulasan pelanggan terverifikasi"}`
-                : isEn ? "Customer feedback monitored" : "Ulasan pelanggan terpantau"}
+            <p className="text-xs text-muted-foreground font-normal">
+              {pendingBookings} {isEn ? "pending" : "menunggu"} • {confirmedBookings} {isEn ? "active" : "aktif"} • {completedBookings} {isEn ? "done" : "selesai"}
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Card 2: Gross Revenue */}
+        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
+            <span className="text-xs font-medium text-muted-foreground">
+              {isEn ? "Gross Revenue" : "Omset Pendapatan"}
+            </span>
+            <DollarSign className="w-4 h-4 text-[#8b5e3c] dark:text-[#d49b6a]" />
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            <div className="text-2xl font-bold text-foreground tracking-tight">
+              {formatIDR(grossRevenue)}
+            </div>
+            <p className="text-xs text-muted-foreground font-normal">
+              {paidOrdersCount} {isEn ? "orders completed & paid" : "pesanan lunas terbayar"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Card 3: Therapist Fees */}
+        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
+            <span className="text-xs font-medium text-muted-foreground">
+              {isEn ? "Therapist Fees" : "Komisi Terapis"}
+            </span>
+            <Wallet className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            <div className="text-2xl font-bold text-foreground tracking-tight">
+              {formatIDR(therapistFeeCost)}
+            </div>
+            <p className="text-xs text-muted-foreground font-normal">
+              {isEn ? "From therapist commission rates" : "Dari komisi per terapis"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Consumables (BHP) */}
+        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
+            <span className="text-xs font-medium text-muted-foreground">
+              {isEn ? "Consumables (BHP)" : "Biaya Bahan (BHP)"}
+            </span>
+            <Package className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            <div className="text-2xl font-bold text-foreground tracking-tight">
+              {formatIDR(bhpCost)}
+            </div>
+            <p className="text-xs text-muted-foreground font-normal">
+              {isEn ? "From service consumables COGS" : "Dari HPP bahan per layanan"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Card 5: Net Profit (Refined Accent) */}
+        <Card className="border border-border/70 hover:border-[#8b5e3c]/40 dark:hover:border-[#d49b6a]/40 shadow-none bg-card transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
+            <span className="text-xs font-medium text-foreground">
+              {isEn ? "Net Profit" : "Laba Bersih"}
+            </span>
+            <TrendingUp className="w-4 h-4 text-[#8b5e3c] dark:text-[#d49b6a]" />
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            <div className="text-2xl font-bold text-foreground tracking-tight">
+              {formatIDR(netProfit)}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-normal">
+              <span className="font-semibold text-[#8b5e3c] dark:text-[#d49b6a] bg-[#8b5e3c]/10 dark:bg-[#d49b6a]/15 px-1.5 py-0.5 rounded text-[11px]">
+                {netMarginPercent}% margin
+              </span>
+              <span>•</span>
+              <span>{isEn ? "net operational" : "bersih operasional"}</span>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* 3. Analytics Section: Revenue Bar Chart (8 cols) & Top Services (4 cols) */}
+      {/* 2. Analytics Section: Daily Net Profit Bar Chart (8 cols) & Top Services (4 cols) */}
       <motion.div
         variants={itemVariants}
         className="grid grid-cols-1 lg:grid-cols-12 gap-6"
       >
-        {/* Left: Bar Chart with Serena Raga Bronze Gradient */}
+        {/* Left: Clean Daily Net Profit Bar Chart */}
         <Card className="lg:col-span-8 border border-border/70 shadow-none bg-card flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div className="space-y-1">
               <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-[#8b5e3c] dark:text-[#d49b6a]" />
-                <span>{isEn ? "Daily Revenue Trends" : "Tren Pendapatan Harian"}</span>
+                <span>{isEn ? "Daily Net Profit Trends" : "Tren Laba Bersih Harian"}</span>
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
                 {isEn
-                  ? "Real revenue based on customer booking dates."
-                  : "Akumulasi pendapatan riil berdasarkan tanggal pemesanan."}
+                  ? "Daily net profit after deducting therapist commissions and supply costs."
+                  : "Akumulasi laba bersih harian setelah dipotong komisi terapis dan biaya BHP."}
               </CardDescription>
-            </div>
-            <div className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-muted/60 text-foreground border border-border/50">
-              <span className="text-muted-foreground font-normal">{isEn ? "Period:" : "Total Periode:"}</span>
-              <span>
-                {new Intl.NumberFormat("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                  maximumFractionDigits: 0,
-                }).format(periodTotalRevenue)}
-              </span>
             </div>
           </CardHeader>
           <CardContent className="pt-2">
@@ -450,46 +638,50 @@ export const Dashboard = () => {
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <ChartTooltip
-                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.25 }}
                   content={
                     <ChartTooltipContent
                       formatter={(value) => (
-                        <span className="font-bold text-foreground">
-                          Rp {Number(value).toLocaleString("id-ID")}
-                        </span>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-muted-foreground text-xs">{isEn ? "Net Profit:" : "Laba Bersih:"}</span>
+                          <span className="font-bold text-foreground text-xs">
+                            Rp {Number(value).toLocaleString("id-ID")}
+                          </span>
+                        </div>
                       )}
                     />
                   }
                 />
-                {/* Serena Bronze Bar */}
+                {/* Single Clean Net Profit Bar */}
                 <Bar
-                  dataKey="revenue"
+                  dataKey="profit"
+                  name={isEn ? "Net Profit" : "Laba Bersih"}
                   fill="currentColor"
                   className="fill-[#8b5e3c] dark:fill-[#d49b6a] transition-colors"
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={36}
+                  maxBarSize={32}
                 />
               </BarChart>
             </ChartContainer>
 
             {/* Bottom Chart Stats Summary */}
             <div className="grid grid-cols-3 gap-2 pt-4 mt-2 border-t border-border/50 text-center">
-              <div className="p-2 rounded-lg bg-muted/30 border border-border/40">
-                <span className="text-[10px] text-muted-foreground block">{isEn ? "Filtered Total" : "Total Terpilih"}</span>
-                <span className="text-xs font-bold text-foreground">
-                  Rp {Math.round(periodTotalRevenue / 1000).toLocaleString("id-ID")}k
-                </span>
-              </div>
-              <div className="p-2 rounded-lg bg-muted/30 border border-border/40">
-                <span className="text-[10px] text-muted-foreground block">{isEn ? "Daily Average" : "Rata-rata/Hari"}</span>
-                <span className="text-xs font-bold text-foreground">
-                  Rp {Math.round((periodTotalRevenue / Math.max(chartData.length, 1)) / 1000).toLocaleString("id-ID")}k
-                </span>
-              </div>
-              <div className="p-2 rounded-lg bg-muted/30 border border-border/40">
-                <span className="text-[10px] text-muted-foreground block">{isEn ? "Peak Day" : "Hari Tertinggi"}</span>
+              <div className="p-2 rounded-lg bg-[#8b5e3c]/5 dark:bg-[#d49b6a]/5 border border-[#8b5e3c]/20 dark:border-[#d49b6a]/20">
+                <span className="text-[10px] text-muted-foreground block">{isEn ? "Total Net Profit" : "Total Laba Bersih"}</span>
                 <span className="text-xs font-bold text-[#8b5e3c] dark:text-[#d49b6a]">
-                  Rp {Math.round(peakDayRevenue / 1000).toLocaleString("id-ID")}k
+                  {formatIDR(netProfit)}
+                </span>
+              </div>
+              <div className="p-2 rounded-lg bg-muted/20 border border-border/40">
+                <span className="text-[10px] text-muted-foreground block">{isEn ? "Daily Average Profit" : "Rata-rata Laba/Hari"}</span>
+                <span className="text-xs font-bold text-foreground">
+                  Rp {Math.round((totalPeriodProfit / Math.max(chartData.length, 1)) / 1000).toLocaleString("id-ID")}k
+                </span>
+              </div>
+              <div className="p-2 rounded-lg bg-muted/20 border border-border/40">
+                <span className="text-[10px] text-muted-foreground block">{isEn ? "Net Profit Margin" : "Margin Laba Bersih"}</span>
+                <span className="text-xs font-bold text-foreground">
+                  {netMarginPercent}%
                 </span>
               </div>
             </div>
@@ -504,7 +696,7 @@ export const Dashboard = () => {
               <span>{isEn ? "Top Services" : "Layanan Terlaris"}</span>
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
-              {isEn ? "Most requested massage packages." : "Paket pijat paling banyak dipesan pelanggan."}
+              {isEn ? "Most requested massage packages in this period." : "Paket pijat paling banyak dipesan pada periode ini."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-0">
@@ -514,7 +706,7 @@ export const Dashboard = () => {
                   <div key={item.id} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[10px] font-bold text-muted-foreground w-4">
+                        <span className={`text-[10px] font-bold w-4 ${index === 0 ? "text-[#8b5e3c] dark:text-[#d49b6a]" : "text-muted-foreground"}`}>
                           #{index + 1}
                         </span>
                         <span className="font-medium text-foreground truncate max-w-[150px]">
@@ -527,7 +719,7 @@ export const Dashboard = () => {
                     </div>
                     <div className="h-1.5 w-full bg-muted/70 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-[#8b5e3c] to-[#d49b6a] rounded-full transition-all duration-500"
+                        className="h-full bg-[#8b5e3c] dark:bg-[#d49b6a] rounded-full transition-all duration-500"
                         style={{
                           width: `${Math.max(12, (item.count / maxServiceCount) * 100)}%`,
                         }}
@@ -537,18 +729,28 @@ export const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <div className="py-12 text-center text-xs text-muted-foreground space-y-1">
-                <Clock className="w-6 h-6 mx-auto text-muted-foreground/50 mb-2" />
-                <p className="font-medium text-foreground">{isEn ? "No order data yet" : "Belum ada pesanan"}</p>
-                <p className="text-[11px]">{isEn ? "New orders will be ranked here automatically." : "Data layanan terlaris akan otomatis terisi."}</p>
-              </div>
+              <Empty className="min-h-[160px] py-6 border-dashed border-border/60 bg-muted/10">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon" className="h-9 w-9 [&_svg]:h-4 [&_svg]:w-4 mb-1">
+                    <Clock className="text-muted-foreground" />
+                  </EmptyMedia>
+                  <EmptyTitle className="text-xs">
+                    {isEn ? "No order data in this period" : "Belum ada pesanan pada periode ini"}
+                  </EmptyTitle>
+                  <EmptyDescription className="text-[11px]">
+                    {isEn
+                      ? "Top service rankings will appear here as bookings are placed."
+                      : "Peringkat layanan terpopuler akan terisi otomatis setelah ada transaksi booking."}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             )}
 
             <div className="pt-2 border-t border-border/50">
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-between text-xs font-medium text-muted-foreground hover:text-foreground h-8 px-2"
+                className="w-full justify-between text-xs font-medium text-muted-foreground hover:text-[#8b5e3c] dark:hover:text-[#d49b6a] h-8 px-2"
                 asChild
               >
                 <a href="#/services" className="inline-flex items-center cursor-pointer">
@@ -561,7 +763,7 @@ export const Dashboard = () => {
         </Card>
       </motion.div>
 
-      {/* 4. Operational Feed: Recent Bookings (7 cols) & Therapist Status (5 cols) */}
+      {/* 3. Operational Feed: Recent Bookings (7 cols) & Therapist Status (5 cols) */}
       <motion.div
         variants={itemVariants}
         className="grid grid-cols-1 lg:grid-cols-12 gap-6"
@@ -581,7 +783,7 @@ export const Dashboard = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-[#8b5e3c] dark:hover:text-[#d49b6a]"
               asChild
             >
               <a href="#/bookings" className="inline-flex items-center gap-1 cursor-pointer">
@@ -601,15 +803,15 @@ export const Dashboard = () => {
                   return (
                     <div key={b.id} className="py-3 flex items-center justify-between gap-3 hover:bg-muted/30 px-1.5 rounded-lg transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
-                        <Avatar className="h-8 w-8 rounded-lg border border-border/60 bg-transparent text-xs font-semibold text-foreground shrink-0">
-                          <AvatarFallback className="rounded-lg bg-transparent text-foreground">
+                        <Avatar className="h-8 w-8 rounded-lg border border-border/60 bg-[#8b5e3c]/5 dark:bg-[#d49b6a]/10 text-xs font-semibold text-[#8b5e3c] dark:text-[#d49b6a] shrink-0">
+                          <AvatarFallback className="rounded-lg bg-transparent text-[#8b5e3c] dark:text-[#d49b6a]">
                             {initial}
                           </AvatarFallback>
                         </Avatar>
 
                         <div className="space-y-0.5 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-[#8b5e3c] dark:text-[#d49b6a]">
+                            <span className="font-bold text-xs text-foreground">
                               #{b.id}
                             </span>
                             <span className="font-medium text-foreground truncate max-w-[160px] sm:max-w-[200px]">
@@ -628,32 +830,32 @@ export const Dashboard = () => {
 
                       <div className="text-right space-y-1 shrink-0">
                         <div className="font-semibold text-xs text-foreground">
-                          Rp {Number(b.total_price || 0).toLocaleString("id-ID")}
+                          {formatIDR(b.total_price)}
                         </div>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] font-medium uppercase px-1.5 py-0",
-                            b.status === "completed"
-                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                              : b.status === "confirmed"
-                              ? "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20"
-                              : b.status === "canceled"
-                              ? "bg-destructive/10 text-destructive border-destructive/20"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-                          )}
-                        >
+                        <span className="text-xs font-medium text-muted-foreground capitalize">
                           {b.status || "pending"}
-                        </Badge>
+                        </span>
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="py-10 text-center text-xs text-muted-foreground">
-                {isEn ? "No bookings in database yet." : "Belum ada data pemesanan di database."}
-              </div>
+              <Empty className="min-h-[160px] py-6 border-dashed border-border/60 bg-muted/10">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon" className="h-9 w-9 [&_svg]:h-4 [&_svg]:w-4 mb-1">
+                    <CalendarCheck className="text-muted-foreground" />
+                  </EmptyMedia>
+                  <EmptyTitle className="text-xs">
+                    {isEn ? "No bookings recorded yet" : "Belum ada pemesanan"}
+                  </EmptyTitle>
+                  <EmptyDescription className="text-[11px]">
+                    {isEn
+                      ? "Real-time client appointments will show up here automatically."
+                      : "Pemesanan layanan terbaru dari pelanggan akan muncul di sini."}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             )}
           </CardContent>
         </Card>
@@ -673,7 +875,7 @@ export const Dashboard = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-[#8b5e3c] dark:hover:text-[#d49b6a]"
               asChild
             >
               <a href="#/therapists" className="inline-flex items-center gap-1 cursor-pointer">
@@ -704,49 +906,44 @@ export const Dashboard = () => {
                         </div>
                       </div>
 
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "text-[10px] font-semibold px-2 py-0.5 gap-1 shrink-0",
-                          t.status === "available"
-                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                            : t.status === "on_duty"
-                            ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-                            : "bg-muted text-muted-foreground border-border"
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "h-1.5 w-1.5 rounded-full",
-                            t.status === "available"
-                              ? "bg-emerald-500"
-                              : t.status === "on_duty"
-                              ? "bg-amber-500 animate-pulse"
-                              : "bg-muted-foreground"
-                          )}
-                        />
-                        <span>
-                          {t.status === "available"
-                            ? isEn ? "Available" : "Siap"
-                            : t.status === "on_duty"
+                      {t.status === "available" ? (
+                        <span className="text-xs font-medium text-[#8b5e3c] dark:text-[#d49b6a] shrink-0 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#8b5e3c] dark:bg-[#d49b6a]" />
+                          {isEn ? "Available" : "Siap"}
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium text-muted-foreground shrink-0">
+                          {t.status === "on_duty"
                             ? isEn ? "On Duty" : "Bertugas"
                             : isEn ? "Off Duty" : "Libur"}
                         </span>
-                      </Badge>
+                      )}
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="py-10 text-center text-xs text-muted-foreground">
-                {isEn ? "No therapists registered yet." : "Belum ada terapis terdaftar."}
-              </div>
+              <Empty className="min-h-[160px] py-6 border-dashed border-border/60 bg-muted/10">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon" className="h-9 w-9 [&_svg]:h-4 [&_svg]:w-4 mb-1">
+                    <UserCheck className="text-muted-foreground" />
+                  </EmptyMedia>
+                  <EmptyTitle className="text-xs">
+                    {isEn ? "No therapists registered" : "Belum ada data terapis"}
+                  </EmptyTitle>
+                  <EmptyDescription className="text-[11px]">
+                    {isEn
+                      ? "Add therapists to monitor live availability and task assignments."
+                      : "Daftarkan staf terapis untuk memantau status kesiapan bertugas."}
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             )}
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* 5. Recent Client Reviews & Feedback Highlight */}
+      {/* 4. Recent Client Reviews & Feedback Highlight */}
       {reviews.length > 0 && (
         <motion.div variants={itemVariants}>
           <Card className="border border-border/70 shadow-none bg-card">
@@ -763,7 +960,7 @@ export const Dashboard = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-[#8b5e3c] dark:hover:text-[#d49b6a]"
                 asChild
               >
                 <a href="#/reviews" className="inline-flex items-center gap-1 cursor-pointer">
@@ -786,9 +983,9 @@ export const Dashboard = () => {
                           <span className="font-semibold text-foreground truncate max-w-[140px]">
                             {rev.customer_name || "Pelanggan"}
                           </span>
-                          <div className="flex items-center gap-0.5 text-amber-500 text-[10px]">
+                          <div className="flex items-center gap-0.5 text-[#8b5e3c] dark:text-[#d49b6a] text-[10px]">
                             {[...Array(rating)].map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-amber-500 text-amber-500" />
+                              <Star key={i} className="w-3 h-3 fill-[#8b5e3c] text-[#8b5e3c] dark:fill-[#d49b6a] dark:text-[#d49b6a]" />
                             ))}
                           </div>
                         </div>
@@ -816,6 +1013,103 @@ export const Dashboard = () => {
           </Card>
         </motion.div>
       )}
+
+      {/* 5. Clean Operational & Performance Compact Cards (Placed at the bottom) */}
+      <motion.div
+        variants={itemVariants}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"
+      >
+        {/* Compact Card 1: Therapist Readiness */}
+        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
+                {isEn ? "Therapist Status" : "Kesiapan Terapis"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {therapists.length} {isEn ? "registered" : "terdaftar"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40">
+              <span className="font-semibold text-[#8b5e3c] dark:text-[#d49b6a]">{availableTherapists} {isEn ? "Ready" : "Siap"}</span>
+              <span className="text-muted-foreground/40">•</span>
+              <span className="text-muted-foreground">{onDutyTherapists} {isEn ? "On Duty" : "Bertugas"}</span>
+              <span className="text-muted-foreground/40">•</span>
+              <span className="text-muted-foreground">{offDutyTherapists} {isEn ? "Off" : "Libur"}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Compact Card 2: Client Rating & Feedback */}
+        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Star className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
+                {isEn ? "Client Satisfaction" : "Kepuasan Pelanggan"}
+              </span>
+              <span className="text-xs font-semibold text-[#8b5e3c] dark:text-[#d49b6a]">
+                {averageRating} <span className="text-[10px] text-muted-foreground font-normal">/ 5.0</span>
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40 text-muted-foreground">
+              <span>{customers.length} {isEn ? "clients" : "pelanggan"}</span>
+              <span className="text-foreground">
+                {filteredReviews.length > 0 ? `${filteredReviews.length} ${isEn ? "new reviews" : "ulasan baru"}` : `${reviews.length} ${isEn ? "total reviews" : "total ulasan"}`}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Compact Card 3: Payment Method Share */}
+        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
+                {isEn ? "Payment Methods" : "Metode Pembayaran"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {paymentStats.totalTransactions} {isEn ? "invoices" : "nota"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40 text-muted-foreground">
+              <span className="text-foreground font-medium">QRIS {paymentStats.qris}%</span>
+              <span className="text-muted-foreground/40">•</span>
+              <span>Transfer {paymentStats.transfer}%</span>
+              <span className="text-muted-foreground/40">•</span>
+              <span>Tunai {paymentStats.cash}%</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Compact Card 4: Action Required Alert */}
+        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />
+                {isEn ? "Attention Needed" : "Perlu Tindakan"}
+              </span>
+              {(urgentPendingBookings > 0 || urgentUnpaidInvoices > 0) && (
+                <span className="text-[11px] font-semibold text-[#8b5e3c] dark:text-[#d49b6a]">
+                  {urgentPendingBookings + urgentUnpaidInvoices} {isEn ? "items" : "item"}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40">
+              <a href="#/bookings" className="text-foreground hover:text-[#8b5e3c] dark:hover:text-[#d49b6a] hover:underline font-medium">
+                {urgentPendingBookings} {isEn ? "pending bookings" : "booking pending"}
+              </a>
+              <span className="text-muted-foreground/40">•</span>
+              <a href="#/invoices" className="text-muted-foreground hover:text-foreground hover:underline">
+                {urgentUnpaidInvoices} {isEn ? "unpaid" : "belum bayar"}
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </motion.div>
   );
 };

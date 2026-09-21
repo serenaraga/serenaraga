@@ -2,50 +2,23 @@
 
 import * as React from "react";
 import type { RaRecord } from "ra-core";
-import { useFieldValue, useTranslate } from "ra-core";
-import { Badge } from "@/components/ui/badge";
+import { useFieldValue, useTranslate, useResourceContext } from "ra-core";
+import { cn } from "@/lib/utils";
 import type { FieldProps } from "@/lib/field.type";
 
-type BadgeProps = React.ComponentProps<typeof Badge>;
-
 /**
- * Displays a text value inside a styled badge component.
- *
- * This field wraps values in a Badge UI component with customizable variants (default, outline, secondary, destructive).
- * Use it to highlight status values, tags, or categorical information.
- * To be used with RecordField or DataTable.Col components, or anywhere a RecordContext is available.
- *
- * @see {@link https://marmelab.com/shadcn-admin-kit/docs/badgefield/ BadgeField documentation}
- * @see {@link https://ui.shadcn.com/docs/components/badge Badge documentation}
- *
- * @example
- * import {
- *   List,
- *   DataTable,
- *   BadgeField,
- * } from '@/components/admin';
- *
- * const OrderList = () => (
- *   <List>
- *     <DataTable>
- *       <DataTable.Col source="id" />
- *       <DataTable.Col>
- *         <BadgeField source="status" variant="outline" />
- *       </DataTable.Col>
- *     </DataTable>
- *   </List>
- * );
+ * Displays a clean, seamless text status field without badges or icons.
  */
 export const BadgeField = <RecordType extends RaRecord = RaRecord>({
   defaultValue,
   source,
   record,
   empty,
-  variant = "outline",
-  ...rest
+  className,
 }: BadgeFieldProps<RecordType>) => {
   const value = useFieldValue({ defaultValue, source, record });
   const translate = useTranslate();
+  const resource = useResourceContext();
 
   if (value == null) {
     return empty && typeof empty === "string"
@@ -53,14 +26,45 @@ export const BadgeField = <RecordType extends RaRecord = RaRecord>({
       : empty;
   }
 
+  const strValue = typeof value !== "string" ? value.toString() : value;
+
+  // Try translating from resource specific status dictionaries
+  let label = strValue;
+  if (resource && source) {
+    const translationKey = `resources.${resource}.${source}.${strValue}`;
+    const fallbackKey = `resources.${resource}.status.${strValue}`;
+    const translated = translate(translationKey, {
+      _: translate(fallbackKey, { _: strValue }),
+    });
+    if (translated && translated !== translationKey && translated !== fallbackKey) {
+      label = translated;
+    }
+  }
+
+  // Fallback human readable formatting if raw underscore string
+  if (label === strValue && strValue.includes("_")) {
+    label = strValue
+      .split("_")
+      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
+
   return (
-    <Badge variant={variant} {...rest}>
-      {typeof value !== "string" ? value.toString() : value}
-    </Badge>
+    <span
+      className={cn(
+        "text-xs font-medium text-foreground tracking-tight whitespace-nowrap capitalize",
+        className
+      )}
+    >
+      {label}
+    </span>
   );
 };
 
 export interface BadgeFieldProps<RecordType extends RaRecord = RaRecord>
-  extends FieldProps<RecordType>, BadgeProps {
+  extends FieldProps<RecordType> {
+  defaultValue?: any;
   variant?: "default" | "outline" | "secondary" | "destructive";
+  className?: string;
 }
+

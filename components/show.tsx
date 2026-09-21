@@ -4,6 +4,7 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbPage,
+  useResourceParent,
 } from "@/components/breadcrumb";
 import type { ShowBaseProps } from "ra-core";
 import {
@@ -184,6 +185,8 @@ export const ShowView = ({
     );
   }
 
+  const parent = useResourceParent(resource);
+
   return (
     <>
       {!disableBreadcrumb && (
@@ -195,10 +198,17 @@ export const ShowView = ({
               </LinkBase>
             </BreadcrumbItem>
           )}
+          {parent && (
+            <BreadcrumbItem>
+              <LinkBase to={parent.path}>{parent.label}</LinkBase>
+            </BreadcrumbItem>
+          )}
           <BreadcrumbItem>
             <LinkBase to={listLink}>{listLabel}</LinkBase>
           </BreadcrumbItem>
-          <BreadcrumbPage>{recordRepresentation}</BreadcrumbPage>
+          <BreadcrumbItem>
+            <BreadcrumbPage>{recordRepresentation}</BreadcrumbPage>
+          </BreadcrumbItem>
         </Breadcrumb>
       )}
       <div

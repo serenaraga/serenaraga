@@ -77,7 +77,7 @@ export function AppSidebar() {
                 <DashboardMenuItem onClick={handleClick} />
               ) : null}
               {Object.keys(resources)
-                .filter((name) => resources[name].hasList && name !== "payouts")
+                .filter((name) => resources[name].hasList && name !== "payouts" && name !== "consumables")
                 .map((name) => (
                   <ResourceMenuItem
                     key={name}

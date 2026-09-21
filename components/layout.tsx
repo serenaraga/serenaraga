@@ -12,6 +12,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { RefreshButton } from "@/components/refresh-button";
 import { LocalesMenuButton } from "@/components/locales-menu-button";
 import { ReviewNotificationBell } from "@/components/review-notification-bell";
+import { GlobalSearchBar } from "@/components/global-search-bar";
 import { Error } from "@/components/error";
 import { Loading } from "@/components/loading";
 
@@ -42,13 +43,18 @@ export const Layout = (props: CoreLayoutProps) => {
           "has-[main.fixed-main]:group-data-[scroll-locked=1]/body:h-svh",
         )}
       >
-        <header className="flex h-16 md:h-12 shrink-0 items-center gap-2 px-4">
+        <header className="flex h-16 md:h-12 shrink-0 items-center gap-2 sm:gap-3 px-3 sm:px-4">
           <SidebarTrigger className="scale-125 sm:scale-100" />
-          <div className="flex-1 flex items-center" id="breadcrumb" />
-          <ReviewNotificationBell />
-          <LocalesMenuButton />
-          <ThemeModeToggle />
-          <RefreshButton />
+          <div className="flex items-center min-w-0" id="breadcrumb" />
+          <div className="flex-1 max-w-md mx-1 sm:mx-2">
+            <GlobalSearchBar />
+          </div>
+          <div className="flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
+            <ReviewNotificationBell />
+            <LocalesMenuButton />
+            <ThemeModeToggle />
+            <RefreshButton />
+          </div>
         </header>
         <ErrorBoundary
           onError={handleError}

@@ -39,6 +39,7 @@ export * from "./file-field";
 export * from "./file-input";
 export * from "./filter-form";
 export * from "./form";
+export * from "./global-search-bar";
 export * from "./invoice-card";
 export * from "./layout";
 export * from "./list-guesser";

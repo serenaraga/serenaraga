@@ -26,10 +26,10 @@ export const dataProvider: DataProvider = {
     for (const [key, value] of Object.entries(filter)) {
       if (value !== undefined && value !== null && value !== "") {
         if (key === "q") {
-          // General search
+          // General multi-column search
           if (resource === "customers") {
             query = query.or(
-              `full_name.ilike.%${value}%,phone.ilike.%${value}%,email.ilike.%${value}%,address.ilike.%${value}%`
+              `full_name.ilike.%${value}%,phone.ilike.%${value}%,email.ilike.%${value}%,address.ilike.%${value}%,city_area.ilike.%${value}%,notes.ilike.%${value}%`
             );
           } else if (resource === "services") {
             query = query.or(
@@ -37,23 +37,31 @@ export const dataProvider: DataProvider = {
             );
           } else if (resource === "therapists") {
             query = query.or(
-              `name.ilike.%${value}%,phone.ilike.%${value}%,specialties.ilike.%${value}%`
+              `name.ilike.%${value}%,phone.ilike.%${value}%,specialties.ilike.%${value}%,coverage_areas.ilike.%${value}%,bank_name.ilike.%${value}%,notes.ilike.%${value}%`
             );
           } else if (resource === "bookings") {
             query = query.or(
-              `service_address.ilike.%${value}%,status.ilike.%${value}%,special_requests.ilike.%${value}%`
+              `service_address.ilike.%${value}%,status.ilike.%${value}%,special_requests.ilike.%${value}%,city_area.ilike.%${value}%,notes.ilike.%${value}%`
             );
           } else if (resource === "invoices") {
             query = query.or(
-              `invoice_number.ilike.%${value}%,customer_name.ilike.%${value}%,customer_phone.ilike.%${value}%,service_name.ilike.%${value}%,payment_status.ilike.%${value}%`
+              `invoice_number.ilike.%${value}%,customer_name.ilike.%${value}%,customer_phone.ilike.%${value}%,service_name.ilike.%${value}%,payment_status.ilike.%${value}%,payment_method.ilike.%${value}%,notes.ilike.%${value}%`
             );
           } else if (resource === "payouts") {
             query = query.or(
-              `payout_number.ilike.%${value}%,therapist_name.ilike.%${value}%,bank_name.ilike.%${value}%`
+              `payout_number.ilike.%${value}%,therapist_name.ilike.%${value}%,bank_name.ilike.%${value}%,status.ilike.%${value}%,notes.ilike.%${value}%`
             );
           } else if (resource === "users") {
             query = query.or(
-              `full_name.ilike.%${value}%,username.ilike.%${value}%,role.ilike.%${value}%`
+              `full_name.ilike.%${value}%,username.ilike.%${value}%,email.ilike.%${value}%,phone.ilike.%${value}%,role.ilike.%${value}%`
+            );
+          } else if (resource === "consumables") {
+            query = query.or(
+              `name.ilike.%${value}%,category.ilike.%${value}%,unit.ilike.%${value}%,notes.ilike.%${value}%`
+            );
+          } else if (resource === "reviews") {
+            query = query.or(
+              `customer_name.ilike.%${value}%,comment.ilike.%${value}%,therapist_name.ilike.%${value}%`
             );
           }
         } else if (typeof value === "string") {
@@ -242,13 +250,22 @@ export const dataProvider: DataProvider = {
         dataToInsert.service_address = "-";
       }
 
-      // Ensure total_price is valid number
+      // Ensure total_price is valid number (dynamically fetch from service if missing)
       if (
         dataToInsert.total_price === undefined ||
         dataToInsert.total_price === null ||
         isNaN(Number(dataToInsert.total_price))
       ) {
-        dataToInsert.total_price = 150000;
+        if (dataToInsert.service_id) {
+          const { data: sData } = await supabase
+            .from("services")
+            .select("price")
+            .eq("id", dataToInsert.service_id)
+            .maybeSingle();
+          dataToInsert.total_price = Number(sData?.price) || 0;
+        } else {
+          dataToInsert.total_price = 0;
+        }
       } else {
         dataToInsert.total_price = Number(dataToInsert.total_price);
       }

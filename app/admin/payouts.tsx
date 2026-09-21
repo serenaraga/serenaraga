@@ -84,18 +84,7 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-/**
- * Format currency to IDR
- */
-const formatIDR = (val: number | string | null | undefined) => {
-  const num = Number(val) || 0;
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
-};
+import { formatIDR } from "@/lib/utils";
 
 /**
  * Formats a Date object to YYYY-MM-DD string in local time

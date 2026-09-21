@@ -58,10 +58,13 @@ export const NumberField = <
     value = transform(value);
   }
 
+  // Default to id-ID for IDR currency formatting or when locales is not specified
+  const effectiveLocales = locales || "id-ID";
+
   return (
     <span {...rest}>
       {hasNumberFormat && typeof value === "number"
-        ? value.toLocaleString(locales, options)
+        ? value.toLocaleString(effectiveLocales, options)
         : value}
     </span>
   );

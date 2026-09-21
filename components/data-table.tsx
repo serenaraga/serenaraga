@@ -339,19 +339,228 @@ const DataTableRow = ({
 const isPromise = (value: any): value is Promise<any> =>
   value && typeof value.then === "function";
 
-const DataTableEmpty = () => {
-  const translate = useTranslate();
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
+import {
+  Boxes,
+  Sparkles,
+  CalendarCheck,
+  UserCheck,
+  Users,
+  ReceiptText,
+  Wallet,
+  Star,
+  UserCog,
+  SearchX,
+  Inbox,
+  Plus,
+  RotateCcw,
+} from "lucide-react";
+import { LinkBase, useListContext, useLocaleState, useResourceDefinition } from "ra-core";
+
+interface ResourceEmptyConfig {
+  icon: React.ElementType;
+  titleEn: string;
+  titleId: string;
+  descEn: string;
+  descId: string;
+  actionEn?: string;
+  actionId?: string;
+  actionPath?: string;
+}
+
+const RESOURCE_EMPTY_CONFIGS: Record<string, ResourceEmptyConfig> = {
+  services: {
+    icon: Sparkles,
+    titleEn: "No services yet",
+    titleId: "Belum ada layanan",
+    descEn: "Your service catalog is empty. Add your massage treatments, durations, and pricing to get started.",
+    descId: "Katalog layanan pijat belum tersedia. Tambahkan menu layanan baru untuk mulai menerima pesanan.",
+    actionEn: "Add Service",
+    actionId: "Tambah Layanan",
+    actionPath: "/services/create",
+  },
+  consumables: {
+    icon: Boxes,
+    titleEn: "No consumables or supplies yet",
+    titleId: "Belum ada bahan habis pakai",
+    descEn: "Track essential massage oils, body scrubs, lotions, and spa supplies to calculate COGS automatically.",
+    descId: "Daftar minyak pijat, scrub, lotion, dan bahan perawatan belum ada. Tambahkan bahan untuk otomatisasi HPP layanan.",
+    actionEn: "Add Consumable",
+    actionId: "Tambah Bahan",
+    actionPath: "/consumables/create",
+  },
+  bookings: {
+    icon: CalendarCheck,
+    titleEn: "No bookings found",
+    titleId: "Belum ada pemesanan",
+    descEn: "No appointment reservations recorded yet. Create a new booking or wait for incoming client orders.",
+    descId: "Belum ada pesanan layanan yang tercatat. Buat janji temu baru untuk pelanggan Anda.",
+    actionEn: "New Booking",
+    actionId: "Buat Booking",
+    actionPath: "/bookings/create",
+  },
+  therapists: {
+    icon: UserCheck,
+    titleEn: "No therapists registered",
+    titleId: "Belum ada terapis terdaftar",
+    descEn: "Register your professional massage therapists to assign them to appointments and track commission payouts.",
+    descId: "Daftarkan tim terapis pijat profesional untuk mulai mengelola jadwal dan komisi bagi hasil.",
+    actionEn: "Add Therapist",
+    actionId: "Tambah Terapis",
+    actionPath: "/therapists/create",
+  },
+  customers: {
+    icon: Users,
+    titleEn: "No customer records",
+    titleId: "Belum ada data pelanggan",
+    descEn: "Customer contacts and profiles will appear here once bookings are placed, or you can register them manually.",
+    descId: "Data pelanggan akan tercatat secara otomatis saat booking atau Anda bisa menambahkannya secara manual.",
+    actionEn: "Add Customer",
+    actionId: "Tambah Pelanggan",
+    actionPath: "/customers/create",
+  },
+  invoices: {
+    icon: ReceiptText,
+    titleEn: "No invoices generated",
+    titleId: "Belum ada invoice tagihan",
+    descEn: "Billing invoices and payment records for completed customer appointments will be listed here.",
+    descId: "Faktur tagihan pembayaran untuk transaksi layanan pelanggan akan terdaftar di sini.",
+    actionEn: "Create Invoice",
+    actionId: "Buat Invoice",
+    actionPath: "/invoices/create",
+  },
+  payouts: {
+    icon: Wallet,
+    titleEn: "No payout records",
+    titleId: "Belum ada riwayat pembayaran komisi",
+    descEn: "Therapist commission settlements and withdrawal records will show up here.",
+    descId: "Catatan pencairan komisi dan bagi hasil untuk terapis akan terdaftar di sini.",
+    actionEn: "New Payout",
+    actionId: "Catat Pembayaran",
+    actionPath: "/payouts/create",
+  },
+  reviews: {
+    icon: Star,
+    titleEn: "No customer reviews yet",
+    titleId: "Belum ada ulasan pelanggan",
+    descEn: "Customer satisfaction ratings and feedback will be collected here after treatment sessions are finished.",
+    descId: "Penilaian bintang dan testimoni dari pelanggan akan ditampilkan di sini setelah treatment selesai.",
+    actionEn: "Add Review",
+    actionId: "Tambah Ulasan",
+    actionPath: "/reviews/create",
+  },
+  users: {
+    icon: UserCog,
+    titleEn: "No administrative users",
+    titleId: "Belum ada akun pengguna",
+    descEn: "Manage system administrators, staff members, and access privileges for Serena Raga.",
+    descId: "Kelola staf administrator dan hak akses operasional sistem Serena Raga.",
+    actionEn: "Add User",
+    actionId: "Tambah Pengguna",
+    actionPath: "/users/create",
+  },
+};
+
+export const DataTableEmpty = () => {
+  const resource = useResourceContext();
+  const [locale] = useLocaleState();
+  const isEn = locale === "en";
+  const listContext = useListContext();
+  const { hasCreate } = useResourceDefinition({ resource });
+
+  const filterValues = listContext?.filterValues || {};
+  const hasActiveFilters = Object.keys(filterValues).some(
+    (key) =>
+      filterValues[key] !== undefined &&
+      filterValues[key] !== "" &&
+      filterValues[key] !== null
+  );
+
+  if (hasActiveFilters) {
+    return (
+      <Empty className="my-2 border-border/70">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <SearchX className="h-6 w-6 text-muted-foreground" />
+          </EmptyMedia>
+          <EmptyTitle>
+            {isEn ? "No matching records found" : "Tidak ada hasil pencarian"}
+          </EmptyTitle>
+          <EmptyDescription>
+            {isEn
+              ? "We couldn't find any results matching your search or active filters. Try adjusting or clearing your filters."
+              : "Tidak ditemukan data yang cocok dengan kata kunci atau filter aktif Anda. Coba ubah atau bersihkan filter pencarian."}
+          </EmptyDescription>
+        </EmptyHeader>
+        {listContext?.setFilters && (
+          <EmptyContent>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => listContext.setFilters({}, {})}
+              className="gap-1.5 text-xs cursor-pointer shadow-none"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>{isEn ? "Reset Filters" : "Reset Filter"}</span>
+            </Button>
+          </EmptyContent>
+        )}
+      </Empty>
+    );
+  }
+
+  const config = resource ? RESOURCE_EMPTY_CONFIGS[resource] : null;
+  const IconComponent = config?.icon || Inbox;
+  const title = config
+    ? isEn
+      ? config.titleEn
+      : config.titleId
+    : isEn
+    ? "No records found"
+    : "Tidak ada data";
+  const desc = config
+    ? isEn
+      ? config.descEn
+      : config.descId
+    : isEn
+    ? "No entries have been added to this catalog yet."
+    : "Belum ada entri data yang tercatat di menu ini.";
+  const actionLabel = config
+    ? isEn
+      ? config.actionEn
+      : config.actionId
+    : isEn
+    ? "Add New"
+    : "Tambah Data";
+  const actionPath = config?.actionPath || (resource ? `/${resource}/create` : undefined);
+
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/70 my-2">
-      <p className="font-medium text-foreground text-sm">
-        {translate("ra.navigation.no_results", { _: "No results found." })}
-      </p>
-      <p className="text-xs text-muted-foreground mt-1">
-        {translate("ra.navigation.no_filtered_results", {
-          _: "No data available in this view.",
-        })}
-      </p>
-    </div>
+    <Empty className="my-2 border-border/70">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <IconComponent className="h-6 w-6 text-muted-foreground" />
+        </EmptyMedia>
+        <EmptyTitle>{title}</EmptyTitle>
+        <EmptyDescription>{desc}</EmptyDescription>
+      </EmptyHeader>
+      {hasCreate && actionPath && actionLabel && (
+        <EmptyContent>
+          <Button size="sm" asChild className="gap-1.5 text-xs cursor-pointer shadow-none">
+            <LinkBase to={actionPath}>
+              <Plus className="h-3.5 w-3.5" />
+              <span>{actionLabel}</span>
+            </LinkBase>
+          </Button>
+        </EmptyContent>
+      )}
+    </Empty>
   );
 };
 

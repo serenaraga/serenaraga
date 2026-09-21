@@ -22,6 +22,7 @@ import {
   useTranslate,
 } from "ra-core";
 import { useBrandSettings, cleanWhatsAppNumber } from "@/lib/brand-settings";
+import { formatIDR } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -117,12 +118,17 @@ export const ReviewList = () => {
   );
 };
 
+const bookingOptionText = (choice: any) => {
+  if (!choice) return "";
+  return `Booking #${choice.id} (${choice.booking_date || ""} ${choice.booking_time || ""}) - ${choice.service_address || "Home"}`;
+};
+
 export const ReviewCreate = () => (
   <Create>
     <SimpleForm>
       <TextInput source="customer_name" required />
       <ReferenceInput source="booking_id" reference="bookings">
-        <SelectInput optionText="id" />
+        <SelectInput optionText={bookingOptionText} />
       </ReferenceInput>
       <ReferenceInput source="therapist_id" reference="therapists">
         <SelectInput optionText="name" />
@@ -138,7 +144,7 @@ export const ReviewEdit = () => (
     <SimpleForm>
       <TextInput source="customer_name" />
       <ReferenceInput source="booking_id" reference="bookings">
-        <SelectInput optionText="id" />
+        <SelectInput optionText={bookingOptionText} />
       </ReferenceInput>
       <ReferenceInput source="therapist_id" reference="therapists">
         <SelectInput optionText="name" />
@@ -198,11 +204,7 @@ const ReviewShowContent = () => {
   const bookingTime = booking?.booking_time ? `${booking.booking_time} WIB` : "-";
   const ratingValue = Number(record.rating) || 5;
 
-  const formattedTotalPrice = new Intl.NumberFormat(isEn ? "en-US" : "id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(Number(booking?.total_price || service?.price || 0));
+  const formattedTotalPrice = formatIDR(booking?.total_price || service?.price || 0);
 
   const formattedDate = record.created_at
     ? new Date(record.created_at).toLocaleDateString(isEn ? "en-US" : "id-ID", {
@@ -224,8 +226,8 @@ const ReviewShowContent = () => {
               <span className="text-xs font-bold text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20">
                 {isEn ? `Review #${record.id}` : `Ulasan #${record.id}`}
               </span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                <CheckCircle2 className="w-3 h-3" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                 <span>{isEn ? "Verified Customer Review" : "Ulasan Terverifikasi"}</span>
               </span>
             </div>
@@ -414,7 +416,7 @@ const ReviewShowContent = () => {
               </span>
               <p className="text-xs font-medium text-foreground mt-0.5 capitalize">
                 {booking?.payment_method === "qris"
-                  ? "QRIS (Instant Pay)"
+                  ? "QRIS"
                   : booking?.payment_method === "bank_transfer"
                     ? isEn ? "Bank Transfer" : "Transfer Bank"
                     : isEn ? "Cash" : "Tunai (Cash)"}

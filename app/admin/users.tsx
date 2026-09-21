@@ -15,7 +15,7 @@ import { RowActions } from "@/components/row-actions";
 import { useRecordContext, useLocaleState, required } from "ra-core";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ShieldCheck, UserCheck, ShieldAlert, User, Key, Mail, Phone } from "lucide-react";
+import { ShieldCheck, UserCheck, ShieldAlert, User, Key, Mail, Phone, Check } from "lucide-react";
 
 /**
  * Custom field for rendering User with avatar and role
@@ -48,7 +48,7 @@ const UserCardField = () => {
 };
 
 /**
- * Custom Role Badge Field
+ * Custom Role Badge Field (Clean & Seamless)
  */
 const RoleBadgeField = () => {
   const record = useRecordContext();
@@ -59,26 +59,19 @@ const RoleBadgeField = () => {
   const isAdmin = record.role === "admin";
 
   return (
-    <Badge
-      variant="outline"
-      className={`text-[10px] font-semibold gap-1 px-2 py-0.5 ${
-        isAdmin
-          ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-          : "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20"
-      }`}
-    >
+    <div className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground">
       {isAdmin ? (
-        <ShieldCheck className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+        <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
       ) : (
-        <UserCheck className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+        <UserCheck className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
       )}
       <span>{isAdmin ? (isEn ? "Administrator" : "Admin / Owner") : (isEn ? "Cashier / Staff" : "Kasir / Staf")}</span>
-    </Badge>
+    </div>
   );
 };
 
 /**
- * Active Status Badge Field
+ * Active Status Badge Field (Clean & Seamless)
  */
 const StatusBadgeField = () => {
   const record = useRecordContext();
@@ -89,16 +82,9 @@ const StatusBadgeField = () => {
   const isActive = record.is_active !== false;
 
   return (
-    <Badge
-      variant="outline"
-      className={`text-[10px] font-medium px-2 py-0.5 ${
-        isActive
-          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-          : "bg-destructive/10 text-destructive border-destructive/20"
-      }`}
-    >
-      <span>{isActive ? (isEn ? "Active" : "Aktif") : (isEn ? "Inactive" : "Nonaktif")}</span>
-    </Badge>
+    <span className="text-xs font-medium text-foreground">
+      {isActive ? (isEn ? "Active" : "Aktif") : (isEn ? "Inactive" : "Nonaktif")}
+    </span>
   );
 };
 

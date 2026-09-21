@@ -4,6 +4,7 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbPage,
+  useResourceParent,
 } from "@/components/breadcrumb";
 import type { ListBaseProps, ListControllerResult, RaRecord } from "ra-core";
 import {
@@ -127,6 +128,7 @@ export const ListView = <RecordType extends RaRecord = RaRecord>(
         });
   const { hasCreate } = useResourceDefinition({ resource });
   const hasDashboard = useHasDashboard();
+  const parent = useResourceParent(resource);
 
   return (
     <>
@@ -139,7 +141,14 @@ export const ListView = <RecordType extends RaRecord = RaRecord>(
               </LinkBase>
             </BreadcrumbItem>
           )}
-          <BreadcrumbPage>{resourceLabel}</BreadcrumbPage>
+          {parent && (
+            <BreadcrumbItem>
+              <LinkBase to={parent.path}>{parent.label}</LinkBase>
+            </BreadcrumbItem>
+          )}
+          <BreadcrumbItem>
+            <BreadcrumbPage>{resourceLabel}</BreadcrumbPage>
+          </BreadcrumbItem>
         </Breadcrumb>
       )}
 
@@ -167,41 +176,9 @@ export const ListView = <RecordType extends RaRecord = RaRecord>(
 
 const defaultPagination = <ListPagination />;
 
-export const Empty = () => {
-  const translate = useTranslate();
-  const resource = useResourceContext();
-  const getResourceLabel = useGetResourceLabel();
-  const { hasCreate } = useResourceDefinition({ resource });
-  if (!resource) {
-    return null;
-  }
-  const resourceName = translate(`resources.${resource}.forcedCaseName`, {
-    smart_count: 0,
-    _: resource ? getResourceLabel(resource, 0) : undefined,
-  });
-  const emptyMessage = translate("ra.page.empty", { name: resourceName });
-  const inviteMessage = translate("ra.page.invite");
+import { DataTableEmpty } from "@/components/data-table";
 
-  return (
-    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2 text-center">
-      <h2 className="text-2xl font-semibold">
-        {translate(`resources.${resource}.empty`, {
-          _: emptyMessage,
-        })}
-      </h2>
-      {hasCreate ? (
-        <>
-          <p className="text-muted-foreground">
-            {translate(`resources.${resource}.invite`, {
-              _: inviteMessage,
-            })}
-          </p>
-          <CreateButton />
-        </>
-      ) : null}
-    </div>
-  );
-};
+export const Empty = DataTableEmpty;
 
 export interface ListViewProps<RecordType extends RaRecord = RaRecord> {
   children?: ReactNode;

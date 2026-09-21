@@ -25,7 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useBrandSettings, cleanWhatsAppNumber } from "@/lib/brand-settings";
 import { BrandLogo } from "@/components/brand-logo";
-import { cn } from "@/lib/utils";
+import { cn, formatIDR } from "@/lib/utils";
 import { toast } from "sonner";
 
 export interface BookingBreakdownItem {
@@ -95,13 +95,7 @@ export const PayoutSlipCard = ({
   const deduction = Number(payout.deduction_amount || 0);
   const netAmount = Number(payout.net_amount || therapistFee + bonus - deduction);
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat(isEn ? "en-US" : "id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(val || 0);
-  };
+  const formatCurrency = formatIDR;
 
   const handlePrint = () => {
     window.print();
@@ -225,15 +219,12 @@ export const PayoutSlipCard = ({
               <span className="text-sm font-bold font-mono text-foreground block">
                 {payout.payout_number}
               </span>
-              <div className="pt-1">
-                <Badge
-                  variant="outline"
-                  className="text-[10px] font-normal text-muted-foreground border-border bg-background"
-                >
+              <div className="pt-1 text-xs text-muted-foreground font-medium">
+                <span>
                   {payout.payment_status === "paid"
                     ? isEn ? "Disbursed" : "Sudah Ditransfer"
                     : isEn ? "Pending" : "Menunggu Transfer"}
-                </Badge>
+                </span>
               </div>
             </div>
           </div>

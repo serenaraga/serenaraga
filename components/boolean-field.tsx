@@ -31,7 +31,6 @@ import {
  *   </Show>
  * );
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const BooleanField = <RecordType extends RaRecord = any>({
   source,
   record,
@@ -39,42 +38,25 @@ export const BooleanField = <RecordType extends RaRecord = any>({
   className,
   TrueIcon = Check,
   FalseIcon = X,
-  valueLabelFalse,
-  valueLabelTrue,
   looseValue = false,
   empty = null,
 }: BooleanFieldProps<RecordType>) => {
   const value = useFieldValue({ source, record, defaultValue });
   const isTruthyValue = value === true || (looseValue && value);
-  const baseClassName = "size-5 text-foreground";
 
   if (looseValue || typeof value === "boolean") {
-    const icon = isTruthyValue ? (
-      TrueIcon ? (
-        <TrueIcon className={cn(baseClassName, className)} />
-      ) : (
-        <div />
-      )
-    ) : FalseIcon ? (
-      <FalseIcon className={cn(baseClassName, className)} />
-    ) : (
-      <div />
-    );
-
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger render={icon} />
-          <TooltipContent>
-            <RenderLabel
-              value={!!value}
-              valueLabelFalse={valueLabelFalse}
-              valueLabelTrue={valueLabelTrue}
-            />
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
+    if (isTruthyValue) {
+      return TrueIcon ? (
+        <span className="inline-flex items-center justify-center text-foreground">
+          <TrueIcon className={cn("w-4 h-4", className)} />
+        </span>
+      ) : null;
+    }
+    return FalseIcon ? (
+      <span className="inline-flex items-center justify-center text-muted-foreground/40">
+        <FalseIcon className={cn("w-4 h-4", className)} />
+      </span>
+    ) : null;
   }
 
   return <>{empty}</>;

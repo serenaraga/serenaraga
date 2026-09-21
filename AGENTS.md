@@ -1,5 +1,16 @@
 # Project Instructions
 
+## Mandatory Rule: Always Use Official Shadcn UI Components
+
+- **Strict Requirement**: Every component required across the project (frontend, admin dashboard, POS, modal, inputs, selects, pickers, tables, cards, buttons) **MUST ALWAYS** use official Shadcn UI / Base UI components strictly according to documentation.
+- **No Native HTML Form Inputs**: Never use raw, un-styled HTML elements (e.g., native `<input type="date">`, `<input type="time">`, unstyled `<select>`, raw `<button>`, etc.) when a Shadcn component exists.
+- **Component Standard**: Always use Shadcn primitives:
+  - Date Picker: `Popover` + `Calendar` (`@/components/ui/popover` + `@/components/ui/calendar`)
+  - Time Picker: `Popover` + Time Selector (`@/components/ui/popover`)
+  - Dropdown / Select: `Select` + `SelectTrigger` + `SelectContent` + `SelectItem` (`@/components/ui/select`)
+  - Buttons, Inputs, Cards, Dialogs, Badges, Tabs, Dropdowns: from `@/components/ui/*`
+- **Design & Quality**: Maintain full dark mode compliance, luxury minimalist aesthetics, responsive layouts, and proper TypeScript types.
+
 ## Rules for Using shadcn MCP server
 
 1. **Always Check Registry First**

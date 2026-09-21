@@ -70,7 +70,7 @@ function CardSkeleton({
             <Skeleton className="h-4 w-4 rounded" />
             <Skeleton className="h-4 w-32" />
           </div>
-          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-md" />
         </div>
       )}
       <div className="space-y-2.5 pt-1">
@@ -300,7 +300,7 @@ function DocumentSlipSkeleton({ className }: { className?: string }) {
         <div className="space-y-1.5 text-right">
           <Skeleton className="h-3 w-24 ml-auto" />
           <Skeleton className="h-4 w-32 ml-auto" />
-          <Skeleton className="h-5 w-20 rounded-full ml-auto" />
+          <Skeleton className="h-5 w-20 rounded-md ml-auto" />
         </div>
       </div>
 

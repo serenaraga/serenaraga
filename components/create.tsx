@@ -4,6 +4,7 @@ import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbPage,
+  useResourceParent,
 } from "@/components/breadcrumb";
 import type { CreateBaseProps } from "ra-core";
 import {
@@ -97,6 +98,7 @@ export const CreateView = ({
     type: "list",
   });
   const hasDashboard = useHasDashboard();
+  const parent = useResourceParent(resource);
 
   return (
     <>
@@ -109,12 +111,19 @@ export const CreateView = ({
               </LinkBase>
             </BreadcrumbItem>
           )}
+          {parent && (
+            <BreadcrumbItem>
+              <LinkBase to={parent.path}>{parent.label}</LinkBase>
+            </BreadcrumbItem>
+          )}
           <BreadcrumbItem>
             <LinkBase to={listLink}>{listLabel}</LinkBase>
           </BreadcrumbItem>
-          <BreadcrumbPage>
-            <Translate i18nKey="ra.action.create">Create</Translate>
-          </BreadcrumbPage>
+          <BreadcrumbItem>
+            <BreadcrumbPage>
+              <Translate i18nKey="ra.action.create">Create</Translate>
+            </BreadcrumbPage>
+          </BreadcrumbItem>
         </Breadcrumb>
       )}
       <div

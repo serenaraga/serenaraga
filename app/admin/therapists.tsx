@@ -32,6 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatIDR } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -155,7 +156,7 @@ export const TherapistList = () => {
           )}
         />
         <DataTableCol source="status">
-          <BadgeField source="status" variant="outline" className="text-[11px] font-normal" />
+          <BadgeField source="status" />
         </DataTableCol>
         <DataTableCol
           label="ra.action.name"
@@ -734,11 +735,11 @@ const TherapistShowView = () => {
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-xl font-bold text-foreground">{record.name}</h2>
-                <Badge variant="outline" className="text-[11px] font-normal">
-                  {record.gender === "Male" ? (isEn ? "Male" : "Pria") : (isEn ? "Female" : "Wanita")}
-                </Badge>
                 <span className="text-xs text-muted-foreground font-medium">
-                  ({record.commission_rate ?? 60}% {isEn ? "Fee" : "Bagi Hasil"})
+                  • {record.gender === "Male" ? (isEn ? "Male" : "Pria") : (isEn ? "Female" : "Wanita")}
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  • ({record.commission_rate ?? 60}% {isEn ? "Fee" : "Bagi Hasil"})
                 </span>
               </div>
 
@@ -777,8 +778,8 @@ const TherapistShowView = () => {
                 </Button>
               </a>
             )}
-            <div className="scale-95">
-              <BadgeField source="status" variant="outline" className="text-xs font-normal" />
+            <div className="flex items-center">
+              <BadgeField source="status" />
             </div>
           </div>
         </div>
@@ -1088,18 +1089,17 @@ const TherapistShowView = () => {
                         {p.total_bookings} Order
                       </TableCell>
                       <TableCell className="text-xs text-right text-muted-foreground">
-                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(p.gross_amount || 0)}
+                        {formatIDR(p.gross_amount)}
                       </TableCell>
                       <TableCell className="text-xs text-right font-bold text-foreground">
-                        {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(p.net_amount || 0)}
+                        {formatIDR(p.net_amount)}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] font-normal text-muted-foreground border-border bg-background"
-                        >
-                          {p.payment_status === "paid" ? (isEn ? "Paid" : "Ditransfer") : (isEn ? "Pending" : "Menunggu")}
-                        </Badge>
+                        <span className="text-xs font-medium text-foreground">
+                          {p.payment_status === "paid"
+                            ? isEn ? "Paid" : "Ditransfer"
+                            : isEn ? "Pending" : "Menunggu"}
+                        </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

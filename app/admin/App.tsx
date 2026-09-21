@@ -8,6 +8,7 @@ import { i18nProvider } from "@/lib/i18nProvider";
 import { Dashboard } from "./Dashboard";
 import { BookingList, BookingEdit, BookingCreate, BookingShow } from "./bookings";
 import { ServiceList, ServiceEdit, ServiceCreate, ServiceShow } from "./services";
+import { ConsumableList, ConsumableEdit, ConsumableCreate, ConsumableShow } from "./consumables";
 import { TherapistList, TherapistEdit, TherapistCreate, TherapistShow } from "./therapists";
 import { CustomerList, CustomerEdit, CustomerCreate, CustomerShow } from "./customers";
 import { ReviewList, ReviewEdit, ReviewCreate, ReviewShow } from "./reviews";
@@ -80,6 +81,17 @@ const App = () => (
             show={ServiceShow}
             recordRepresentation="name"
             icon={Sparkles}
+          />
+        ) : null,
+        isAdmin ? (
+          <Resource
+            key="consumables"
+            name="consumables"
+            list={ConsumableList}
+            edit={ConsumableEdit}
+            create={ConsumableCreate}
+            show={ConsumableShow}
+            recordRepresentation="name"
           />
         ) : null,
         isAdmin ? (
