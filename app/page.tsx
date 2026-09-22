@@ -629,25 +629,88 @@ export default function LandingPage() {
     [testimonials.length, paginateTestimonial]
   );
 
-  // Webpage scroll trigger: as the user scrolls down/up the webpage past the testimonials section
-  const testimonialSectionRef = React.useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: testimonialSectionRef,
-    offset: ["start 85%", "end 15%"],
-  });
+  // Direct touch swipe handlers for mobile screens
+  const touchStartXRef = React.useRef<number | null>(null);
+  const touchStartYRef = React.useRef<number | null>(null);
 
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    if (testimonials.length <= 1) return;
-    const count = testimonials.length;
-    const targetIdx = Math.min(count - 1, Math.max(0, Math.floor(latest * count)));
-    setActiveTestimonialPage((prev) => {
-      const curIdx = ((prev % count) + count) % count;
-      if (curIdx !== targetIdx) {
-        return targetIdx;
+  const handleTouchStart = React.useCallback((e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = React.useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+      const diffX = e.changedTouches[0].clientX - touchStartXRef.current;
+      const diffY = e.changedTouches[0].clientY - touchStartYRef.current;
+
+      // Handle horizontal swipe or vertical swipe gestures on mobile
+      if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < 0) {
+          paginateTestimonial(1);
+        } else {
+          paginateTestimonial(-1);
+        }
+      } else if (Math.abs(diffY) > 55) {
+        if (diffY < 0) {
+          paginateTestimonial(1);
+        } else {
+          paginateTestimonial(-1);
+        }
       }
-      return prev;
-    });
-  });
+
+      touchStartXRef.current = null;
+      touchStartYRef.current = null;
+    },
+    [paginateTestimonial]
+  );
+
+  // Webpage scroll listener for mobile (HP) & desktop: triggers when user scrolls the webpage past testimonials
+  const testimonialSectionRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    let lastScrollY = typeof window !== "undefined" ? window.scrollY : 0;
+    let accumulatedDelta = 0;
+    let lastTriggerTime = 0;
+    const SCROLL_THRESHOLD = 70; // 70px vertical page scroll to trigger next/prev slide on mobile
+
+    const handlePageScroll = () => {
+      if (!testimonialSectionRef.current || testimonials.length <= 1) return;
+      const rect = testimonialSectionRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+
+      // Trigger while testimonial section is visible on viewport
+      const isVisible = rect.top < windowHeight * 0.85 && rect.bottom > windowHeight * 0.15;
+      const currentScrollY = window.scrollY;
+      const delta = currentScrollY - lastScrollY;
+      lastScrollY = currentScrollY;
+
+      if (!isVisible) {
+        accumulatedDelta = 0;
+        return;
+      }
+
+      accumulatedDelta += delta;
+      const now = Date.now();
+
+      if (now - lastTriggerTime > 300) {
+        if (accumulatedDelta > SCROLL_THRESHOLD) {
+          paginateTestimonial(1);
+          accumulatedDelta = 0;
+          lastTriggerTime = now;
+        } else if (accumulatedDelta < -SCROLL_THRESHOLD) {
+          paginateTestimonial(-1);
+          accumulatedDelta = 0;
+          lastTriggerTime = now;
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handlePageScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handlePageScroll);
+    };
+  }, [testimonials.length, paginateTestimonial]);
 
   const getTestimonialDistance = (index: number, page: number, total: number) => {
     if (total <= 1) return 0;
@@ -1218,6 +1281,8 @@ export default function LandingPage() {
               <div className="lg:col-span-6 xl:col-span-6 flex justify-center items-center">
                 <div
                   onWheel={handleTestimonialWheel}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
                   className="relative w-full max-w-[460px] sm:max-w-[500px] lg:max-w-[540px] h-[480px] sm:h-[540px] md:h-[580px] flex items-center justify-center select-none overflow-hidden sm:overflow-visible"
                 >
                   {displayTestimonials.map((item, idx) => {
