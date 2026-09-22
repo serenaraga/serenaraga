@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { BrandLogo } from "@/components/brand-logo";
-import { useBrandSettings, cleanWhatsAppNumber } from "@/lib/brand-settings";
+import { useBrandSettings, cleanWhatsAppNumber, formatDisplayPhone } from "@/lib/brand-settings";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +79,30 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+const SacredLotusLogo = ({ className = "w-8 h-8 sm:w-9 sm:h-9" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 100 100"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={cn("shrink-0 text-[#2b2420]", className)}
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {/* Geometric 8-petal sacred lotus bloom matching reference */}
+    <ellipse cx="50" cy="28" rx="14" ry="22" />
+    <ellipse cx="50" cy="72" rx="14" ry="22" />
+    <ellipse cx="28" cy="50" rx="22" ry="14" />
+    <ellipse cx="72" cy="50" rx="22" ry="14" />
+    <ellipse cx="34.5" cy="34.5" rx="20" ry="12" transform="rotate(45 34.5 34.5)" />
+    <ellipse cx="65.5" cy="65.5" rx="20" ry="12" transform="rotate(45 65.5 65.5)" />
+    <ellipse cx="65.5" cy="34.5" rx="20" ry="12" transform="rotate(-45 65.5 34.5)" />
+    <ellipse cx="34.5" cy="65.5" rx="20" ry="12" transform="rotate(-45 34.5 65.5)" />
+    <circle cx="50" cy="50" r="3.5" fill="none" strokeWidth="2" />
+  </svg>
+);
 
 // Curated default services with fallback
 const DEFAULT_SERVICES = [
@@ -430,8 +454,8 @@ export default function LandingPage() {
   const handleQuickBook = (customServiceName?: string) => {
     const targetService = customServiceName || selectedService;
     const dateStr = selectedDate
-      ? selectedDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
-      : "Hari ini";
+      ? selectedDate.toLocaleDateString(isEn ? "en-US" : "id-ID", { day: "numeric", month: "long", year: "numeric" })
+      : (isEn ? "Today" : "Hari ini");
 
     const message = isEn
       ? `Hello ${settings.brand_name || "Serena Raga"}, I would like to book a home massage session:\n\n✨ Treatment: *${targetService}*\n📅 Date: *${dateStr}*\n⏰ Preferred Time: *${selectedTimeSlot} WIB*\n\nPlease let me know therapist availability and confirmation. Thank you!`
@@ -545,940 +569,667 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#241c17] text-stone-100 font-sans antialiased selection:bg-[#8b5e3c]/30 selection:text-amber-200">
-      {/* 1. TOP PROMO NOTIFICATION BAR (Matching Reference Clean Gold Banner) */}
-      {promoVisible && (
-        <div className="w-full bg-[#eed7a1] text-[#241c17] px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-medium tracking-wide text-center">
-          <span>
-            {isEn
-              ? "10% Discount on all Credit Cards"
-              : "Diskon 10% untuk Semua Kartu Kredit"}
-          </span>
-        </div>
-      )}
+      {/* 1. TOP PROMO NOTIFICATION BANNER (Seamless, Thin Minimalist & Elegant) */}
+      <div className="w-full bg-[#f6f3ee] text-stone-700 py-1.5 sm:py-2 px-4 text-center font-sans font-[350] text-[12.5px] sm:text-[13px] tracking-[0.03em] relative z-50">
+        <span>
+          {isEn
+            ? "5% Discount for first customer"
+            : "Diskon 5% untuk Pelanggan Pertama"}
+        </span>
+      </div>
 
-      {/* 2. TOP NAVBAR — seamless dark espresso, Menu | Logo | Reservation */}
-      <header className="sticky top-0 z-50 w-full bg-[#241c17]">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 h-20 sm:h-24 flex items-center justify-between">
+      {/* 2. TOP NAVBAR — PURE WHITE LUXURY EDITORIAL */}
+      <header className="sticky top-0 z-50 w-full bg-white border-b border-stone-200/70 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 md:h-22 flex items-center justify-between">
+          {/* Left: Authentic Serena Raga Brand Logo */}
+          <Link href="/" className="inline-flex items-center group">
+            <BrandLogo variant="full" className="h-7 sm:h-8 md:h-9 w-auto hover:opacity-85 transition-opacity" />
+          </Link>
 
-          {/* Left: Hamburger + "Menu" label — plain, seamless, matches reference */}
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger
-              render={
-                <button
-                  type="button"
-                  className="flex items-center gap-2.5 text-stone-200 hover:text-white transition-colors cursor-pointer"
-                />
-              }
-            >
-              {/* Classic hamburger: 3 clean lines */}
-              <span className="flex flex-col justify-center gap-[4.5px] w-[18px]">
-                <span className="h-[1.5px] w-full bg-current rounded-full" />
-                <span className="h-[1.5px] w-full bg-current rounded-full" />
-                <span className="h-[1.5px] w-full bg-current rounded-full" />
-              </span>
-              <span className="text-sm font-normal tracking-wide text-stone-200">
-                Menu
-              </span>
-            </SheetTrigger>
+          {/* Right: Desktop Horizontal Links in Thin Minimalist Elegant Typography */}
+          <nav className="hidden xl:flex items-center gap-6 lg:gap-7.5">
+            {[
+              { href: "#", label: "Home", active: true },
+              { href: "#about", label: isEn ? "About Us" : "Tentang Kami" },
+              { href: "#services", label: isEn ? "Wellness Treatments" : "Layanan Wellness" },
+              { href: "#services", label: isEn ? "Mix Body Treatments" : "Layanan Kombinasi" },
+              { href: "#benefits", label: isEn ? "Service Areas" : "Area Layanan" },
+              { href: "#testimonials", label: isEn ? "Testimonials" : "Testimoni" },
+              { href: "#faq", label: isEn ? "Articles" : "Artikel" },
+              { href: "#gallery", label: isEn ? "Gallery" : "Galeri" },
+              { href: "#book-now", label: isEn ? "Contact" : "Kontak" },
+            ].map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "text-[13px] lg:text-[13.5px] tracking-[0.03em] transition-colors duration-200 font-sans",
+                  item.active
+                    ? "text-[#9a6a43] font-medium"
+                    : "text-stone-600 hover:text-stone-950 font-[350]"
+                )}
+              >
+                {item.label}
+              </a>
+            ))}
 
-            {/* Drawer panel */}
-            <SheetContent side="left" className="bg-[#241c17] border-stone-800 text-stone-100 p-7 w-80 flex flex-col justify-between">
-              <div>
-                <SheetHeader className="text-left pb-5 border-b border-stone-800/80 mb-2">
-                  <SheetTitle className="text-stone-100">
-                    <BrandLogo variant="full" forceWhite className="h-7 w-auto" />
-                  </SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-1 py-5">
-                  {([
-                    { href: "#about", label: isEn ? "Experience" : "Pengalaman" },
-                    { href: "#steps", label: isEn ? "How it Works" : "Cara Pemesanan" },
-                    { href: "#services", label: isEn ? "Services & Pricing" : "Layanan & Tarif" },
-                    { href: "#benefits", label: isEn ? "Benefits" : "Keunggulan" },
-                    { href: "#testimonials", label: isEn ? "Reviews" : "Ulasan" },
-                    { href: "#faq", label: "FAQ" },
-                  ] as { href: string; label: string }[]).map((item) => (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-sm text-stone-300 hover:text-amber-300 py-2.5 px-1 border-b border-stone-800/40 transition-colors"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </nav>
-              </div>
-
-              {/* Bottom drawer footer: WhatsApp CTA + Language & Theme */}
-              <div className="pt-5 space-y-4 border-t border-stone-800/80">
-                <Button
-                  onClick={() => { setMobileMenuOpen(false); handleQuickBook(); }}
-                  className="w-full bg-[#8b5e3c] hover:bg-[#785033] text-white text-sm"
+            {/* Action Group: Shadcn Language & Theme Mode Dropdowns */}
+            <div className="flex items-center gap-1 pl-3 border-l border-stone-200">
+              {/* Shadcn Language Switcher Dropdown */}
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-stone-700 hover:text-stone-950 hover:bg-stone-100/80 font-sans font-normal flex items-center gap-1.5 border-0 shadow-none transition-colors cursor-pointer"
+                    />
+                  }
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  {isEn ? "Book via WhatsApp" : "Pesan via WhatsApp"}
-                </Button>
+                  <Globe className="w-3.5 h-3.5 text-stone-500" />
+                  <span className="font-medium text-[#9a6a43]">{locale.toUpperCase()}</span>
+                  <ChevronDown className="w-3 h-3 text-stone-400 opacity-80" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem
+                    onClick={() => setLocale("en")}
+                    className="flex items-center justify-between text-xs cursor-pointer py-2"
+                  >
+                    <span>English (EN)</span>
+                    <Check className={cn("w-4 h-4 text-[#9a6a43]", locale !== "en" && "hidden")} />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setLocale("id")}
+                    className="flex items-center justify-between text-xs cursor-pointer py-2"
+                  >
+                    <span>Indonesia (ID)</span>
+                    <Check className={cn("w-4 h-4 text-[#9a6a43]", locale !== "id" && "hidden")} />
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-                {/* Language & Theme switches inside Menu */}
-                <div className="flex items-center justify-between text-xs text-stone-400 pt-2">
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-3.5 h-3.5 text-stone-400" />
-                    <button
-                      type="button"
-                      onClick={() => setLocale("en")}
-                      className={cn("px-2 py-1 rounded transition-colors cursor-pointer", locale === "en" ? "bg-[#382b23] text-amber-200 font-semibold" : "text-stone-400 hover:text-white")}
-                    >
-                      EN
-                    </button>
-                    <span>/</span>
-                    <button
-                      type="button"
-                      onClick={() => setLocale("id")}
-                      className={cn("px-2 py-1 rounded transition-colors cursor-pointer", locale === "id" ? "bg-[#382b23] text-amber-200 font-semibold" : "text-stone-400 hover:text-white")}
-                    >
-                      ID
-                    </button>
-                  </div>
+              {/* Shadcn Theme Mode Toggle Dropdown */}
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-stone-700 hover:text-stone-950 hover:bg-stone-100/80 border-0 shadow-none transition-colors cursor-pointer"
+                    />
+                  }
+                >
+                  {theme === "dark" ? (
+                    <Moon className="w-4 h-4 text-[#9a6a43]" />
+                  ) : (
+                    <Sun className="w-4 h-4 text-[#9a6a43]" />
+                  )}
+                  <span className="sr-only">Toggle theme</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-32">
+                  <DropdownMenuItem
+                    onClick={() => setTheme("light")}
+                    className="flex items-center justify-between text-xs cursor-pointer py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sun className="w-3.5 h-3.5 text-stone-700 dark:text-stone-300" />
+                      <span>{isEn ? "Light" : "Terang"}</span>
+                    </div>
+                    <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "light" && "hidden")} />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setTheme("dark")}
+                    className="flex items-center justify-between text-xs cursor-pointer py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Moon className="w-3.5 h-3.5 text-stone-700 dark:text-stone-300" />
+                      <span>{isEn ? "Dark" : "Gelap"}</span>
+                    </div>
+                    <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "dark" && "hidden")} />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setTheme("system")}
+                    className="flex items-center justify-between text-xs cursor-pointer py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-stone-400" />
+                      <span>{isEn ? "System" : "Sistem"}</span>
+                    </div>
+                    <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "system" && "hidden")} />
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </nav>
 
-                  <div className="flex items-center gap-1.5 bg-[#1b1511] p-1 rounded-md border border-stone-800/60">
-                    <button
-                      type="button"
-                      onClick={() => setTheme("light")}
-                      className={cn("p-1.5 rounded transition-colors cursor-pointer", theme === "light" ? "bg-[#382b23] text-amber-300" : "text-stone-500 hover:text-stone-300")}
-                      title="Light Mode"
-                    >
-                      <Sun className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTheme("dark")}
-                      className={cn("p-1.5 rounded transition-colors cursor-pointer", theme === "dark" ? "bg-[#382b23] text-amber-300" : "text-stone-500 hover:text-stone-300")}
-                      title="Dark Mode"
-                    >
-                      <Moon className="w-3.5 h-3.5" />
-                    </button>
+          {/* Mobile / Tablet: Hamburger Trigger for Sheet */}
+          <div className="xl:hidden flex items-center gap-3">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label="Open Navigation Menu"
+                    className="p-2 text-stone-700 hover:text-stone-900 transition-colors cursor-pointer"
+                  />
+                }
+              >
+                <span className="flex flex-col justify-center gap-[5px] w-6">
+                  <span className="h-[2px] w-full bg-[#2b2420] rounded-full" />
+                  <span className="h-[2px] w-full bg-[#2b2420] rounded-full" />
+                  <span className="h-[2px] w-full bg-[#2b2420] rounded-full" />
+                </span>
+              </SheetTrigger>
+
+              <SheetContent side="right" className="bg-[#fcfaf7] border-l border-[#ebe6df] text-stone-900 p-5 sm:p-7 w-[300px] sm:w-[340px] max-w-[85vw] flex flex-col justify-between shadow-2xl overflow-y-auto max-h-screen">
+                <div>
+                  <SheetHeader className="text-left pb-4 border-b border-[#eee8df] mb-2 p-0">
+                    <SheetTitle className="text-stone-900 flex items-center">
+                      <BrandLogo variant="full" className="h-7 sm:h-8 w-auto" />
+                    </SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col py-2">
+                    {[
+                      { href: "#", label: "Home", active: true },
+                      { href: "#about", label: isEn ? "About Us" : "Tentang Kami" },
+                      { href: "#services", label: isEn ? "Wellness Treatments" : "Layanan Wellness" },
+                      { href: "#services", label: isEn ? "Mix Body Treatments" : "Layanan Kombinasi" },
+                      { href: "#benefits", label: isEn ? "Service Areas" : "Area Layanan" },
+                      { href: "#testimonials", label: isEn ? "Testimonials" : "Testimoni" },
+                      { href: "#faq", label: isEn ? "Articles & FAQ" : "Artikel & FAQ" },
+                      { href: "#gallery", label: isEn ? "Gallery" : "Galeri" },
+                      { href: "#book-now", label: isEn ? "Contact & Booking" : "Kontak & Pemesanan" },
+                    ].map((item) => (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={cn(
+                          "text-[14px] sm:text-[14.5px] font-sans tracking-[0.03em] py-2.5 px-1 border-b border-[#f0ece4] transition-colors flex items-center justify-between group",
+                          item.active
+                            ? "text-[#9a6a43] font-medium"
+                            : "text-[#3c342f] hover:text-[#9a6a43] font-[350]"
+                        )}
+                      >
+                        <span>{item.label}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#9a6a43] group-hover:translate-x-0.5 transition-all" />
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+
+                <div className="pt-5 space-y-4 border-t border-[#eee8df]">
+                  {/* Hero Outlined Style WhatsApp CTA */}
+                  <button
+                    type="button"
+                    onClick={() => { setMobileMenuOpen(false); handleQuickBook(); }}
+                    className="w-full py-3 px-4 border border-[#3c342f] text-[#3c342f] hover:bg-[#3c342f] hover:text-white flex items-center justify-center gap-2.5 text-xs tracking-[0.16em] uppercase font-normal transition-all duration-300 cursor-pointer"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>{isEn ? "Book via WhatsApp" : "Pesan via WhatsApp"}</span>
+                  </button>
+
+                  {/* Shadcn UI Language & Theme Selectors for Mobile Drawer */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 font-sans text-xs">
+                    {/* Language Dropdown */}
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full h-8.5 justify-between px-2 text-xs text-stone-700 hover:bg-[#eee7dc]/60 rounded-md font-normal cursor-pointer border-0 shadow-none"
+                          />
+                        }
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Globe className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                          <span className="font-medium text-[#9a6a43] truncate">
+                            {locale === "en" ? "EN" : "ID"}
+                          </span>
+                        </div>
+                        <ChevronDown className="w-3 h-3 text-stone-400 shrink-0" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-44">
+                        <DropdownMenuItem
+                          onClick={() => setLocale("en")}
+                          className="flex items-center justify-between text-xs cursor-pointer py-2"
+                        >
+                          <span>English (EN)</span>
+                          <Check className={cn("w-4 h-4 text-[#9a6a43]", locale !== "en" && "hidden")} />
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setLocale("id")}
+                          className="flex items-center justify-between text-xs cursor-pointer py-2"
+                        >
+                          <span>Bahasa Indonesia (ID)</span>
+                          <Check className={cn("w-4 h-4 text-[#9a6a43]", locale !== "id" && "hidden")} />
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Theme Mode Dropdown */}
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full h-8.5 justify-between px-2 text-xs text-stone-700 hover:bg-[#eee7dc]/60 rounded-md font-normal cursor-pointer border-0 shadow-none"
+                          />
+                        }
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          {theme === "dark" ? (
+                            <Moon className="w-3.5 h-3.5 text-[#9a6a43] shrink-0" />
+                          ) : (
+                            <Sun className="w-3.5 h-3.5 text-[#9a6a43] shrink-0" />
+                          )}
+                          <span className="capitalize font-medium text-[#9a6a43] truncate">
+                            {theme === "dark" ? (isEn ? "Dark" : "Gelap") : theme === "light" ? (isEn ? "Light" : "Terang") : (isEn ? "System" : "Sistem")}
+                          </span>
+                        </div>
+                        <ChevronDown className="w-3 h-3 text-stone-400 shrink-0" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-36">
+                        <DropdownMenuItem
+                          onClick={() => setTheme("light")}
+                          className="flex items-center justify-between text-xs cursor-pointer py-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Sun className="w-3.5 h-3.5 text-stone-700 dark:text-stone-300" />
+                            <span>{isEn ? "Light" : "Terang"}</span>
+                          </div>
+                          <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "light" && "hidden")} />
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setTheme("dark")}
+                          className="flex items-center justify-between text-xs cursor-pointer py-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Moon className="w-3.5 h-3.5 text-stone-600" />
+                            <span>{isEn ? "Dark" : "Gelap"}</span>
+                          </div>
+                          <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "dark" && "hidden")} />
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setTheme("system")}
+                          className="flex items-center justify-between text-xs cursor-pointer py-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-3.5 h-3.5 text-stone-400" />
+                            <span>{isEn ? "System" : "Sistem"}</span>
+                          </div>
+                          <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "system" && "hidden")} />
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-
-          {/* Center: Brand Logo — pure white */}
-          <div className="absolute left-1/2 -translate-x-1/2">
-            <Link href="/" className="inline-flex items-center hover:opacity-85 transition-opacity">
-              <BrandLogo variant="full" forceWhite className="h-8 sm:h-10 w-auto" />
-            </Link>
-          </div>
-
-          {/* Right: Reservation CTA — dark espresso rounded box, cream text, ↗ */}
-          <div className="flex items-center">
-            <Button
-              onClick={() => handleQuickBook()}
-              size="sm"
-              className="h-10 px-5 sm:px-6 text-xs sm:text-sm font-normal bg-[#382b23] hover:bg-[#46362c] text-stone-200 hover:text-white border-0 rounded-lg shadow-none transition-all flex items-center gap-2 tracking-wide cursor-pointer"
-            >
-              <span>{isEn ? "Reservation" : "Reservasi"}</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-stone-300" />
-            </Button>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
 
-      {/* 3. HERO SECTION (DARK ESPRESSO WITH GALLIENT LUXURY SERIF) */}
-      <section className="relative pt-10 sm:pt-14 pb-14 sm:pb-20 bg-[#241c17] text-center overflow-visible">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          {/* Luxury Serif Headline */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl text-stone-100 max-w-4xl mx-auto leading-[1.12] mb-4" style={{ fontFamily: 'var(--font-gallient), Georgia, serif', fontWeight: 400 }}>
-            {isEn ? (
-              <>
-                Traditional massage at Home <br />
-                or Hotel in Your City
-              </>
-            ) : (
-              <>
-                Pijat Tradisional di Rumah <br />
-                atau Hotel Pilihan Anda
-              </>
-            )}
+      {/* 2. CINEMATIC HERO SECTION (Matching Reference Screenshot) */}
+      <section className="relative w-full overflow-hidden flex items-center justify-center min-h-[480px] sm:min-h-[620px] md:min-h-[680px] lg:min-h-[740px] bg-stone-950">
+        {/* Full-bleed Sanctuary Background */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/images/hero-sanctuary.jpg"
+            alt="So Bali SPA - Sanctuary Wellness Experience"
+            className="w-full h-full object-cover object-center"
+          />
+          {/* Subtle contrast overlay */}
+          <div className="absolute inset-0 bg-black/20 md:bg-black/15" />
+        </div>
+
+        {/* Center Hero Content */}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center flex flex-col items-center justify-center py-16 sm:py-28">
+          {/* Main Title: SoBali SPA in Gallient Luxury Roman Serif */}
+          <h1
+            className="text-4xl sm:text-6xl md:text-7xl lg:text-[84px] text-white font-normal tracking-[0.14em] sm:tracking-[0.22em] leading-tight drop-shadow-[0_3px_15px_rgba(0,0,0,0.45)] uppercase select-none"
+            style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+          >
+            {settings.brand_name || "SoBali SPA"}
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xs sm:text-sm text-stone-300 font-light tracking-wide max-w-2xl mx-auto mb-16 sm:mb-24">
+          <p className="text-xs sm:text-base md:text-lg text-white/95 font-light tracking-wide mt-3 sm:mt-4 max-w-xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] px-2">
             {isEn
-              ? "Escape the Ordinary. Indulge in Ultimate Relaxation, Anytime, Anywhere."
-              : "Lepaskan Kepenatan. Nikmati Relaksasi Mewah Kapan Saja, di Mana Saja."}
+              ? "Professional spa care, wherever you stay."
+              : "Layanan spa profesional, di mana pun Anda menginap."}
           </p>
 
-          {/* 4. FLOATING ONLINE BOOKING WIDGET (Overlapping seamlessly between Hero and Photo Gallery) */}
-          <div className="relative max-w-4xl mx-auto text-left z-30 px-2 sm:px-0 -mb-[70px] sm:-mb-[96px]">
-            {/* Top Bar: Online Booking Tab */}
-            <div className="inline-block bg-[#8e6851] text-stone-100 text-xs font-medium px-4 sm:px-5 py-2 tracking-wider">
-              {isEn ? "Online Booking" : "Pemesanan Online"}
-            </div>
-
-            {/* Main Booking Row */}
-            <div className="bg-white text-stone-900 shadow-2xl flex flex-col md:flex-row items-stretch overflow-hidden">
-              {/* Col 1: Service */}
-              <div className="flex-1 p-3.5 sm:p-4 border-b md:border-b-0 md:border-r border-stone-200">
-                <span className="text-[10px] uppercase tracking-wider text-stone-500 font-semibold block mb-0.5">
-                  {isEn ? "Service" : "Layanan"}
-                </span>
-                <Select value={selectedService} onValueChange={(val) => { if (val) setSelectedService(val); }}>
-                  <SelectTrigger className="w-full bg-transparent border-0 p-0 h-auto text-xs sm:text-sm font-semibold text-stone-900 focus:ring-0 shadow-none">
-                    <SelectValue placeholder={isEn ? "Select Treatment" : "Pilih Layanan"} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border-stone-200 text-stone-900">
-                    {services.map((s) => (
-                      <SelectItem key={s.id} value={s.name} className="text-xs">
-                        {isEn ? s.name : s.name_id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Col 2: Time / Duration */}
-              <div className="w-full md:w-36 p-3.5 sm:p-4 border-b md:border-b-0 md:border-r border-stone-200">
-                <span className="text-[10px] uppercase tracking-wider text-stone-500 font-semibold block mb-0.5">
-                  {isEn ? "Time" : "Durasi"}
-                </span>
-                <Select value={selectedDuration} onValueChange={(val) => { if (val) setSelectedDuration(val); }}>
-                  <SelectTrigger className="w-full bg-transparent border-0 p-0 h-auto text-xs sm:text-sm font-semibold text-stone-900 focus:ring-0 shadow-none">
-                    <SelectValue placeholder="90 Minute" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border-stone-200 text-stone-900">
-                    <SelectItem value="60" className="text-xs">{isEn ? "60 Minute" : "60 Menit"}</SelectItem>
-                    <SelectItem value="90" className="text-xs">{isEn ? "90 Minute" : "90 Menit"}</SelectItem>
-                    <SelectItem value="120" className="text-xs">{isEn ? "120 Minute" : "120 Menit"}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Col 3: Price / Currency (IDR) */}
-              <div className="w-full md:w-44 p-3.5 sm:p-4 border-b md:border-b-0 md:border-r border-stone-200 flex flex-col justify-center">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-wider text-stone-500 font-semibold block mb-0.5">
-                    {isEn ? "IDR" : "Tarif"}
-                  </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
-                </div>
-                <div className="text-xs sm:text-sm font-semibold text-stone-900 font-mono">
-                  {currentPriceFormatted}
-                </div>
-              </div>
-
-              {/* Col 4: Book Now Button (Pale Golden Yellow) */}
-              <div className="w-full md:w-44 flex items-stretch">
-                <Button
-                  onClick={() => handleQuickBook()}
-                  className="w-full h-full min-h-[56px] bg-[#eed7a1] hover:bg-[#e4cb91] text-[#241c17] font-semibold text-xs sm:text-sm tracking-wide rounded-none transition-colors flex items-center justify-center shadow-none cursor-pointer border-0"
-                >
-                  <span>{isEn ? "Book Now" : "Pesan Sekarang"}</span>
-                </Button>
-              </div>
-            </div>
-          </div>
+          {/* 24 hours online booking outlined button */}
+          <a
+            href="#services"
+            onClick={(e) => {
+              const el = document.getElementById("services");
+              if (el) {
+                e.preventDefault();
+                el.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
+            className="mt-6 sm:mt-8 inline-flex items-center justify-center px-6 sm:px-10 py-3 sm:py-3.5 border border-white/85 hover:border-white hover:bg-white/10 text-white text-xs sm:text-[13px] tracking-[0.14em] sm:tracking-[0.18em] font-normal transition-all duration-300 backdrop-blur-[2px] cursor-pointer"
+          >
+            <span>
+              {isEn ? "24 hours online booking" : "Pemesanan online 24 jam"}
+            </span>
+          </a>
         </div>
       </section>
 
-      {/* 5. SEAMLESS 5-PHOTO GALLERY (ZERO GAP, FULL BLEED) */}
-      <section className="relative z-10 w-full overflow-hidden bg-[#241c17]">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-0 w-full">
-          {/* Photo 1: Towel / Setup Preparation */}
-          <div className="relative h-64 sm:h-80 md:h-[400px] lg:h-[440px] overflow-hidden bg-stone-900">
-            <img
-              src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=600"
-              alt="Therapist preparing fresh linens and towels"
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-            />
-          </div>
-
-          {/* Photo 2: Living Room / Bedroom Sanctuary */}
-          <div className="relative h-64 sm:h-80 md:h-[400px] lg:h-[440px] overflow-hidden bg-stone-900">
-            <img
-              src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&q=80&w=600"
-              alt="Cozy ambient spa sanctuary at home"
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-            />
-          </div>
-
-          {/* Photo 3: Welcoming Client */}
-          <div className="relative h-64 sm:h-80 md:h-[400px] lg:h-[440px] overflow-hidden bg-stone-900">
-            <img
-              src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=600"
-              alt="Welcoming client for gentle spa experience"
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-            />
-          </div>
-
-          {/* Photo 4: Aromatherapy Oil Massage Close-up */}
-          <div className="relative h-64 sm:h-80 md:h-[400px] lg:h-[440px] overflow-hidden bg-stone-900">
-            <img
-              src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=80&w=600"
-              alt="Relaxing body massage with organic oils"
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-            />
-          </div>
-
-          {/* Photo 5: Traditional Assisted Stretching Massage */}
-          <div className="relative h-64 sm:h-80 md:h-[400px] lg:h-[440px] overflow-hidden bg-stone-900 col-span-2 sm:col-span-1 md:col-span-1">
-            <img
-              src="https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&q=80&w=600"
-              alt="Traditional stretching and acupressure ritual"
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 3. PHILOSOPHY & NARRATIVE SECTION ("The Philosophy - Ketenangan di Setiap Sentuhan") */}
-      <section id="about" className="py-16 sm:py-24 bg-[#241c17] relative overflow-hidden border-t border-stone-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="w-full flex flex-col lg:flex-row items-stretch relative">
-            {/* Left Column: Heading in Gallient Font + Philosophy Intro */}
-            <div className="w-full lg:w-[46%] flex flex-col justify-center pr-0 lg:pr-8 py-8 lg:py-16 z-10">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-6 h-[1.5px] bg-[#8b5e3c]" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#d49b6a]">
-                  {isEn ? "THE PHILOSOPHY" : "THE PHILOSOPHY"}
-                </span>
+      {/* 3. ABOUT / NARRATIVE SECTION (Matching Reference Screenshot) */}
+      <section id="about" className="py-14 sm:py-28 lg:py-36 bg-[#f6f3ee] text-stone-900 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 xl:gap-16 items-center">
+            
+            {/* Left Column: 2 Images Collage */}
+            <div className="lg:col-span-6 xl:col-span-7 flex items-center justify-center gap-3.5 sm:gap-6 lg:gap-7">
+              {/* Left Vertical Image (Massage with Oil) */}
+              <div className="w-[38%] sm:w-[35%] aspect-[3/4] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.06)] shrink-0">
+                <img
+                  src="/images/about-massage-oil.jpg"
+                  alt="Professional massage with natural essential oils"
+                  className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-700"
+                />
               </div>
+
+              {/* Right Wider Image (Couple Relaxing on Mosaic Loungers) */}
+              <div className="w-[62%] sm:w-[65%] aspect-[4/3] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.08)]">
+                <img
+                  src="/images/about-couple-mosaic.jpg"
+                  alt="Couple relaxing on wellness spa loungers"
+                  className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-700"
+                />
+              </div>
+            </div>
+
+            {/* Right Column: Editorial Text */}
+            <div className="lg:col-span-6 xl:col-span-5 flex flex-col justify-center text-left">
+              {/* Main Headline */}
               <h2
-                className="text-4xl sm:text-5xl lg:text-6xl text-stone-100 leading-[1.12] tracking-tight mb-4"
-                style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
+                className="text-2.5xl sm:text-4xl lg:text-[42px] xl:text-[46px] text-[#221c19] font-normal leading-[1.14] tracking-tight"
+                style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
               >
+                {settings.brand_name ? `${settings.brand_name} Homeservice` : "SoBali SPA Homeservice"}
+              </h2>
+
+              {/* Tagline Subtitle */}
+              <h3 className="font-serif text-[#2b2420] text-base sm:text-xl lg:text-[22px] font-normal leading-snug mt-2.5 sm:mt-4">
                 {isEn ? (
                   <>
-                    Serenity in <br />
-                    Every <br />
-                    <span className="italic text-[#ecd9a8]">Touch</span>
+                    Experience Authentic Balinese Wellness,<br className="hidden sm:inline" />
+                    {" "}Thoughtfully Brought to Your Villa or Resort
                   </>
                 ) : (
                   <>
-                    Ketenangan di <br />
-                    Setiap <br />
-                    <span className="italic text-[#ecd9a8]">Sentuhan</span>
+                    Rasakan Ketenangan Tradisi Spa Bali Otentik,<br className="hidden sm:inline" />
+                    {" "}Dihadirkan Eksklusif ke Villa atau Hotel Anda
                   </>
                 )}
-              </h2>
-              <p className="text-xs sm:text-sm text-stone-300 font-light leading-relaxed max-w-sm">
+              </h3>
+
+              {/* Body Paragraph */}
+              <p className="text-[#685f58] text-[14px] sm:text-[15px] leading-relaxed font-sans font-[350] mt-5 sm:mt-6">
                 {isEn
-                  ? "SerenaRaga was born from the desire to rekindle harmony between body and soul. We believe that true self-care is best experienced in the space where you feel most at ease—your home."
-                  : "SerenaRaga terlahir dari keinginan untuk menghidupkan kembali harmoni antara tubuh dan jiwa. Kami percaya bahwa perawatan diri terbaik adalah yang dilakukan dalam ruang privat yang paling nyaman bagi Anda—rumah sendiri."}
+                  ? "At So Bali SPA, we believe true wellness begins with balance, tranquility, and authentic care. Inspired by the timeless traditions of Balinese healing, we bring professional wellness treatments to your villa or resort, allowing you to experience genuine Balinese wellness in the comfort, privacy, and serenity of your surroundings."
+                  : "Di Serena Raga, kami meyakini bahwa ketenangan sejati berawal dari keseimbangan tubuh, ketenteraman jiwa, dan sentuhan otentik. Terinspirasi oleh kearifan tradisi penyembuhan Bali yang melegenda, kami menghadirkan layanan spa profesional langsung ke villa atau hotel pilihan Anda—menghadirkan relaksasi sejati dalam kenyamanan, privasi, dan kedamaian ruang Anda."}
+              </p>
+
+              {/* Read More Link */}
+              <div className="mt-6 sm:mt-8">
+                <a
+                  href="#services"
+                  onClick={(e) => {
+                    const el = document.getElementById("services");
+                    if (el) {
+                      e.preventDefault();
+                      el.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 text-[#9a6a43] hover:text-[#785033] font-serif text-[15px] sm:text-base font-normal tracking-wide transition-colors group cursor-pointer"
+                >
+                  <span>{isEn ? "Read More" : "Pelajari Lebih Lanjut"}</span>
+                  <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* 4. WELLNESS TREATMENTS INTRO BANNER (Matching Reference Screenshot) */}
+      <section className="py-12 sm:py-20 lg:py-24 bg-white text-stone-900 overflow-hidden border-t border-stone-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+          {/* Top Header Row */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 pb-6 sm:pb-12">
+            {/* Left: Two-Tone Large Headline */}
+            <div>
+              <h2
+                className="text-3xl sm:text-4xl lg:text-[46px] xl:text-[52px] text-[#221c19] font-normal leading-[1.14] tracking-tight"
+                style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+              >
+                <span className="text-[#1c1815] block">Wellness</span>
+                <span className="text-[#b3a498] block">Treatments</span>
+              </h2>
+            </div>
+
+            {/* Right: Subtitle Description */}
+            <div className="md:max-w-xs lg:max-w-sm">
+              <p className="text-[#4a423d] text-[13.5px] sm:text-[15px] leading-relaxed font-sans font-[350]">
+                {isEn
+                  ? "Authentic Balinese wellness treatments designed for relaxation, renewal, and complete wellbeing."
+                  : "Layanan perawatan spa Bali otentik yang dirancang khusus untuk relaksasi, pemulihan energi, dan kesehatan menyeluruh."}
               </p>
             </div>
+          </div>
 
-            {/* Floating Mocha Card + Reservation Button (Overlapping center on desktop) */}
-            <div className="lg:absolute lg:left-[35%] xl:left-[36%] lg:top-1/2 lg:-translate-y-1/2 lg:w-[470px] xl:w-[500px] z-20 my-6 lg:my-0">
-              {/* Mocha narrative box */}
-              <div className="bg-[#967259] p-7 sm:p-8 text-stone-100 shadow-2xl space-y-5">
-                {/* Seren Section */}
-                <div className="space-y-1.5 pb-4 border-b border-white/15">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base sm:text-lg font-serif font-bold text-[#ecd9a8]">Seren</span>
-                    <span className="text-[10px] uppercase tracking-widest text-stone-200/80 font-medium">
-                      {isEn ? "THE ART OF RESTING" : "THE ART OF RESTING"}
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-[13px] leading-relaxed font-light text-stone-100">
-                    {isEn
-                      ? "Seren (in Javanese) signifies rest. True rest begins at home. We bring tranquility and harmonic massage directly to your most sacred space, without stepping outside."
-                      : "Seren (dalam bahasa Jawa) memiliki arti istirahat. Istirahat sejati bermula dari rumah. Kami membawa ketenangan dan keharmonisan massage langsung ke ruang paling sakral bagi Anda, tanpa perlu melangkah keluar."}
-                  </p>
-                </div>
-
-                {/* Raga Section */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base sm:text-lg font-serif font-bold text-[#ecd9a8]">Raga</span>
-                    <span className="text-[10px] uppercase tracking-widest text-stone-200/80 font-medium">
-                      {isEn ? "BODY RESTORATION" : "BODY RESTORATION"}
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-[13px] leading-relaxed font-light text-stone-100">
-                    {isEn
-                      ? "Your body is the home of your life. Through certified professional therapists who understand every fatigue, we restore complete physical and mental harmony."
-                      : "Tubuh adalah rumah bagi hidup Anda. Dengan sentuhan terapis profesional yang memahami setiap lelah, kami memulihkan harmoni fisik secara menyeluruh."}
-                  </p>
-                </div>
-              </div>
-
-              {/* Bottom-left attached white Reservation button */}
-              <div className="inline-flex">
-                <Button
-                  onClick={() => handleQuickBook()}
-                  className="bg-white hover:bg-stone-100 text-stone-900 px-6 py-5 rounded-none text-xs sm:text-sm font-medium flex items-center gap-3 cursor-pointer shadow-xl border-0 transition-colors"
-                >
-                  <span>{isEn ? "Reservation" : "Reservasi"}</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Right Column: Spa Image with Orchid and Carousel Arrows */}
-            <div className="w-full lg:w-[54%] relative min-h-[380px] sm:min-h-[480px] lg:min-h-[560px] bg-stone-900 overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=1400"
-                alt="Client with orchid enjoying tranquil head and temple spa massage"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/10" />
-
-              {/* Bottom-Right Slider Arrows */}
-              <div className="absolute bottom-6 right-6 flex items-center gap-2 z-10">
-                <button
-                  type="button"
-                  className="w-9 h-9 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white flex items-center justify-center transition-colors cursor-pointer"
-                  title="Previous"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  className="w-9 h-9 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white flex items-center justify-center transition-colors cursor-pointer"
-                  title="Next"
-                >
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+          {/* Panoramic Banner Photo */}
+          <div className="w-full aspect-[16/9] sm:aspect-[21/8.5] md:aspect-[21/8] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.07)]">
+            <img
+              src="/images/wellness-treatment-banner.jpg"
+              alt="Authentic Balinese Wellness Treatment Massage Experience"
+              className="w-full h-full object-cover object-[center_35%] hover:scale-[1.02] transition-transform duration-700"
+            />
           </div>
         </div>
       </section>
 
-      {/* 4. SEAMLESS & HASSLE-FREE BOOKING STEPS */}
-      <section id="steps" className="py-16 sm:py-24 bg-white text-stone-900 relative overflow-hidden border-t border-stone-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      {/* 5. UNIFIED SECTION: OUR SERVICES & WHY CHOOSE US (MATCHING REFERENCE SCREENSHOT) */}
+      <section id="services" className="py-14 sm:py-28 lg:py-32 bg-[#f6f3ee] text-stone-900 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
           
-          {/* Main Layout Container with Integrated Candle Visual on Right */}
-          <div className="relative">
-            {/* Right Candle Image Background (Tall vertical block covering top-right and extending behind Step 3 & Step 4) */}
-            <div className="hidden lg:block absolute right-0 top-0 w-[49%] h-full min-h-[580px] z-0 overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=80&w=1200"
-                alt="Glowing candles with herbal spa ambiance"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/10" />
-            </div>
+          {/* PART 1: OUR SERVICES */}
+          <div className="text-center mb-8 sm:mb-14">
+            <h2
+              className="text-2.5xl sm:text-4xl lg:text-[44px] text-[#1c1815] font-normal tracking-tight"
+              style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+            >
+              {isEn ? "Our Services" : "Layanan Kami"}
+            </h2>
+          </div>
 
-            {/* Top Row: Left Heading + Subtitle */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-10 sm:mb-14 relative z-10">
-              {/* Left Column: Heading and Subtitle */}
-              <div className="lg:col-span-6 space-y-4">
-                <span className="text-xs sm:text-sm text-stone-500 font-normal tracking-wide block">
-                  {isEn ? "Booking Process" : "Proses Pemesanan"}
-                </span>
-                <h2
-                  className="text-4xl sm:text-5xl lg:text-6xl text-stone-900 leading-[1.08] tracking-tight"
-                  style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
-                >
-                  {isEn ? (
-                    <>
-                      Booking Seamless <br />
-                      & Hassle-Free
-                    </>
-                  ) : (
-                    <>
-                      Pemesanan Mudah <br />
-                      & Tanpa Repot
-                    </>
-                  )}
-                </h2>
-                <p className="text-xs sm:text-sm text-stone-600 font-light leading-relaxed max-w-md pt-1">
-                  {isEn
-                    ? "Imagine unwinding after a long day with a world-class Thai massage—without stepping outside. Whether you're in a luxury hotel, your private residence."
-                    : "Bayangkan melepas lelah setelah hari yang panjang dengan pijatan berkualitas dunia—tanpa perlu melangkah keluar. Baik Anda berada di hotel mewah, apartemen, atau rumah pribadi."}
-                </p>
-              </div>
-
-              {/* Mobile Right Candle Image Preview */}
-              <div className="lg:col-span-6 h-48 sm:h-64 rounded-none overflow-hidden block lg:hidden relative">
+          {/* 4-Card Service Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+            {[
+              {
+                id: "balinese",
+                title: "Balinese",
+                titleId: "Pijat Bali",
+                tagline: "Authentic Relaxation",
+                taglineId: "Relaksasi Otentik",
+                image: "/images/service-balinese.jpg",
+                alt: "Traditional Balinese Massage",
+              },
+              {
+                id: "foot",
+                title: "Foot Reflexology",
+                titleId: "Refleksi Kaki",
+                tagline: "Relax Tired Feet",
+                taglineId: "Redakan Kaki Lelah",
+                image: "/images/service-foot-reflexology.jpg",
+                alt: "Foot Reflexology Treatment",
+              },
+              {
+                id: "back-neck",
+                title: "Back, Neck & Shoulder",
+                titleId: "Punggung, Leher & Pundak",
+                tagline: "Release Everyday Tension",
+                taglineId: "Lepaskan Ketegangan Otot",
+                image: "/images/service-back-neck.jpg",
+                alt: "Back, Neck and Shoulder Massage",
+              },
+              {
+                id: "face-lifting",
+                title: "Face Lifting & Acupressure",
+                titleId: "Totok Wajah & Akupresur",
+                tagline: "Lift, Refresh & Relax",
+                taglineId: "Segarkan & Kencangkan Wajah",
+                image: "/images/service-face-lifting.jpg",
+                alt: "Face Lifting and Acupressure Massage",
+              },
+            ].map((service) => (
+              <div
+                key={service.id}
+                onClick={() => handleQuickBook(service.title)}
+                className="group relative aspect-[4/3] sm:aspect-[3/4] overflow-hidden cursor-pointer shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)] transition-all duration-500"
+              >
+                {/* Background Image */}
                 <img
-                  src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=80&w=1000"
-                  alt="Glowing candles with herbal spa ambiance"
-                  className="w-full h-full object-cover"
+                  src={service.image}
+                  alt={service.alt}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
                 />
-              </div>
-            </div>
 
-            {/* 4 Cards Grid: Cards 1 & 2 on white canvas, Cards 3 & 4 overlapping on top of Candle image */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6 relative z-10">
-              {/* Step 1 */}
-              <div className="bg-[#ede4dc] p-6 sm:p-7 flex flex-col justify-between shadow-sm min-h-[340px]">
-                <div>
-                  <div className="self-start inline-block bg-[#3c2e25] text-stone-200 text-[11px] font-medium px-3.5 py-1 mb-5">
-                    Step 1
-                  </div>
-                  <h3 className="text-xl sm:text-[22px] font-medium text-stone-900 tracking-tight leading-snug mb-3">
-                    {isEn ? "Reserve Online" : "Pesan Online"}
+                {/* Dark Gradient Overlay for Text Readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-4 sm:p-6 text-center text-white" />
+
+                {/* Text Content Overlay */}
+                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 text-center text-white flex flex-col items-center justify-end">
+                  <h3
+                    className="text-lg sm:text-xl font-normal text-stone-100 tracking-wide"
+                    style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+                  >
+                    {isEn ? service.title : service.titleId}
                   </h3>
-                  <p className="text-xs sm:text-[13px] text-stone-600 leading-relaxed font-light">
-                    {isEn
-                      ? "Book your Thai massage effortlessly through our website. Choose a time that suits your schedule and enter your location details."
-                      : "Pesan layanan massage dengan mudah melalui website kami. Pilih waktu yang sesuai dengan jadwal Anda dan tentukan detail lokasi penjemputan."}
+                  <p className="text-[12px] sm:text-[13px] text-stone-300 font-light font-sans mt-1">
+                    {isEn ? service.tagline : service.taglineId}
                   </p>
                 </div>
-                <div className="pt-6 mt-4 border-t border-stone-300/60">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickBook()}
-                    className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-medium text-stone-900 hover:text-[#8b5e3c] transition-colors cursor-pointer"
-                  >
-                    <span>{isEn ? "Reservation" : "Reservasi"}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
               </div>
-
-              {/* Step 2 */}
-              <div className="bg-[#ede4dc] p-6 sm:p-7 flex flex-col justify-between shadow-sm min-h-[340px]">
-                <div>
-                  <div className="self-start inline-block bg-[#3c2e25] text-stone-200 text-[11px] font-medium px-3.5 py-1 mb-5">
-                    Step 2
-                  </div>
-                  <h3 className="text-xl sm:text-[22px] font-medium text-stone-900 tracking-tight leading-snug mb-3">
-                    {isEn ? "Receive Confirmation" : "Konfirmasi Instan"}
-                  </h3>
-                  <p className="text-xs sm:text-[13px] text-stone-600 leading-relaxed font-light">
-                    {isEn
-                      ? "Our team will promptly confirm your booking and assign a highly skilled therapist for your session."
-                      : "Tim kami akan segera mengonfirmasi pesanan Anda dan menugaskan terapis profesional berlisensi terbaik untuk sesi Anda."}
-                  </p>
-                </div>
-                <div className="pt-6 mt-4 border-t border-stone-300/60">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickBook()}
-                    className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-medium text-stone-900 hover:text-[#8b5e3c] transition-colors cursor-pointer"
-                  >
-                    <span>{isEn ? "Reservation" : "Reservasi"}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="bg-[#ede4dc] p-6 sm:p-7 flex flex-col justify-between shadow-sm min-h-[340px]">
-                <div>
-                  <div className="self-start inline-block bg-[#3c2e25] text-stone-200 text-[11px] font-medium px-3.5 py-1 mb-5">
-                    Step 3
-                  </div>
-                  <h3 className="text-xl sm:text-[22px] font-medium text-stone-900 tracking-tight leading-snug mb-3">
-                    {isEn ? "Wait for Your Therapist" : "Terapis Tiba di Lokasi"}
-                  </h3>
-                  <p className="text-xs sm:text-[13px] text-stone-600 leading-relaxed font-light">
-                    {isEn
-                      ? "Relax and prepare for your session. Our professional masseuse will arrive at your doorstep on time, bringing everything needed for your massage."
-                      : "Bersantailah dan bersiap menikmati sesi relaksasi. Terapis kami tiba tepat waktu di depan pintu Anda lengkap dengan seluruh perlengkapan higienis."}
-                  </p>
-                </div>
-                <div className="pt-6 mt-4 border-t border-stone-300/60">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickBook()}
-                    className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-medium text-stone-900 hover:text-[#8b5e3c] transition-colors cursor-pointer"
-                  >
-                    <span>{isEn ? "Reservation" : "Reservasi"}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="bg-[#ede4dc] p-6 sm:p-7 flex flex-col justify-between shadow-sm min-h-[340px]">
-                <div>
-                  <div className="self-start inline-block bg-[#3c2e25] text-stone-200 text-[11px] font-medium px-3.5 py-1 mb-5">
-                    Step 4
-                  </div>
-                  <h3 className="text-xl sm:text-[22px] font-medium text-stone-900 tracking-tight leading-snug mb-3">
-                    {isEn ? "Enjoy a Premium Thai Massage" : "Nikmati Pijatan Premium"}
-                  </h3>
-                  <p className="text-xs sm:text-[13px] text-stone-600 leading-relaxed font-light">
-                    {isEn
-                      ? "Experience deep relaxation and rejuvenation from the comfort of your home or hotel room. Let go of stress and enjoy the ultimate indulgence."
-                      : "Rasakan relaksasi mendalam dan pemulihan tubuh dari kenyamanan rumah atau kamar hotel Anda. Lepaskan kepenatan dan nikmati kemewahan sejati."}
-                  </p>
-                </div>
-                <div className="pt-6 mt-4 border-t border-stone-300/60">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickBook()}
-                    className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-medium text-stone-900 hover:text-[#8b5e3c] transition-colors cursor-pointer"
-                  >
-                    <span>{isEn ? "Reservation" : "Reservasi"}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
-      </section>
 
-      {/* 5. WHERE WE SERVE / RELAX, REJUVENATE, AND RECHARGE (EXACT MATCH REFERENCE) */}
-      <section className="py-16 sm:py-24 bg-[#241c17] text-stone-100 relative overflow-hidden border-t border-stone-800/80">
-        {/* Subtle Decorative Ambient Oval Ring in Background */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[780px] h-[600px] rounded-[100%] border border-stone-700/25 pointer-events-none hidden lg:block -rotate-12" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          {/* Top Section Header */}
-          <div className="text-left mb-12 sm:mb-16">
-            <h2
-              className="text-4xl sm:text-5xl lg:text-6xl text-stone-100 leading-[1.08] tracking-tight mb-4"
-              style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
+          {/* Explore Other Treatments Link */}
+          <div className="text-center mt-7 sm:mt-12">
+            <button
+              type="button"
+              onClick={() => handleQuickBook()}
+              className="inline-flex items-center gap-1.5 text-[#9a6a43] hover:text-[#785033] font-serif text-[14.5px] sm:text-base font-normal tracking-wide transition-colors cursor-pointer group"
             >
-              {isEn ? (
-                <>
-                  Relax, Rejuvenate, and <br />
-                  Recharge—Wherever you are
-                </>
-              ) : (
-                <>
-                  Lepaskan, Pulihkan, dan <br />
-                  Segarkan Diri—Di Mana Saja
-                </>
-              )}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-300 font-light tracking-wide max-w-xl">
-              {isEn
-                ? "Escape the Ordinary. Indulge in Ultimate Relaxation, Anytime, Anywhere."
-                : "Lepaskan Kepenatan. Nikmati Relaksasi Mewah Kapan Saja, di Mana Saja."}
-            </p>
+              <span>{isEn ? "Explore Other Treatments" : "Jelajahi Layanan Lainnya"}</span>
+              <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
+            </button>
           </div>
 
-          {/* 3-Column Centerpiece Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-            {/* Left 2 Feature Blocks */}
-            <div className="lg:col-span-4 space-y-10 sm:space-y-14">
-              {/* Feature 1 */}
-              <div className="space-y-3">
-                <div className="text-stone-300">
-                  <svg className="w-5 h-5 stroke-current fill-none stroke-[1.5]" viewBox="0 0 24 24">
-                    <path d="M6 3h12l4 6-10 12L2 9z" />
-                    <path d="M11 3v6l-5 12" />
-                    <path d="M13 3v6l5 12" />
-                    <path d="M2 9h20" />
-                  </svg>
-                </div>
-                <h3 className="text-lg sm:text-xl font-normal text-stone-100 leading-snug tracking-tight">
-                  {isEn ? "The Ultimate in Luxury & Convenience" : "Kemewahan & Kenyamanan Tertinggi"}
-                </h3>
-                <p className="text-xs sm:text-[13px] text-stone-400 leading-relaxed font-light">
-                  {isEn
-                    ? "Skip the trip to the salon—our professional therapists come to you, fully equipped with everything needed for a high-end Thai massage experience. Whether you're staying in a five-star hotel or simply want to elevate your home relaxation, we ensure a seamless and stress-free experience."
-                    : "Tak perlu repot bepergian ke luar—terapis profesional kami datang langsung ke lokasi Anda, dilengkapi seluruh perlengkapan higienis untuk pengalaman spa mewah. Baik Anda berada di hotel bintang lima atau rumah pribadi, kami menjamin pengalaman yang lancar dan bebas repot."}
-                </p>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="space-y-3">
-                <div className="text-stone-300">
-                  <svg className="w-5 h-5 stroke-current fill-none stroke-[1.5]" viewBox="0 0 24 24">
-                    <path d="M6 3h12l4 6-10 12L2 9z" />
-                    <path d="M11 3v6l-5 12" />
-                    <path d="M13 3v6l5 12" />
-                    <path d="M2 9h20" />
-                  </svg>
-                </div>
-                <h3 className="text-lg sm:text-xl font-normal text-stone-100 leading-snug tracking-tight">
-                  {isEn ? "Privacy, Comfort & Exclusivity" : "Privasi, Kenyamanan & Eksklusivitas"}
-                </h3>
-                <p className="text-xs sm:text-[13px] text-stone-400 leading-relaxed font-light">
-                  {isEn
-                    ? "Experience a luxury spa-quality massage without interruptions. Whether you prefer a soothing aromatherapy session in your hotel suite or a therapeutic deep-tissue massage in your private residence, we create a personalized ambiance for your comfort."
-                    : "Nikmati pijatan kualitas spa mewah tanpa gangguan. Apakah Anda menginginkan sesi aromaterapi yang menenangkan di kamar hotel atau deep-tissue massage di hunian pribadi, kami menciptakan suasana khusus yang nyaman untuk Anda."}
-                </p>
-              </div>
+          {/* PART 2: WHY CHOOSE US ? */}
+          <div id="benefits" className="mt-14 sm:mt-28 lg:mt-32 pt-12 sm:pt-20 border-t border-stone-300/60 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 xl:gap-16 items-start">
+            {/* Left Column: Heading */}
+            <div className="lg:col-span-4 xl:col-span-4 lg:sticky lg:top-28">
+              <h3
+                className="text-3xl sm:text-5xl lg:text-[54px] text-[#1c1815] font-normal leading-[1.08] tracking-tight"
+                style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+              >
+                {isEn ? (
+                  <>
+                    Why <br />
+                    Choose Us ?
+                  </>
+                ) : (
+                  <>
+                    Mengapa <br />
+                    Memilih Kami ?
+                  </>
+                )}
+              </h3>
             </div>
 
-            {/* Center Visual Card with Gold Reservation CTA */}
-            <div className="lg:col-span-4 flex flex-col items-center justify-center">
-              <div className="w-full max-w-[340px] shadow-2xl overflow-hidden bg-stone-900 border border-stone-800">
-                <div className="relative aspect-[4/5] overflow-hidden">
-                  <img
-                    src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=800"
-                    alt="Serena Raga luxury massage with orchid flower"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/10" />
-                </div>
-                <Button
-                  onClick={() => handleQuickBook()}
-                  className="w-full h-12 bg-[#eed7a1] hover:bg-[#e4cb91] text-[#241c17] font-medium text-xs sm:text-sm tracking-wide rounded-none shadow-none flex items-center justify-center gap-2 cursor-pointer transition-colors border-0"
-                >
-                  <span>{isEn ? "Reservation" : "Reservasi"}</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Right 2 Feature Blocks */}
-            <div className="lg:col-span-4 space-y-10 sm:space-y-14">
-              {/* Feature 3 */}
-              <div className="space-y-3">
-                <div className="text-stone-300">
-                  <svg className="w-5 h-5 stroke-current fill-none stroke-[1.5]" viewBox="0 0 24 24">
-                    <path d="M6 3h12l4 6-10 12L2 9z" />
-                    <path d="M11 3v6l-5 12" />
-                    <path d="M13 3v6l5 12" />
-                    <path d="M2 9h20" />
-                  </svg>
-                </div>
-                <h3 className="text-lg sm:text-xl font-normal text-stone-100 leading-snug tracking-tight">
-                  {isEn ? "Traditional Thai Massage by Certified Experts" : "Pijatan Tradisional oleh Terapis Tersertifikasi"}
-                </h3>
-                <p className="text-xs sm:text-[13px] text-stone-400 leading-relaxed font-light">
-                  {isEn
-                    ? "Our team consists of highly trained Thai professionals, specializing in traditional Thai massage, deep tissue therapy, oil massage, and aromatherapy. Each session is tailored to your body's needs, promoting deep relaxation, improved circulation, and complete rejuvenation."
-                    : "Tim kami terdiri dari terapis profesional terlatih dan bersertifikat, ahli dalam pijat tradisional, terapi deep-tissue, oil massage, dan aromaterapi. Setiap sesi disesuaikan dengan kebutuhan tubuh Anda untuk melancarkan sirkulasi dan memulihkan vitalitas."}
-                </p>
-              </div>
-
-              {/* Feature 4 */}
-              <div className="space-y-3">
-                <div className="text-stone-300">
-                  <svg className="w-5 h-5 stroke-current fill-none stroke-[1.5]" viewBox="0 0 24 24">
-                    <path d="M6 3h12l4 6-10 12L2 9z" />
-                    <path d="M11 3v6l-5 12" />
-                    <path d="M13 3v6l5 12" />
-                    <path d="M2 9h20" />
-                  </svg>
-                </div>
-                <h3 className="text-lg sm:text-xl font-normal text-stone-100 leading-snug tracking-tight">
-                  {isEn ? "Perfect for Travelers & Busy Professionals" : "Sempurna untuk Eksekutif & Wisatawan"}
-                </h3>
-                <p className="text-xs sm:text-[13px] text-stone-400 leading-relaxed font-light">
-                  {isEn
-                    ? "Long flight? Intense work schedule? A professional Thai massage can help reduce jet lag, relieve tension, and restore balance—allowing you to make the most of your time in your city."
-                    : "Penerbangan panjang atau jadwal kerja padat? Pijatan terapis kami membantu meredakan jet lag, melemaskan otot kaku, dan memulihkan keseimbangan energi Anda."}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. PRICING & BOOKING SECTION (COMPACT LUXURY LAYOUT MATCHING REFERENCE) */}
-      <section id="services" className="py-12 sm:py-16 bg-[#241c17] border-t border-stone-800/80 text-stone-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          {/* Section Header */}
-          <div className="mb-8 sm:mb-10">
-            <h2
-              className="text-4xl sm:text-5xl lg:text-6xl text-stone-100 leading-[1.08] tracking-tight mb-3"
-              style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
-            >
-              {isEn ? "Pricing & Booking" : "Tarif & Pemesanan"}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-300 font-light tracking-wide max-w-xl mx-auto">
-              {isEn
-                ? "Escape the Ordinary. Indulge in Ultimate Relaxation, Anytime, Anywhere."
-                : "Lepaskan Kepenatan. Nikmati Relaksasi Mewah Kapan Saja, di Mana Saja."}
-            </p>
-          </div>
-
-          {/* Center Light Stone Card */}
-          <div className="bg-[#eae5df] text-stone-900 shadow-2xl p-6 sm:p-8 max-w-3xl mx-auto text-left">
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 sm:gap-8 items-center">
-              {/* Left Column: Price + Min Booking + Button */}
-              <div className="sm:col-span-6 space-y-4">
-                <div>
-                  <div className="text-2xl sm:text-3xl font-semibold text-stone-900 font-sans tracking-tight">
-                    {currentPriceFormatted}{" "}
-                    <span className="text-xs sm:text-sm font-normal text-stone-600">
-                      {isEn ? "/per hour" : "/sesi 60 menit"}
-                    </span>
+            {/* Right Column: 2x3 Grid of 6 Benefit Cards */}
+            <div className="lg:col-span-8 xl:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10 lg:gap-x-12 lg:gap-y-12">
+              {[
+                {
+                  titleEn: "Authentic Balinese Wellness Traditions",
+                  titleId: "Tradisi Spa Bali Otentik",
+                  descEn: "Inspired by timeless Balinese spa traditions and rituals.",
+                  descId: "Terinspirasi oleh tradisi penyembuhan dan ritual spa Bali yang melegenda.",
+                },
+                {
+                  titleEn: "Premium Natural Oils and Wellness Products",
+                  titleId: "Minyak Alami & Produk Herbal Premium",
+                  descEn: "Quality natural oils and selected products enhance every treatment.",
+                  descId: "Minyak esensial murni organik dan produk pilihan terbaik untuk kenyamanan tubuh.",
+                },
+                {
+                  titleEn: "Professional Wellness Treatments at Your Villa or Resort",
+                  titleId: "Layanan Spa Profesional di Villa atau Hotel Anda",
+                  descEn: "Enjoy professional spa treatments in the comfort of your accommodation.",
+                  descId: "Nikmati perawatan spa profesional langsung dalam kenyamanan dan privasi tempat Anda menginap.",
+                },
+                {
+                  titleEn: "Personalized Treatments Tailored to Your Individual Needs",
+                  titleId: "Perawatan Fleksibel Sesuai Kebutuhan Tubuh",
+                  descEn: "Every treatment is adapted to your preferences, comfort, and needs.",
+                  descId: "Tekanan dan fokus pemijatan disesuaikan penuh dengan kenyamanan tubuh Anda.",
+                },
+                {
+                  titleEn: "Respectful, Discreet, and Professional Therapists",
+                  titleId: "Terapis Ramah, Bersertifikat & Menjaga Privasi",
+                  descEn: "Our therapists provide skilled, respectful, and attentive service.",
+                  descId: "Terapis kami bersertifikasi resmi, santun, terampil, dan melayani dengan sepenuh hati.",
+                },
+                {
+                  titleEn: "Flexible Appointments Across Bali's Destinations",
+                  titleId: "Jangkauan Layanan Luas & Jadwal Fleksibel",
+                  descEn: "Enjoy convenient spa treatments across Bali's most popular destinations.",
+                  descId: "Pemesanan fleksibel yang menjangkau seluruh area tujuan utama di kota Anda.",
+                },
+              ].map((benefit, index) => (
+                <div key={index} className="flex items-start gap-3.5 sm:gap-4.5">
+                  {/* Rounded Lotus Icon Badge */}
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#6f665e] text-[#f6f3ee] flex items-center justify-center shrink-0 shadow-sm">
+                    <SacredLotusLogo className="w-5.5 h-5.5 sm:w-6.5 sm:h-6.5 text-[#f6f3ee]" />
                   </div>
-                  <p className="text-xs sm:text-[13px] text-stone-700 font-light mt-1">
-                    {isEn
-                      ? "Minimum booking: 60 Minutes (All-Inclusive)"
-                      : "Minimum pemesanan: 60 Menit (Tanpa Biaya Tambahan)"}
-                  </p>
-                </div>
 
-                <Button
-                  onClick={() => handleQuickBook()}
-                  className="bg-[#241c17] hover:bg-[#382b23] text-stone-100 px-6 py-3 rounded-none text-xs sm:text-sm font-normal flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-none w-full sm:w-auto border-0"
-                >
-                  <span>{isEn ? "Reservation" : "Reservasi"}</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </Button>
-              </div>
-
-              {/* Right Column: Availability & Service Area Note */}
-              <div className="sm:col-span-6 border-t sm:border-t-0 sm:border-l border-stone-300 sm:pl-8 pt-4 sm:pt-0 space-y-2">
-                <div>
-                  <div className="text-xs sm:text-sm font-semibold text-stone-900">
-                    {isEn ? "Available 7 days a week" : "Buka Setiap Hari (7 Hari)"}
-                  </div>
-                  <div className="text-xs sm:text-sm font-medium text-stone-800">
-                    08:00 AM – 10:00 PM WIB
+                  {/* Benefit Content */}
+                  <div className="space-y-1 sm:space-y-1.5 pt-0.5">
+                    <h4 className="font-serif text-[#1c1815] text-[14.5px] sm:text-base font-normal leading-snug">
+                      {isEn ? benefit.titleEn : benefit.titleId}
+                    </h4>
+                    <p className="text-[#685f58] text-[12.5px] sm:text-[13.5px] leading-relaxed font-sans font-[350]">
+                      {isEn ? benefit.descEn : benefit.descId}
+                    </p>
                   </div>
                 </div>
-                <p className="text-xs text-stone-600 leading-relaxed font-light pt-1">
-                  {isEn
-                    ? "We provide massage services anywhere in your city, including hotels, private residences, and serviced apartments."
-                    : "Kami melayani panggilan massage ke seluruh wilayah kota Anda, termasuk hotel berbintang, rumah tinggal, dan apartemen."}
-                </p>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Bottom Fast Contact Channels */}
-          <div className="mt-8 sm:mt-10 max-w-3xl mx-auto text-left">
-            <div className="text-[11px] sm:text-xs text-stone-400 font-light mb-3">
-              {isEn ? "Easy Booking in Just Seconds" : "Pemesanan Mudah dalam Hitungan Detik"}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-1">
-              {/* Channel 1: Call */}
-              <div className="space-y-1">
-                <span className="text-[10px] text-stone-400 uppercase tracking-wider block font-medium">
-                  {isEn ? "Call Us" : "Telepon"}
-                </span>
-                <a
-                  href={`tel:${cleanWhatsAppNumber(settings.phone_number || "6281234567890")}`}
-                  className="text-xs sm:text-sm text-stone-200 hover:text-white font-mono transition-colors block"
-                >
-                  {settings.phone_number || "+62 812-XXXX-XXXX"}
-                </a>
-              </div>
-
-              {/* Channel 2: WhatsApp */}
-              <div className="space-y-1 sm:border-l border-stone-800 sm:pl-6">
-                <span className="text-[10px] text-stone-400 uppercase tracking-wider block font-medium">
-                  WhatsApp
-                </span>
-                <a
-                  href={`https://wa.me/${cleanWhatsAppNumber(settings.whatsapp_number || "6281234567890")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs sm:text-sm text-stone-200 hover:text-white font-mono transition-colors block"
-                >
-                  {settings.whatsapp_number || "+62 812-XXXX-XXXX"}
-                </a>
-              </div>
-
-              {/* Channel 3: Online Booking */}
-              <div className="space-y-1 sm:border-l border-stone-800 sm:pl-6">
-                <span className="text-[10px] text-stone-400 uppercase tracking-wider block font-medium">
-                  {isEn ? "Online Booking" : "Reservasi Online"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleQuickBook()}
-                  className="text-xs sm:text-sm text-stone-100 hover:text-amber-200 font-medium underline underline-offset-4 cursor-pointer transition-colors block"
-                >
-                  {isEn ? "Book Now" : "Pesan Sekarang"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. EXCLUSIVE BENEFITS SLIDER SECTION (WHITE BACKGROUND, TALL LUXURY LAYOUT) */}
-      <section id="benefits" className="py-24 sm:py-32 lg:py-36 bg-white text-stone-900 border-t border-stone-200/80 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-24">
-            <h2
-              className="text-4xl sm:text-5xl lg:text-6xl text-stone-900 leading-[1.08] tracking-tight mb-4"
-              style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
-            >
-              {isEn ? (
-                <>
-                  Exclusive Benefits of Our <br />
-                  Private Massage Service
-                </>
-              ) : (
-                <>
-                  Keunggulan Eksklusif Layanan <br />
-                  Private Massage Kami
-                </>
-              )}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-600 font-light tracking-wide max-w-xl mx-auto">
-              {isEn
-                ? "Escape the Ordinary. Indulge in Ultimate Relaxation, Anytime, Anywhere."
-                : "Lepaskan Kepenatan. Nikmati Relaksasi Mewah Kapan Saja, di Mana Saja."}
-            </p>
-          </div>
-
-          {/* Interactive 2-Column Showcase */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-            {/* Left Column: Number, Title, Description, Button, Carousel Arrows */}
-            <div className="lg:col-span-5 flex flex-col justify-between space-y-6">
-              <div className="space-y-4">
-                <span className="text-xs sm:text-sm font-mono text-stone-400 font-medium block">
-                  {currentBenefit.num}
-                </span>
-
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-normal text-stone-900 leading-tight tracking-tight">
-                  {isEn ? currentBenefit.titleEn : currentBenefit.titleId}
-                </h3>
-
-                <p className="text-xs sm:text-[13px] text-stone-600 leading-relaxed font-light pt-1">
-                  {isEn ? currentBenefit.descEn : currentBenefit.descId}
-                </p>
-
-                <div className="pt-3">
-                  <Button
-                    onClick={() => handleQuickBook()}
-                    className="bg-[#967259] hover:bg-[#836048] text-stone-100 px-6 py-3 rounded-none text-xs sm:text-sm font-normal flex items-center gap-2 cursor-pointer transition-colors shadow-none border-0"
-                  >
-                    <span>{isEn ? "Reservation" : "Reservasi"}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Slider Arrows: positioned closer to the image on the right */}
-              <div className="flex items-center justify-end gap-3 pt-6 sm:pt-8 pr-0 lg:pr-2">
-                <button
-                  type="button"
-                  onClick={prevBenefit}
-                  className="w-11 h-11 rounded-full bg-[#e8e4e0] hover:bg-[#ded8d2] text-stone-700 flex items-center justify-center transition-colors cursor-pointer"
-                  title="Previous Benefit"
-                >
-                  <ArrowLeft className="w-4 h-4 stroke-[1.5]" />
-                </button>
-                <button
-                  type="button"
-                  onClick={nextBenefit}
-                  className="w-11 h-11 rounded-full bg-[#eed7a1] hover:bg-[#e4cb91] text-[#241c17] flex items-center justify-center transition-colors cursor-pointer shadow-sm"
-                  title="Next Benefit"
-                >
-                  <ArrowRight className="w-4 h-4 stroke-[1.5]" />
-                </button>
-              </div>
-            </div>
-
-            {/* Right Column: Hero Showcase Image with smooth change */}
-            <div className="lg:col-span-7">
-              <div className="relative aspect-[4/3] sm:aspect-[16/10] min-h-[260px] sm:min-h-[440px] lg:min-h-[520px] overflow-hidden shadow-2xl bg-stone-100">
-                <img
-                  key={activeBenefitIndex}
-                  src={currentBenefit.image}
-                  alt={currentBenefit.alt}
-                  className="w-full h-full object-cover transition-opacity duration-500 animate-in fade-in"
-                />
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* 8. COMBINED CUSTOMER TESTIMONIALS & FAQ SECTION (DARK ESPRESSO BACKGROUND) */}
-      <section id="testimonials" className="py-16 sm:py-28 lg:py-36 bg-[#241c17] text-stone-100 border-t border-stone-800/80 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 sm:space-y-28 lg:space-y-36">
+      <section id="testimonials" className="py-14 sm:py-24 lg:py-28 bg-[#241c17] text-stone-100 border-t border-stone-800/80 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 space-y-12 sm:space-y-20 lg:space-y-24">
           
           {/* PART 1: CUSTOMER TESTIMONIALS */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
-            {/* Left: Large Photo (Assisted Stretch / Thai Massage) */}
-            <div className="lg:col-span-6 relative">
-              <div className="relative aspect-[4/3] sm:aspect-[1/1] lg:aspect-[4/5] min-h-[280px] sm:min-h-[440px] lg:min-h-[540px] overflow-hidden shadow-2xl bg-stone-900">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-center">
+            {/* Left: Balanced Photo */}
+            <div className="lg:col-span-5 xl:col-span-5 relative">
+              <div className="relative aspect-[16/11] sm:aspect-[4/3] lg:aspect-[4/3.8] max-w-lg mx-auto lg:max-w-none overflow-hidden shadow-2xl bg-stone-900">
                 <img
                   src={currentTestimonial.image}
                   alt="Therapist performing authentic relaxation massage"
@@ -1488,10 +1239,10 @@ export default function LandingPage() {
             </div>
 
             {/* Right: Testimonials Content */}
-            <div className="lg:col-span-6 flex flex-col justify-between space-y-8 lg:pl-4">
-              <div className="space-y-6">
+            <div className="lg:col-span-7 xl:col-span-7 flex flex-col justify-center space-y-5 sm:space-y-6 lg:pl-4">
+              <div className="space-y-3 sm:space-y-5">
                 <h2
-                  className="text-4xl sm:text-5xl lg:text-6xl text-stone-100 leading-[1.08] tracking-tight"
+                  className="text-2.5xl sm:text-4xl lg:text-[42px] xl:text-[46px] text-stone-100 leading-[1.14] tracking-tight"
                   style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
                 >
                   {isEn ? (
@@ -1507,26 +1258,26 @@ export default function LandingPage() {
                   )}
                 </h2>
 
-                <p className="text-sm sm:text-base lg:text-lg text-stone-200 font-light leading-relaxed max-w-xl">
+                <p className="text-[13.5px] sm:text-[15px] lg:text-base text-stone-200 font-light leading-relaxed max-w-xl">
                   "{isEn ? currentTestimonial.text_en : currentTestimonial.text_id}"
                 </p>
 
-                <div className="space-y-0.5 pt-2">
-                  <div className="text-base sm:text-lg font-semibold text-stone-100">
+                <div className="space-y-0.5 pt-1">
+                  <div className="text-[15px] sm:text-lg font-medium text-stone-100">
                     {currentTestimonial.name}
                   </div>
-                  <div className="text-xs sm:text-sm text-stone-400 font-light">
+                  <div className="text-xs sm:text-[13px] text-stone-400 font-light">
                     {isEn ? currentTestimonial.role_en : currentTestimonial.role_id}
                   </div>
                 </div>
               </div>
 
               {/* Navigation Arrows */}
-              <div className="flex items-center gap-3 pt-4">
+              <div className="flex items-center gap-2.5 pt-1">
                 <button
                   type="button"
                   onClick={prevTestimonial}
-                  className="w-11 h-11 rounded-full bg-[#382b23] hover:bg-[#46362c] text-stone-300 flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#382b23] hover:bg-[#46362c] text-stone-300 flex items-center justify-center transition-colors cursor-pointer"
                   title="Previous Testimonial"
                 >
                   <ArrowLeft className="w-4 h-4 stroke-[1.5]" />
@@ -1534,7 +1285,7 @@ export default function LandingPage() {
                 <button
                   type="button"
                   onClick={nextTestimonial}
-                  className="w-11 h-11 rounded-full bg-[#eed7a1] hover:bg-[#e4cb91] text-[#241c17] flex items-center justify-center transition-colors cursor-pointer shadow-sm"
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#eed7a1] hover:bg-[#e4cb91] text-[#241c17] flex items-center justify-center transition-colors cursor-pointer shadow-sm"
                   title="Next Testimonial"
                 >
                   <ArrowRight className="w-4 h-4 stroke-[1.5]" />
@@ -1544,12 +1295,12 @@ export default function LandingPage() {
           </div>
 
           {/* PART 2: FREQUENTLY ASKED QUESTIONS (FAQS) */}
-          <div id="faq" className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start pt-8 border-t border-stone-800/60">
+          <div id="faq" className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start pt-10 sm:pt-16 border-t border-stone-800/60">
             {/* Left: Heading & Accordion List */}
-            <div className="lg:col-span-7 space-y-8">
+            <div className="lg:col-span-7 space-y-5 sm:space-y-6">
               <div>
                 <h2
-                  className="text-4xl sm:text-5xl lg:text-6xl text-stone-100 leading-[1.08] tracking-tight mb-3"
+                  className="text-2.5xl sm:text-4xl lg:text-[42px] xl:text-[46px] text-stone-100 leading-[1.14] tracking-tight mb-2"
                   style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
                 >
                   {isEn ? (
@@ -1564,7 +1315,7 @@ export default function LandingPage() {
                     </>
                   )}
                 </h2>
-                <p className="text-xs sm:text-sm text-stone-400 font-light tracking-wide max-w-xl">
+                <p className="text-xs sm:text-[13.5px] text-stone-400 font-light tracking-wide max-w-xl">
                   {isEn
                     ? "Escape the Ordinary. Indulge in Ultimate Relaxation, Anytime, Anywhere."
                     : "Lepaskan Kepenatan. Nikmati Relaksasi Mewah Kapan Saja, di Mana Saja."}
@@ -1572,20 +1323,20 @@ export default function LandingPage() {
               </div>
 
               {/* Clean Luxury Accordion */}
-              <div className="space-y-4 pt-2">
+              <div className="space-y-3 pt-1">
                 {FAQ_ITEMS.map((item, idx) => {
                   const isOpen = openFaqIndex === idx;
                   return (
                     <div
                       key={idx}
-                      className="border-b border-stone-800/80 pb-4 transition-colors"
+                      className="border-b border-stone-800/80 pb-3 transition-colors"
                     >
                       <button
                         type="button"
                         onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                        className="w-full flex items-center justify-between text-left py-2 gap-4 group cursor-pointer"
+                        className="w-full flex items-center justify-between text-left py-2 gap-3 group cursor-pointer"
                       >
-                        <span className="text-sm sm:text-base font-medium text-stone-100 group-hover:text-[#eed7a1] transition-colors">
+                        <span className="text-[13px] sm:text-[14.5px] font-medium text-stone-100 group-hover:text-[#eed7a1] transition-colors">
                           {isEn ? item.q_en : item.q_id}
                         </span>
                         <span className="text-stone-400 shrink-0">
@@ -1598,7 +1349,7 @@ export default function LandingPage() {
                       </button>
 
                       {isOpen && (
-                        <div className="pt-2 pr-6 text-xs sm:text-[13px] text-stone-400 font-light leading-relaxed animate-in fade-in duration-300">
+                        <div className="pt-1.5 pb-1 pr-2 text-xs sm:text-[13px] text-stone-400 font-light leading-relaxed animate-in fade-in duration-300">
                           {isEn ? item.a_en : item.a_id}
                         </div>
                       )}
@@ -1608,12 +1359,12 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Right: Landscape Spa Oil Pouring Photo */}
-            <div className="lg:col-span-5 pt-4 lg:pt-8">
-              <div className="relative aspect-[16/10] overflow-hidden shadow-2xl bg-stone-900 border border-stone-800/80">
+            {/* Right: Faceless Relaxing Back Massage Photo */}
+            <div className="lg:col-span-5 pt-2 lg:pt-4">
+              <div className="relative aspect-[16/10] max-w-lg mx-auto lg:max-w-none overflow-hidden shadow-2xl bg-stone-900 border border-stone-800/80">
                 <img
-                  src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=80&w=1000"
-                  alt="Therapist pouring aromatic massage oil on client"
+                  src="/images/faq-back-massage.jpg"
+                  alt="Therapist performing authentic soothing back massage"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -1623,32 +1374,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 10. FINAL LUXURY BOOKING BANNER (COMPACT LUXURY GLASS CARD MATCHING REFERENCE) */}
-      <section className="relative py-14 sm:py-20 lg:py-24 overflow-hidden bg-[#18120f] border-t border-stone-800 text-center">
-        {/* Background Image with Dark Atmospheric Spa Warm Glow */}
-        <div className="absolute inset-0 pointer-events-none opacity-40">
+      {/* 10. FINAL LUXURY BOOKING BANNER (MATCHING REFERENCE SCREENSHOT) */}
+      <section className="relative py-14 sm:py-24 lg:py-28 overflow-hidden bg-[#18120f] border-t border-stone-800 flex items-center justify-center">
+        {/* Full-bleed Warm Spa Background Photo */}
+        <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&q=80&w=1600"
-            alt="Warm spa atmosphere with therapist and essential oils"
-            className="w-full h-full object-cover"
+            src="/images/reservation-back-massage.jpg"
+            alt="Relaxing luxury Balinese back massage experience with soothing oil and candles"
+            className="w-full h-full object-cover object-center"
           />
+          {/* Subtle warm translucent overlay */}
+          <div className="absolute inset-0 bg-black/30 sm:bg-black/25" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#18120f] via-[#18120f]/75 to-[#18120f]/90" />
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Framed Translucent Luxury Booking Card */}
-          <div className="max-w-3xl mx-auto rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border border-white/15 backdrop-blur-md">
+        <div className="relative z-10 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Translucent Luxury Booking Glass Card (No border, No rounded corners, Wider) */}
+          <div className="max-w-4xl mx-auto rounded-none overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md sm:backdrop-blur-lg">
             {/* Top Gold Header Strip */}
-            <div className="bg-[#eed7a1] text-[#241c17] py-2.5 sm:py-3 text-xs sm:text-[13px] font-medium tracking-wider uppercase text-center">
+            <div className="bg-[#eed8a1] text-[#241c17] py-2 sm:py-3 text-xs sm:text-[13px] font-medium tracking-[0.06em] uppercase text-center rounded-none">
               {isEn ? "Reservation" : "Reservasi"}
             </div>
 
             {/* Card Content Body */}
-            <div className="bg-stone-950/60 p-6 sm:p-10 text-stone-100 space-y-6 text-center">
+            <div className="bg-stone-950/45 sm:bg-stone-950/50 p-5 sm:p-11 lg:p-14 text-stone-100 flex flex-col items-center text-center">
               {/* Gallient Headline */}
               <h2
-                className="text-3xl sm:text-4xl lg:text-5xl text-stone-100 leading-[1.12] tracking-tight"
-                style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
+                className="text-2.5xl sm:text-4xl lg:text-[48px] text-white leading-[1.14] tracking-tight font-normal"
+                style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
               >
                 {isEn ? (
                   <>
@@ -1664,58 +1416,46 @@ export default function LandingPage() {
               </h2>
 
               {/* Subtitle */}
-              <p className="text-xs sm:text-sm text-stone-300 font-light tracking-wide max-w-lg mx-auto">
+              <p className="text-xs sm:text-[14px] text-stone-200/90 font-light tracking-wide mt-2.5 sm:mt-4 max-w-xl mx-auto">
                 {isEn
-                  ? "Escape. Relax. Rejuvenate. Anytime, Anywhere in Your City."
+                  ? `Escape. Relax. Rejuvenate. Anytime, Anywhere in ${settings.service_areas ? settings.service_areas.split(",")[0] : "Bali"}.`
                   : "Lepaskan Kepenatan. Nikmati Relaksasi Mewah Kapan Saja, di Mana Saja."}
               </p>
 
               {/* Mocha Fast Banner */}
-              <div className="pt-1">
-                <div className="bg-[#967259]/90 text-stone-100 py-2 px-6 rounded-none text-xs sm:text-[13px] font-normal inline-block max-w-md w-full sm:w-auto mx-auto shadow-sm">
+              <div className="mt-5 sm:mt-8">
+                <div className="bg-[#947864]/90 text-stone-100 py-1.5 sm:py-2.5 px-5 sm:px-12 rounded-none text-xs sm:text-[13px] font-normal inline-block shadow-sm">
                   {isEn ? "Easy Booking in Just Seconds" : "Pemesanan Mudah dalam Hitungan Detik"}
                 </div>
               </div>
 
-              {/* 3 Booking Channels Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-0 pt-2 items-center text-center">
-                {/* Channel 1: Call Us */}
-                <div className="space-y-1 pb-3 sm:pb-0 border-b sm:border-b-0 border-white/10">
-                  <span className="text-[10px] text-stone-400 uppercase tracking-wider block font-medium">
-                    {isEn ? "Call Us" : "Telepon"}
-                  </span>
-                  <a
-                    href={`tel:${cleanWhatsAppNumber(settings.phone_number || "6281234567890")}`}
-                    className="text-xs sm:text-sm text-stone-100 hover:text-amber-200 font-mono transition-colors block"
-                  >
-                    {settings.phone_number || "+62 812-XXXX-XXXX"}
-                  </a>
-                </div>
-
-                {/* Channel 2: WhatsApp */}
-                <div className="space-y-1 pb-3 sm:pb-0 border-b sm:border-b-0 sm:border-l border-white/15">
-                  <span className="text-[10px] text-stone-400 uppercase tracking-wider block font-medium">
+              {/* 2 Booking Channels Grid (WhatsApp & Online Booking) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-0 mt-6 sm:mt-9 w-full max-w-lg mx-auto items-center text-center">
+                {/* Channel 1: WhatsApp */}
+                <div className="space-y-1 pb-3 sm:pb-0 border-b sm:border-b-0 sm:border-r border-white/20 sm:pr-6">
+                  <span className="text-[10.5px] sm:text-[11px] text-stone-300 uppercase tracking-wider block font-light">
                     WhatsApp
                   </span>
                   <a
                     href={`https://wa.me/${cleanWhatsAppNumber(settings.whatsapp_number || "6281234567890")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs sm:text-sm text-stone-100 hover:text-amber-200 font-mono transition-colors block"
+                    className="text-xs sm:text-[14px] text-white hover:text-[#eed8a1] font-mono transition-colors block tracking-wide font-medium"
+                    suppressHydrationWarning
                   >
-                    {settings.whatsapp_number || "+62 812-XXXX-XXXX"}
+                    {formatDisplayPhone(settings.whatsapp_number)}
                   </a>
                 </div>
 
-                {/* Channel 3: Online Booking */}
-                <div className="space-y-1 sm:border-l border-white/15">
-                  <span className="text-[10px] text-stone-400 uppercase tracking-wider block font-medium">
+                {/* Channel 2: Online Booking */}
+                <div className="space-y-1 sm:pl-6">
+                  <span className="text-[10.5px] sm:text-[11px] text-stone-300 uppercase tracking-wider block font-light">
                     {isEn ? "Online Booking" : "Reservasi Online"}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleQuickBook()}
-                    className="text-xs sm:text-sm text-amber-200 hover:text-white font-medium underline underline-offset-4 cursor-pointer transition-colors block mx-auto"
+                    className="text-xs sm:text-[14px] text-white hover:text-[#eed8a1] font-medium underline underline-offset-4 cursor-pointer transition-colors block mx-auto"
                   >
                     {isEn ? "Book Now" : "Pesan Sekarang"}
                   </button>
@@ -1725,13 +1465,18 @@ export default function LandingPage() {
           </div>
 
           {/* Bottom Footnote underneath the card */}
-          <div className="pt-7 sm:pt-9 space-y-2 max-w-2xl mx-auto">
-            <span className="text-xs sm:text-sm font-medium text-[#eed7a1] block">
-              📍 {isEn ? "Serving All of Your City – Hotels, Private Residences & More" : "Melayani Seluruh Wilayah Kota – Hotel, Rumah Tinggal & Apartemen"}
+          <div className="mt-7 sm:mt-9 space-y-2 text-center max-w-2xl mx-auto px-4">
+            <span className="text-xs sm:text-[13.5px] font-medium text-[#eed8a1] flex items-center justify-center gap-1">
+              <span>📍</span>
+              <span>
+                {isEn
+                  ? `Serving All of ${settings.service_areas ? settings.service_areas.split(",")[0] : "Bali"} – Hotels, Private Residences & More`
+                  : "Melayani Seluruh Wilayah Kota – Hotel, Rumah Tinggal & Apartemen"}
+              </span>
             </span>
-            <p className="text-xs sm:text-sm text-stone-300 font-light leading-relaxed">
+            <p className="text-xs sm:text-[13px] text-stone-200/90 font-light leading-relaxed">
               {isEn
-                ? "Indulge in the finest Thai massage experience without leaving your space. Book now and transform your surroundings into a sanctuary of relaxation."
+                ? "Indulge in the finest authentic spa massage experience without leaving your space. Book now and transform your surroundings into a sanctuary of relaxation."
                 : "Nikmati pengalaman pijat tradisional terbaik tanpa perlu meninggalkan kenyamanan ruangan Anda. Pesan sekarang dan ubah ruangan Anda menjadi tempat peristirahatan yang damai."}
             </p>
           </div>
@@ -1758,10 +1503,10 @@ export default function LandingPage() {
             <div className="flex items-center justify-center gap-2 text-stone-600 font-mono text-xs sm:text-[13px]" suppressHydrationWarning>
               <Phone className="w-3.5 h-3.5 text-stone-500 shrink-0" />
               <a
-                href={`tel:${cleanWhatsAppNumber(settings.phone_number || "6281234567890")}`}
+                href={`tel:${cleanWhatsAppNumber(settings.phone_number || settings.whatsapp_number || "6281234567890")}`}
                 className="hover:text-stone-900 transition-colors"
               >
-                {settings.phone_number || "+62 812-XXXX-XXXX"}
+                {formatDisplayPhone(settings.phone_number || settings.whatsapp_number)}
               </a>
             </div>
 

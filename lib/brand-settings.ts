@@ -73,15 +73,21 @@ export function cleanWhatsAppNumber(phone?: string): string {
  * Formats a phone number for display (e.g. +62 812-3456-7890)
  */
 export function formatDisplayPhone(phone?: string): string {
+  if (!phone) return "+62 812-3456-7890";
   const cleaned = cleanWhatsAppNumber(phone);
   if (cleaned.startsWith("62")) {
     const rest = cleaned.slice(2);
     if (rest.length >= 8) {
+      if (rest.length === 11) {
+        return `+62 ${rest.slice(0, 3)}-${rest.slice(3, 7)}-${rest.slice(7)}`;
+      } else if (rest.length === 10) {
+        return `+62 ${rest.slice(0, 3)}-${rest.slice(3, 6)}-${rest.slice(6)}`;
+      }
       return `+62 ${rest.slice(0, 3)}-${rest.slice(3, 7)}-${rest.slice(7)}`;
     }
     return `+62 ${rest}`;
   }
-  return phone || "+62 812-3456-7890";
+  return phone.startsWith("+") ? phone : `+62 ${phone}`;
 }
 
 /**
@@ -153,12 +159,20 @@ export async function saveBrandSettings(
  * React Hook for consuming Brand Settings throughout the application
  */
 export function useBrandSettings() {
-  const [settings, setSettings] = useState<BrandSettings>(getCachedBrandSettings());
+  const [settings, setSettings] = useState<BrandSettings>(DEFAULT_BRAND_SETTINGS);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
 
-  // Load from Supabase on mount
+  // Load from localStorage and sync with Supabase on mount
   useEffect(() => {
     let mounted = true;
+    setIsMounted(true);
+
+    // Hydrate from localStorage on client mount
+    try {
+      const cached = getCachedBrandSettings();
+      setSettings(cached);
+    } catch (e) {}
 
     async function loadRemoteSettings() {
       try {
