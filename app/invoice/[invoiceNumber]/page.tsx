@@ -356,15 +356,11 @@ export default function PublicInvoicePage() {
 
           {/* WhatsApp Support Button */}
           <a
-            href={
-              mounted
-                ? adminWhatsAppUrl(
-                    isEn
-                      ? `Hello ${settings.brand_name || "Serena Raga"} Support, I have a question regarding invoice #${invoice?.invoice_number || ""}`
-                      : `Halo CS ${settings.brand_name || "Serena Raga"}, saya ingin bertanya mengenai nota #${invoice?.invoice_number || ""}`
-                  )
-                : "https://wa.me/6281234567890"
-            }
+            href={adminWhatsAppUrl(
+              isEn
+                ? `Hello ${settings.brand_name || "Serena Raga"} Support, I have a question regarding invoice #${invoice?.invoice_number || ""}`
+                : `Halo CS ${settings.brand_name || "Serena Raga"}, saya ingin bertanya mengenai nota #${invoice?.invoice_number || ""}`
+            )}
             target="_blank"
             rel="noopener noreferrer"
             suppressHydrationWarning

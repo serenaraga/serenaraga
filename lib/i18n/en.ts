@@ -270,6 +270,20 @@ export const englishMessages: TranslationMessages = {
         paid: "Transferred / Paid",
       },
     },
+    testimonials: {
+      name: "WhatsApp Testimonials |||| WhatsApp Testimonials",
+      fields: {
+        id: "ID",
+        customer_name: "Customer Name",
+        service_name: "Service Taken",
+        image_url: "WA Chat Screenshot",
+        caption: "Review Excerpt",
+        rating: "Rating",
+        is_active: "Display Status",
+        sort_order: "Sort Order",
+        created_at: "Added Date",
+      },
+    },
     settings: {
       name: "Settings |||| Settings",
     },

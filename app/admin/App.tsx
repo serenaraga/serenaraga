@@ -12,6 +12,12 @@ import { ConsumableList, ConsumableEdit, ConsumableCreate, ConsumableShow } from
 import { TherapistList, TherapistEdit, TherapistCreate, TherapistShow } from "./therapists";
 import { CustomerList, CustomerEdit, CustomerCreate, CustomerShow } from "./customers";
 import { ReviewList, ReviewEdit, ReviewCreate, ReviewShow } from "./reviews";
+import {
+  TestimonialList,
+  TestimonialEdit,
+  TestimonialCreate,
+  TestimonialShow,
+} from "./testimonials";
 import { InvoiceList, InvoiceCreate, InvoiceShow } from "./invoices";
 import { PayoutCreate, PayoutShow } from "./payouts";
 import { BrandSettingsPage } from "./settings";
@@ -26,6 +32,7 @@ import {
   Wallet,
   SlidersHorizontal,
   UserCog,
+  MessageSquareQuote,
 } from "lucide-react";
 
 const App = () => (
@@ -125,6 +132,18 @@ const App = () => (
             show={ReviewShow}
             recordRepresentation="id"
             icon={Star}
+          />
+        ) : null,
+        isAdmin ? (
+          <Resource
+            key="testimonials"
+            name="testimonials"
+            list={TestimonialList}
+            edit={TestimonialEdit}
+            create={TestimonialCreate}
+            show={TestimonialShow}
+            recordRepresentation="customer_name"
+            icon={MessageSquareQuote}
           />
         ) : null,
         isAdmin ? (

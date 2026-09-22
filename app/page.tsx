@@ -3,8 +3,17 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "motion/react";
 import { BrandLogo } from "@/components/brand-logo";
-import { useBrandSettings, cleanWhatsAppNumber, formatDisplayPhone } from "@/lib/brand-settings";
+import {
+  useBrandSettings,
+  cleanWhatsAppNumber,
+  formatDisplayPhone,
+  getInstagramUrl,
+  getTikTokUrl,
+  getFacebookUrl,
+  getThreadsUrl,
+} from "@/lib/brand-settings";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +52,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sparkles,
   ShieldCheck,
   Clock,
@@ -60,6 +75,10 @@ import {
   Plus,
   Minus,
   Globe,
+  Eye,
+  MessageSquareQuote,
+  ImageIcon,
+  ZoomIn,
   Award,
   HeartHandshake,
   Droplets,
@@ -256,95 +275,60 @@ const DEFAULT_SERVICES = [
   },
 ];
 
-// Curated verified testimonials matching editorial design
-const TESTIMONIALS = [
-  {
-    name: "David K.",
-    role_en: "Business Traveler",
-    role_id: "Wisatawan Bisnis",
-    text_en:
-      "Escape's at-home massage service is a game-changer. The therapist was incredibly skilled, professional, and created a spa-like atmosphere right in my hotel room. I felt completely refreshed and renewed.",
-    text_id:
-      "Layanan pijat panggilan Serena Raga benar-benar luar biasa. Terapisnya sangat terampil, profesional, dan menciptakan suasana spa mewah di kamar hotel saya. Tubuh terasa segar dan bugar kembali.",
-    image:
-      "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&q=80&w=1200",
-  },
-  {
-    name: "Clarissa Wijaya",
-    role_en: "Executive Resident",
-    role_id: "Eksekutif & Residen",
-    text_en:
-      "The therapist was exceptionally professional, punctual, and brought clean sanitized linens. The lavender aromatherapy was divine and non-greasy. Truly feels like bringing a 5-star luxury hotel spa directly into my bedroom.",
-    text_id:
-      "Terapisnya sangat profesional, datang tepat waktu dengan seragam rapi dan perlengkapan higienis. Minyak aromaterapi lavender-nya sangat wangi dan menenangkan. Benar-benar serasa membawa spa hotel bintang lima ke rumah.",
-    image:
-      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=1200",
-  },
-  {
-    name: "Dr. Hendra Gunawan",
-    role_en: "Medical Specialist",
-    role_id: "Dokter Spesialis",
-    text_en:
-      "After grueling surgical hours, the Deep Tissue massage completely melted away all my shoulder and back tension. Incredibly convenient with zero traffic hassle.",
-    text_id:
-      "Setelah jadwal operasi yang padat, pijatan Deep Tissue dari Serena Raga benar-benar melegakan ketegangan leher dan punggung saya. Sangat praktis tanpa perlu macet-macetan di jalan.",
-    image:
-      "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=1200",
-  },
-  {
-    name: "Nadira Salsabila",
-    role_en: "Loyal Wellness Client",
-    role_id: "Pelanggan Setia",
-    text_en:
-      "The digital invoice and booking process were seamless and transparent. The female therapist was polite, respectful, and master of acupressure techniques. Definitely our family's weekly routine.",
-    text_id:
-      "Nota digital dan proses pemesanannya sangat rapi dan transparan. Terapis wanita yang bertugas sangat santun dan paham betul teknik totok relaksasi. Pasti jadi langganan mingguan keluarga kami.",
-    image:
-      "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1200",
-  },
-];
+// Interface for Dynamic Authentic WhatsApp Testimonials
+export interface TestimonialItem {
+  id: number;
+  customer_name?: string;
+  service_name?: string;
+  image_url: string;
+  caption?: string;
+  rating?: number;
+  is_active?: boolean;
+  sort_order?: number;
+  created_at?: string;
+}
 
 // Curated FAQ Items
 const FAQ_ITEMS = [
   {
-    q_en: "How far in advance should I book?",
-    q_id: "Berapa lama waktu pemesanan sebelum terapis tiba?",
+    q_en: "Do therapists bring their own equipment?",
+    q_id: "Apakah terapis membawa perlengkapan sendiri?",
     a_en:
-      "We recommend booking at least 2 hours in advance, but last-minute bookings are available depending on therapist availability.",
+      "Yes, our therapists come fully equipped with specialized aromatherapy oils, clean linens/mats, and standard relaxation equipment. You only need to provide a comfortable space at home.",
     a_id:
-      "Kami sarankan memesan setidaknya 1-2 jam sebelumnya agar terapis dapat mempersiapkan perlengkapan steril dan tiba tepat waktu. Pesanan mendesak (last-minute) tetap dilayani selama slot terapis tersedia.",
+      "Ya, terapis kami telah dibekali dengan minyak pijat aromaterapi khusus, kain/alas bersih, dan perlengkapan relaksasi standar. Anda cukup menyiapkan tempat yang nyaman di rumah.",
   },
   {
-    q_en: "Do I need to prepare anything for the massage?",
-    q_id: "Apa saja yang perlu saya siapkan di rumah atau hotel?",
+    q_en: "Can female clients request a female therapist?",
+    q_id: "Apakah bisa pilih terapis wanita untuk pelanggan wanita?",
     a_en:
-      "You don't need to prepare anything! Our professional therapist arrives fully equipped with a portable sanitized mattress, fresh sealed linens, organic essential oils, and soothing ambient music.",
+      "Absolutely. Your comfort and peace of mind are our priority. By default, female clients will be serviced by female therapists. Please specify your preference when booking.",
     a_id:
-      "Anda tidak perlu menyiapkan apa pun! Terapis Serena Raga membawa seluruh perlengkapan lengkap: matras busa empuk portabel, sprei & handuk higienis bersegel, minyak aromaterapi organik, hingga musik relaksasi.",
+      "Tentu. Kenyamanan Anda adalah prioritas kami. Secara default, pelanggan wanita akan dilayani oleh terapis wanita. Mohon tuliskan preferensi Anda saat mengisi form booking.",
   },
   {
-    q_en: "What massage styles do you offer?",
-    q_id: "Layanan dan teknik pijat apa saja yang tersedia?",
+    q_en: "What is the latest time to book (Last order)?",
+    q_id: "Sampai jam berapa maksimal pemesanan (Last order)?",
     a_en:
-      "We specialize in Traditional Balinese Massage, Deep Tissue Acupressure, Aromatherapy Relaxation, Royal Body Scrub & Lulur, Foot Reflexology, and gentle Prenatal Massage.",
+      "Our services operate daily from 08:00 AM to 10:00 PM WIB. We recommend booking by 08:00 PM WIB at the latest to ensure therapist availability.",
     a_id:
-      "Kami menyediakan Pijat Tradisional Bali, Deep Tissue & Totok Akupresur, Relaksasi Aromaterapi, Lulur & Body Scrub Keraton, Refleksi Kaki, serta Pijat Lembut Ibu Hamil (Prenatal).",
+      "Layanan kami beroperasi dari jam 08.00 hingga 22.00 WIB. Disarankan melakukan pemesanan (booking) maksimal pukul 20.00 WIB untuk memastikan ketersediaan terapis.",
   },
   {
-    q_en: "Is tipping expected?",
-    q_id: "Apakah ada kewajiban memberikan tip kepada terapis?",
+    q_en: "How does payment work at SerenaRaga?",
+    q_id: "Bagaimana sistem pembayaran di SerenaRaga?",
     a_en:
-      "Tipping is completely optional and at your discretion. All our package prices are transparent and all-inclusive with zero hidden travel fees.",
+      "Payment can be made once the therapist arrives at your location or after the session ends. We accept Bank Transfer, QRIS, and Cash.",
     a_id:
-      "Pemberian tip bersifat sepenuhnya sukarela dan tidak wajib. Seluruh tarif layanan yang tercantum sudah bersifat all-inclusive tanpa biaya tersembunyi.",
+      "Pembayaran dapat dilakukan setelah terapis tiba di lokasi atau setelah sesi selesai. Kami menerima pembayaran via Transfer Bank, QRIS, maupun Tunai.",
   },
   {
-    q_en: "Are your therapists certified and vetted?",
-    q_id: "Apakah terapis Serena Raga wanita dan bersertifikasi?",
+    q_en: "Is there an additional transport fee?",
+    q_id: "Apakah ada biaya transport tambahan?",
     a_en:
-      "Yes, 100% of our therapists are certified female practitioners who undergo strict background screening, health checks, and standardized spa hospitality training.",
+      "We provide free transport within designated zones in Yogyakarta. For outer areas in Sleman and Bantul, a modest and affordable transport adjustment applies. Feel free to share your location on WhatsApp to confirm.",
     a_id:
-      "Ya, 100% terapis kami adalah wanita profesional yang telah melalui verifikasi identitas ketat, uji kesehatan, serta sertifikasi keahlian terstandar hotel bintang lima.",
+      "Kami memberikan gratis biaya transport (ongkir) untuk radius tertentu di wilayah Jogja. Untuk area Sleman dan Bantul yang lebih jauh, akan ada sedikit penyesuaian biaya transport yang sangat terjangkau. Silakan share loc ke WA kami untuk memastikan.",
   },
 ];
 
@@ -445,11 +429,40 @@ export default function LandingPage() {
       : `Halo CS ${settings.brand_name || "Serena Raga"}, saya ingin memesan layanan pijat ke rumah:\n\n✨ Layanan: *${targetService}*\n📅 Tanggal: *${dateStr}*\n⏰ Jam: *${selectedTimeSlot} WIB*\n\nMohon info ketersediaan terapis dan konfirmasi pesanannya. Terima kasih!`;
 
     const cleanNumber = cleanWhatsAppNumber(settings.whatsapp_number);
-    const url = cleanNumber
-      ? `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`
-      : `https://wa.me/6281234567890?text=${encodeURIComponent(message)}`;
+    const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
 
     window.open(url, "_blank");
+  };
+
+  // Smooth scroll helper for section navigation
+  const handleNavScroll = (e: React.MouseEvent<HTMLElement>, href: string) => {
+    e.preventDefault();
+    if (href === "#") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const targetId = href.replace(/^#/, "");
+    const targetEl = document.getElementById(targetId);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // Mobile navigation click helper that closes drawer before scrolling
+  const handleMobileNavClick = (e: React.MouseEvent<HTMLElement>, href: string) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    setTimeout(() => {
+      if (href === "#") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      const targetId = href.replace(/^#/, "");
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 150);
   };
 
   const handleInvoiceLookup = (e: React.FormEvent) => {
@@ -460,17 +473,6 @@ export default function LandingPage() {
     }
     const cleanInv = invoiceLookupNumber.trim().replace(/^#/, "");
     window.location.href = `/invoice/${cleanInv}`;
-  };
-
-  const [newsletterEmail, setNewsletterEmail] = React.useState("");
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail.trim()) {
-      toast.error(isEn ? "Please enter your email" : "Masukkan alamat email Anda");
-      return;
-    }
-    toast.success(isEn ? "Thank you for subscribing to Serena Raga newsletter!" : "Terima kasih telah berlangganan newsletter Serena Raga!");
-    setNewsletterEmail("");
   };
 
   const [promoVisible, setPromoVisible] = React.useState(true);
@@ -536,17 +538,126 @@ export default function LandingPage() {
 
   const currentBenefit = benefitsData[activeBenefitIndex];
 
-  // Testimonials Carousel & FAQ accordion state
+  // Dynamic Testimonials from Supabase
+  const [testimonials, setTestimonials] = React.useState<TestimonialItem[]>([]);
+  const [isLoadingTestimonials, setIsLoadingTestimonials] = React.useState(true);
   const [activeTestimonialIndex, setActiveTestimonialIndex] = React.useState(0);
   const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(0);
 
-  const nextTestimonial = () => {
-    setActiveTestimonialIndex((prev) => (prev + 1) % TESTIMONIALS.length);
+  React.useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("testimonials")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .order("id", { ascending: false });
+
+        if (!error && data) {
+          setTestimonials(data);
+        }
+      } catch (err) {
+        console.warn("Failed to load testimonials from Supabase:", err);
+      } finally {
+        setIsLoadingTestimonials(false);
+      }
+    };
+
+    fetchTestimonials();
+
+    const channel = supabase
+      .channel("testimonials_realtime_landing")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "testimonials" },
+        () => {
+          fetchTestimonials();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const [activeTestimonialPage, setActiveTestimonialPage] = React.useState(0);
+
+  const displayTestimonials = React.useMemo(() => {
+    if (testimonials.length === 0) return [];
+    if (testimonials.length === 1) return testimonials.map((t, idx) => ({ ...t, _key: `${t.id}-${idx}` }));
+    if (testimonials.length === 2) {
+      return [
+        { ...testimonials[0], _key: `${testimonials[0].id}-0` },
+        { ...testimonials[1], _key: `${testimonials[1].id}-1` },
+        { ...testimonials[0], _key: `${testimonials[0].id}-2` },
+        { ...testimonials[1], _key: `${testimonials[1].id}-3` },
+      ];
+    }
+    return testimonials.map((t, idx) => ({ ...t, _key: `${t.id}-${idx}` }));
+  }, [testimonials]);
+
+  const paginateTestimonial = React.useCallback(
+    (newDirection: number) => {
+      if (testimonials.length <= 1) return;
+      setActiveTestimonialPage((prev) => prev + newDirection);
+    },
+    [testimonials.length]
+  );
+
+  const lastWheelTriggerRef = React.useRef<number>(0);
+  const handleTestimonialWheel = React.useCallback(
+    (e: React.WheelEvent<HTMLDivElement>) => {
+      if (testimonials.length <= 1) return;
+      const now = Date.now();
+      if (now - lastWheelTriggerRef.current < 420) return;
+
+      const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+      if (Math.abs(delta) > 15) {
+        if (delta > 0) {
+          // Scroll down / swipe right -> Next
+          paginateTestimonial(1);
+          lastWheelTriggerRef.current = now;
+        } else if (delta < 0) {
+          // Scroll up / swipe left -> Previous
+          paginateTestimonial(-1);
+          lastWheelTriggerRef.current = now;
+        }
+      }
+    },
+    [testimonials.length, paginateTestimonial]
+  );
+
+  // Webpage scroll trigger: as the user scrolls down/up the webpage past the testimonials section
+  const testimonialSectionRef = React.useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: testimonialSectionRef,
+    offset: ["start 85%", "end 15%"],
+  });
+
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    if (testimonials.length <= 1) return;
+    const count = testimonials.length;
+    const targetIdx = Math.min(count - 1, Math.max(0, Math.floor(latest * count)));
+    setActiveTestimonialPage((prev) => {
+      const curIdx = ((prev % count) + count) % count;
+      if (curIdx !== targetIdx) {
+        return targetIdx;
+      }
+      return prev;
+    });
+  });
+
+  const getTestimonialDistance = (index: number, page: number, total: number) => {
+    if (total <= 1) return 0;
+    const currentIdx = ((page % total) + total) % total;
+    let diff = index - currentIdx;
+    if (diff > total / 2) diff -= total;
+    if (diff < -total / 2) diff += total;
+    return diff;
   };
-  const prevTestimonial = () => {
-    setActiveTestimonialIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
-  };
-  const currentTestimonial = TESTIMONIALS[activeTestimonialIndex];
+
   const currentServiceObj = services.find((s) => s.name === selectedService) || services[0];
   const currentPriceFormatted = currentServiceObj ? formatRupiah(currentServiceObj.price) : "Rp 185.000";
 
@@ -572,21 +683,20 @@ export default function LandingPage() {
           {/* Right: Desktop Horizontal Links in Thin Minimalist Elegant Typography */}
           <nav className="hidden xl:flex items-center gap-6 lg:gap-7.5">
             {[
-              { href: "#", label: "Home", active: true },
+              { href: "#", label: isEn ? "Home" : "Beranda", active: true },
               { href: "#about", label: isEn ? "About Us" : "Tentang Kami" },
-              { href: "#services", label: isEn ? "Wellness Treatments" : "Layanan Wellness" },
-              { href: "#services", label: isEn ? "Mix Body Treatments" : "Layanan Kombinasi" },
-              { href: "#benefits", label: isEn ? "Service Areas" : "Area Layanan" },
+              { href: "#services", label: isEn ? "Services" : "Layanan" },
+              { href: "#benefits", label: isEn ? "Why Choose Us" : "Keunggulan" },
               { href: "#testimonials", label: isEn ? "Testimonials" : "Testimoni" },
-              { href: "#faq", label: isEn ? "Articles" : "Artikel" },
-              { href: "#gallery", label: isEn ? "Gallery" : "Galeri" },
-              { href: "#book-now", label: isEn ? "Contact" : "Kontak" },
+              { href: "#faq", label: isEn ? "FAQ" : "FAQ" },
+              { href: "#reservation", label: isEn ? "Reservation" : "Reservasi" },
             ].map((item) => (
               <a
                 key={item.label}
                 href={item.href}
+                onClick={(e) => handleNavScroll(e, item.href)}
                 className={cn(
-                  "text-[13px] lg:text-[13.5px] tracking-[0.03em] transition-colors duration-200 font-sans",
+                  "text-[13px] lg:text-[13.5px] tracking-[0.03em] transition-colors duration-200 font-sans cursor-pointer",
                   item.active
                     ? "text-[#9a6a43] font-medium"
                     : "text-stone-600 hover:text-stone-950 font-[350]"
@@ -661,22 +771,20 @@ export default function LandingPage() {
                   </SheetHeader>
                   <nav className="flex flex-col py-2">
                     {[
-                      { href: "#", label: "Home", active: true },
+                      { href: "#", label: isEn ? "Home" : "Beranda", active: true },
                       { href: "#about", label: isEn ? "About Us" : "Tentang Kami" },
-                      { href: "#services", label: isEn ? "Wellness Treatments" : "Layanan Wellness" },
-                      { href: "#services", label: isEn ? "Mix Body Treatments" : "Layanan Kombinasi" },
-                      { href: "#benefits", label: isEn ? "Service Areas" : "Area Layanan" },
+                      { href: "#services", label: isEn ? "Services" : "Layanan" },
+                      { href: "#benefits", label: isEn ? "Why Choose Us" : "Keunggulan" },
                       { href: "#testimonials", label: isEn ? "Testimonials" : "Testimoni" },
-                      { href: "#faq", label: isEn ? "Articles & FAQ" : "Artikel & FAQ" },
-                      { href: "#gallery", label: isEn ? "Gallery" : "Galeri" },
-                      { href: "#book-now", label: isEn ? "Contact & Booking" : "Kontak & Pemesanan" },
+                      { href: "#faq", label: isEn ? "FAQ" : "FAQ" },
+                      { href: "#reservation", label: isEn ? "Reservation" : "Reservasi" },
                     ].map((item) => (
                       <a
                         key={item.label}
                         href={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
+                        onClick={(e) => handleMobileNavClick(e, item.href)}
                         className={cn(
-                          "text-[14px] sm:text-[14.5px] font-sans tracking-[0.03em] py-2.5 px-1 border-b border-[#f0ece4] transition-colors flex items-center justify-between group",
+                          "text-[14px] sm:text-[14.5px] font-sans tracking-[0.03em] py-2.5 px-1 border-b border-[#f0ece4] transition-colors flex items-center justify-between group cursor-pointer",
                           item.active
                             ? "text-[#9a6a43] font-medium"
                             : "text-[#3c342f] hover:text-[#9a6a43] font-[350]"
@@ -771,31 +879,25 @@ export default function LandingPage() {
           {/* Subtitle */}
           <p className="text-xs sm:text-base md:text-lg text-white/95 font-light tracking-wide mt-3 sm:mt-4 max-w-xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] px-2">
             {isEn
-              ? "Professional spa care, wherever you stay."
-              : "Layanan spa profesional, di mana pun Anda menginap."}
+              ? "Relaxing massage to your doorstep."
+              : "Pijat relaksasi ke rumah anda."}
           </p>
 
-          {/* 24 hours online booking outlined button */}
+          {/* Book Now outlined button */}
           <a
-            href="#services"
-            onClick={(e) => {
-              const el = document.getElementById("services");
-              if (el) {
-                e.preventDefault();
-                el.scrollIntoView({ behavior: "smooth" });
-              }
-            }}
-            className="mt-6 sm:mt-8 inline-flex items-center justify-center px-6 sm:px-10 py-3 sm:py-3.5 border border-white/85 hover:border-white hover:bg-white/10 text-white text-xs sm:text-[13px] tracking-[0.14em] sm:tracking-[0.18em] font-normal transition-all duration-300 backdrop-blur-[2px] cursor-pointer"
+            href="#reservation"
+            onClick={(e) => handleNavScroll(e, "#reservation")}
+            className="mt-6 sm:mt-8 inline-flex items-center justify-center px-8 sm:px-12 py-3 sm:py-3.5 border border-white/85 hover:border-white hover:bg-white/10 text-white text-xs sm:text-[13px] tracking-[0.16em] sm:tracking-[0.20em] uppercase font-normal transition-all duration-300 backdrop-blur-[2px] cursor-pointer"
           >
             <span>
-              {isEn ? "24 hours online booking" : "Pemesanan online 24 jam"}
+              {isEn ? "Book Now" : "Pesan Sekarang"}
             </span>
           </a>
         </div>
       </section>
 
       {/* 3. ABOUT / NARRATIVE SECTION (Matching Reference Screenshot) */}
-      <section id="about" className="py-14 sm:py-28 lg:py-36 bg-[#f6f3ee] text-stone-900 relative overflow-hidden">
+      <section id="about" className="scroll-mt-16 sm:scroll-mt-20 md:scroll-mt-24 py-14 sm:py-28 lg:py-36 bg-[#f6f3ee] text-stone-900 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 xl:gap-16 items-center">
             
@@ -834,22 +936,22 @@ export default function LandingPage() {
               <h3 className="font-serif text-[#2b2420] text-base sm:text-xl lg:text-[22px] font-normal leading-snug mt-2.5 sm:mt-4">
                 {isEn ? (
                   <>
-                    Experience Authentic Balinese Wellness,<br className="hidden sm:inline" />
-                    {" "}Thoughtfully Brought to Your Villa or Resort
+                    SerenaRaga delivers comfortable and personalized massage<br className="hidden sm:inline" />
+                    {" "}services in the comfort of your home
                   </>
                 ) : (
                   <>
-                    Rasakan Ketenangan Tradisi Spa Bali Otentik,<br className="hidden sm:inline" />
-                    {" "}Dihadirkan Eksklusif ke Villa atau Hotel Anda
+                    SerenaRaga menghadirkan layanan pijat panggilan yang nyaman<br className="hidden sm:inline" />
+                    {" "}dan personal langsung ke hunian Anda
                   </>
                 )}
               </h3>
 
-              {/* Body Paragraph */}
+              {/* Seamless Seren & Raga Philosophy Narrative */}
               <p className="text-[#685f58] text-[14px] sm:text-[15px] leading-relaxed font-sans font-[350] mt-5 sm:mt-6">
                 {isEn
-                  ? "At So Bali SPA, we believe true wellness begins with balance, tranquility, and authentic care. Inspired by the timeless traditions of Balinese healing, we bring professional wellness treatments to your villa or resort, allowing you to experience genuine Balinese wellness in the comfort, privacy, and serenity of your surroundings."
-                  : "Di Serena Raga, kami meyakini bahwa ketenangan sejati berawal dari keseimbangan tubuh, ketenteraman jiwa, dan sentuhan otentik. Terinspirasi oleh kearifan tradisi penyembuhan Bali yang melegenda, kami menghadirkan layanan spa profesional langsung ke villa atau hotel pilihan Anda—menghadirkan relaksasi sejati dalam kenyamanan, privasi, dan kedamaian ruang Anda."}
+                  ? "Seren embodies the art of resting, where true peace begins at home. We bring the tranquility and harmony of professional massage directly into your private sanctuary without you needing to step outside. Your body is the home of your life; through the skilled touch of certified therapists who understand every point of fatigue, we restore your physical vitality and holistic wellbeing."
+                  : "Seren memiliki arti istirahat, di mana istirahat sejati selalu bermula dari rumah. Kami membawa ketenangan dan keharmonisan pijat langsung ke ruang paling sakral bagi Anda tanpa perlu melangkah keluar. Tubuh adalah rumah bagi hidup Anda; dengan sentuhan terapis profesional yang memahami setiap titik lelah, kami memulihkan vitalitas dan harmoni fisik Anda secara menyeluruh."}
               </p>
 
               {/* Read More Link */}
@@ -892,11 +994,11 @@ export default function LandingPage() {
             </div>
 
             {/* Right: Subtitle Description */}
-            <div className="md:max-w-xs lg:max-w-sm">
-              <p className="text-[#4a423d] text-[13.5px] sm:text-[15px] leading-relaxed font-sans font-[350]">
+            <div className="md:max-w-sm lg:max-w-md">
+              <p className="text-[#4a423d] text-[13.5px] sm:text-[14.5px] leading-relaxed font-sans font-[350]">
                 {isEn
-                  ? "Authentic Balinese wellness treatments designed for relaxation, renewal, and complete wellbeing."
-                  : "Layanan perawatan spa Bali otentik yang dirancang khusus untuk relaksasi, pemulihan energi, dan kesehatan menyeluruh."}
+                  ? "SerenaRaga was born to restore the timeless harmony between body and soul. We believe the finest self-care unfolds within your most intimate sanctuary—your own home."
+                  : "SerenaRaga terlahir untuk menghidupkan kembali harmoni antara tubuh dan jiwa. Kami percaya bahwa pemulihan diri terbaik selalu bermula dari ruang privat yang paling nyaman—rumah Anda sendiri."}
               </p>
             </div>
           </div>
@@ -913,7 +1015,7 @@ export default function LandingPage() {
       </section>
 
       {/* 5. UNIFIED SECTION: OUR SERVICES & WHY CHOOSE US (MATCHING REFERENCE SCREENSHOT) */}
-      <section id="services" className="py-14 sm:py-28 lg:py-32 bg-[#f6f3ee] text-stone-900 overflow-hidden">
+      <section id="services" className="scroll-mt-16 sm:scroll-mt-20 md:scroll-mt-24 py-14 sm:py-28 lg:py-32 bg-[#f6f3ee] text-stone-900 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
           
           {/* PART 1: OUR SERVICES */}
@@ -930,13 +1032,13 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
             {[
               {
-                id: "balinese",
-                title: "Balinese",
-                titleId: "Pijat Bali",
+                id: "traditional",
+                title: "Traditional",
+                titleId: "Pijat Tradisional",
                 tagline: "Authentic Relaxation",
                 taglineId: "Relaksasi Otentik",
                 image: "/images/service-balinese.jpg",
-                alt: "Traditional Balinese Massage",
+                alt: "Traditional Massage Treatment",
               },
               {
                 id: "foot",
@@ -1010,7 +1112,7 @@ export default function LandingPage() {
           </div>
 
           {/* PART 2: WHY CHOOSE US ? */}
-          <div id="benefits" className="mt-14 sm:mt-28 lg:mt-32 pt-12 sm:pt-20 border-t border-stone-300/60 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 xl:gap-16 items-start">
+          <div id="benefits" className="scroll-mt-16 sm:scroll-mt-20 md:scroll-mt-24 mt-14 sm:mt-28 lg:mt-32 pt-12 sm:pt-20 border-t border-stone-300/60 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 xl:gap-16 items-start">
             {/* Left Column: Heading */}
             <div className="lg:col-span-4 xl:col-span-4 lg:sticky lg:top-28">
               <h3
@@ -1035,40 +1137,40 @@ export default function LandingPage() {
             <div className="lg:col-span-8 xl:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10 lg:gap-x-12 lg:gap-y-12">
               {[
                 {
-                  titleEn: "Authentic Balinese Wellness Traditions",
-                  titleId: "Tradisi Spa Bali Otentik",
-                  descEn: "Inspired by timeless Balinese spa traditions and rituals.",
-                  descId: "Terinspirasi oleh tradisi penyembuhan dan ritual spa Bali yang melegenda.",
+                  titleEn: "Skilled Therapists",
+                  titleId: "Terapis Terampil",
+                  descEn: "All our therapists are professionally trained and certified to premium spa standards.",
+                  descId: "Seluruh terapis kami terlatih profesional dan setara standar spa premium.",
                 },
                 {
-                  titleEn: "Premium Natural Oils and Wellness Products",
-                  titleId: "Minyak Alami & Produk Herbal Premium",
-                  descEn: "Quality natural oils and selected products enhance every treatment.",
-                  descId: "Minyak esensial murni organik dan produk pilihan terbaik untuk kenyamanan tubuh.",
+                  titleEn: "Guaranteed Privacy",
+                  titleId: "Privasi Terjaga",
+                  descEn: "Enjoy a relaxing massage in your own private sanctuary without interacting with others.",
+                  descId: "Nikmati pijat relaksasi di ruang aman tanpa berinteraksi dengan pelanggan lain.",
                 },
                 {
-                  titleEn: "Professional Wellness Treatments at Your Villa or Resort",
-                  titleId: "Layanan Spa Profesional di Villa atau Hotel Anda",
-                  descEn: "Enjoy professional spa treatments in the comfort of your accommodation.",
-                  descId: "Nikmati perawatan spa profesional langsung dalam kenyamanan dan privasi tempat Anda menginap.",
+                  titleEn: "Time Saving",
+                  titleId: "Hemat Waktu",
+                  descEn: "Free from traffic and queues. Let our professional therapist come directly to you.",
+                  descId: "Bebas macet dan antre. Biar terapis kami yang datang ke lokasi Anda.",
                 },
                 {
-                  titleEn: "Personalized Treatments Tailored to Your Individual Needs",
-                  titleId: "Perawatan Fleksibel Sesuai Kebutuhan Tubuh",
-                  descEn: "Every treatment is adapted to your preferences, comfort, and needs.",
-                  descId: "Tekanan dan fokus pemijatan disesuaikan penuh dengan kenyamanan tubuh Anda.",
+                  titleEn: "Hygienic Equipment",
+                  titleId: "Alat Higienis",
+                  descEn: "Massage linens, mats, and aromatherapy oils are always fresh, sanitized, and pristine.",
+                  descId: "Alas pijat dan minyak aromaterapi selalu bersih, wangi, dan disanitasi.",
                 },
                 {
-                  titleEn: "Respectful, Discreet, and Professional Therapists",
-                  titleId: "Terapis Ramah, Bersertifikat & Menjaga Privasi",
-                  descEn: "Our therapists provide skilled, respectful, and attentive service.",
-                  descId: "Terapis kami bersertifikasi resmi, santun, terampil, dan melayani dengan sepenuh hati.",
+                  titleEn: "Transparent Pricing",
+                  titleId: "Harga Transparan",
+                  descEn: "Honest all-inclusive rates with no hidden fees.",
+                  descId: "Tidak ada biaya tersembunyi.",
                 },
                 {
-                  titleEn: "Flexible Appointments Across Bali's Destinations",
-                  titleId: "Jangkauan Layanan Luas & Jadwal Fleksibel",
-                  descEn: "Enjoy convenient spa treatments across Bali's most popular destinations.",
-                  descId: "Pemesanan fleksibel yang menjangkau seluruh area tujuan utama di kota Anda.",
+                  titleEn: "Flexible Scheduling",
+                  titleId: "Jadwal Fleksibel",
+                  descEn: "Ready to serve daily. Feel free to set your own preferred therapy schedule.",
+                  descId: "Kami siap melayani setiap hari. Bebas tentukan waktu terapi Anda.",
                 },
               ].map((benefit, index) => (
                 <div key={index} className="flex items-start gap-3.5 sm:gap-4.5">
@@ -1095,28 +1197,103 @@ export default function LandingPage() {
       </section>
 
       {/* 8. COMBINED CUSTOMER TESTIMONIALS & FAQ SECTION (DARK ESPRESSO BACKGROUND) */}
-      <section id="testimonials" className="py-14 sm:py-24 lg:py-28 bg-[#241c17] text-stone-100 border-t border-stone-800/80 overflow-hidden">
+      <section id="testimonials" className="scroll-mt-16 sm:scroll-mt-20 md:scroll-mt-24 py-14 sm:py-24 lg:py-28 bg-[#241c17] text-stone-100 border-t border-stone-800/80 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 space-y-12 sm:space-y-20 lg:space-y-24">
           
-          {/* PART 1: CUSTOMER TESTIMONIALS */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-center">
-            {/* Left: Balanced Photo */}
-            <div className="lg:col-span-5 xl:col-span-5 relative">
-              <div className="relative aspect-[16/11] sm:aspect-[4/3] lg:aspect-[4/3.8] max-w-lg mx-auto lg:max-w-none overflow-hidden shadow-2xl bg-stone-900">
-                <img
-                  src={currentTestimonial.image}
-                  alt="Therapist performing authentic relaxation massage"
-                  className="w-full h-full object-cover transition-opacity duration-500 animate-in fade-in"
-                />
+          {/* PART 1: CUSTOMER TESTIMONIALS (VERTICAL SCREENSHOT, NO BORDER, NO ROUNDED CORNER) */}
+          {isLoadingTestimonials ? (
+            /* Stable Loading Skeleton - Zero Layout Shift or Flickering */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center animate-pulse">
+              <div className="lg:col-span-6 xl:col-span-6 flex justify-center lg:justify-start">
+                <div className="w-full max-w-[360px] sm:max-w-[400px] aspect-[9/14] bg-stone-900/60" />
+              </div>
+              <div className="lg:col-span-6 xl:col-span-6 space-y-6">
+                <div className="h-12 w-3/4 bg-stone-900/60" />
+                <div className="h-4 w-1/2 bg-stone-900/40" />
               </div>
             </div>
+          ) : testimonials.length > 0 ? (
+            <div ref={testimonialSectionRef} className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
+              {/* Left: Physical Pushing Screenshot Carousel (Center Main, Left & Right Flanking Slides) */}
+              <div className="lg:col-span-6 xl:col-span-6 flex justify-center items-center">
+                <div
+                  onWheel={handleTestimonialWheel}
+                  className="relative w-full max-w-[460px] sm:max-w-[500px] lg:max-w-[540px] h-[480px] sm:h-[540px] md:h-[580px] flex items-center justify-center select-none overflow-hidden sm:overflow-visible"
+                >
+                  {displayTestimonials.map((item, idx) => {
+                    const dist = getTestimonialDistance(idx, activeTestimonialPage, displayTestimonials.length);
+                    const isCenter = dist === 0;
+                    const isLeft = dist === -1;
+                    const isRight = dist === 1;
+                    const isVisible = isCenter || isLeft || isRight;
 
-            {/* Right: Testimonials Content */}
-            <div className="lg:col-span-7 xl:col-span-7 flex flex-col justify-center space-y-5 sm:space-y-6 lg:pl-4">
-              <div className="space-y-3 sm:space-y-5">
+                    // Snug / Mepet physical push offsets:
+                    let xOffset = "0%";
+                    if (dist === -1) xOffset = "-48%";
+                    else if (dist === 1) xOffset = "48%";
+                    else if (dist > 1) xOffset = "120%";
+                    else if (dist < -1) xOffset = "-120%";
+
+                    return (
+                      <motion.div
+                        key={item._key || `${item.id}-${idx}`}
+                        animate={{
+                          x: xOffset,
+                          scale: isCenter ? 1 : isVisible ? 0.82 : 0.65,
+                          opacity: isVisible ? 1 : 0,
+                          filter: isCenter ? "brightness(1)" : isVisible ? "brightness(0.65)" : "brightness(0.5)",
+                          zIndex: isCenter ? 20 : isVisible ? 10 : 0,
+                        }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 240,
+                          damping: 26,
+                          mass: 0.9,
+                        }}
+                        onClick={() => {
+                          if (isLeft) paginateTestimonial(-1);
+                          if (isRight) paginateTestimonial(1);
+                        }}
+                        className={`absolute w-[62%] sm:w-[66%] max-h-[560px] flex items-center justify-center select-none ${
+                          isCenter
+                            ? "cursor-grab active:cursor-grabbing pointer-events-auto"
+                            : isVisible
+                            ? "cursor-pointer pointer-events-auto"
+                            : "pointer-events-none"
+                        }`}
+                        drag={isCenter ? "x" : false}
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.25}
+                        onDragEnd={
+                          isCenter
+                            ? (e, { offset, velocity }) => {
+                                const swipe = Math.abs(offset.x) * velocity.x;
+                                if (swipe < -600 || offset.x < -40) {
+                                  paginateTestimonial(1);
+                                } else if (swipe > 600 || offset.x > 40) {
+                                  paginateTestimonial(-1);
+                                }
+                              }
+                            : undefined
+                        }
+                      >
+                        <img
+                          src={item.image_url}
+                          alt={item.customer_name || "WhatsApp Client Review Screenshot"}
+                          className="w-full h-auto max-h-[520px] sm:max-h-[560px] object-contain rounded-none border-0 shadow-none outline-none ring-0 pointer-events-none"
+                          draggable={false}
+                        />
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right: Section Title, Subtitle Description & Carousel Navigation */}
+              <div className="lg:col-span-6 xl:col-span-6 flex flex-col justify-center space-y-6 lg:pl-2">
                 <h2
-                  className="text-2.5xl sm:text-4xl lg:text-[42px] xl:text-[46px] text-stone-100 leading-[1.14] tracking-tight"
-                  style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
+                  className="text-3xl sm:text-4xl lg:text-[44px] xl:text-[50px] text-stone-100 font-normal tracking-tight leading-[1.15]"
+                  style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
                 >
                   {isEn ? (
                     <>
@@ -1131,44 +1308,84 @@ export default function LandingPage() {
                   )}
                 </h2>
 
-                <p className="text-[13.5px] sm:text-[15px] lg:text-base text-stone-200 font-light leading-relaxed max-w-xl">
-                  "{isEn ? currentTestimonial.text_en : currentTestimonial.text_id}"
+                {/* Subtitle / Sub Judul Description */}
+                <p className="text-stone-300 text-sm sm:text-[15px] font-light leading-relaxed max-w-xl">
+                  {isEn
+                    ? "All client experiences shown are genuine feedback and authentic WhatsApp conversations directly from our valued clients after their massage sessions."
+                    : "Seluruh ulasan dan kepuasan pelanggan Serena Raga merupakan tangkapan layar percakapan asli langsung dari WhatsApp setelah menikmati sesi pijat relaksasi kami."}
                 </p>
 
-                <div className="space-y-0.5 pt-1">
-                  <div className="text-[15px] sm:text-lg font-medium text-stone-100">
-                    {currentTestimonial.name}
+                {/* Navigation Circular Arrows */}
+                {testimonials.length > 1 && (
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => paginateTestimonial(-1)}
+                      className="w-11 h-11 rounded-full bg-[#3a2e26] hover:bg-[#4a3b32] text-stone-300 flex items-center justify-center transition-colors cursor-pointer"
+                      aria-label="Previous Testimonial"
+                    >
+                      <ArrowLeft className="w-4 h-4 stroke-[1.5]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => paginateTestimonial(1)}
+                      className="w-11 h-11 rounded-full bg-[#eed7a1] hover:bg-[#e4cb91] text-[#241c17] flex items-center justify-center transition-colors cursor-pointer shadow-sm"
+                      aria-label="Next Testimonial"
+                    >
+                      <ArrowRight className="w-4 h-4 stroke-[1.5]" />
+                    </button>
                   </div>
-                  <div className="text-xs sm:text-[13px] text-stone-400 font-light">
-                    {isEn ? currentTestimonial.role_en : currentTestimonial.role_id}
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Graceful Empty State when database is awaiting uploads */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
+              <div className="lg:col-span-6 xl:col-span-6 flex justify-center lg:justify-start">
+                <div className="w-full max-w-[360px] sm:max-w-[420px] aspect-[9/13] bg-stone-900/40 flex flex-col items-center justify-center p-8 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-[#eed7a1]/10 text-[#eed7a1] flex items-center justify-center">
+                    <MessageSquareQuote className="w-6 h-6" />
                   </div>
+                  <p className="text-stone-300 text-xs sm:text-sm font-medium">
+                    {isEn ? "Authentic WhatsApp Screenshots" : "Screenshot Chat WhatsApp Pelanggan"}
+                  </p>
+                  <p className="text-stone-500 text-[11px] max-w-xs font-light">
+                    {isEn
+                      ? "Screenshots uploaded via Admin Dashboard will appear here."
+                      : "Screenshot ulasan asli dari WhatsApp yang diunggah via Admin Dashboard akan tampil di sini."}
+                  </p>
                 </div>
               </div>
 
-              {/* Navigation Arrows */}
-              <div className="flex items-center gap-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={prevTestimonial}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#382b23] hover:bg-[#46362c] text-stone-300 flex items-center justify-center transition-colors cursor-pointer"
-                  title="Previous Testimonial"
+              <div className="lg:col-span-6 xl:col-span-6 flex flex-col justify-center space-y-6 lg:pl-2">
+                <h2
+                  className="text-3xl sm:text-4xl lg:text-[44px] xl:text-[50px] text-stone-100 font-normal tracking-tight leading-[1.15]"
+                  style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
                 >
-                  <ArrowLeft className="w-4 h-4 stroke-[1.5]" />
-                </button>
-                <button
-                  type="button"
-                  onClick={nextTestimonial}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#eed7a1] hover:bg-[#e4cb91] text-[#241c17] flex items-center justify-center transition-colors cursor-pointer shadow-sm"
-                  title="Next Testimonial"
-                >
-                  <ArrowRight className="w-4 h-4 stroke-[1.5]" />
-                </button>
+                  {isEn ? (
+                    <>
+                      Customer Testimonials— <br />
+                      What Our Clients Say
+                    </>
+                  ) : (
+                    <>
+                      Pengalaman Pelanggan— <br />
+                      Kepuasan & Ulasan Nyata
+                    </>
+                  )}
+                </h2>
+
+                <p className="text-stone-300 text-sm sm:text-[15px] font-light leading-relaxed max-w-xl">
+                  {isEn
+                    ? "All client experiences shown are genuine feedback and authentic WhatsApp conversations directly from our valued clients after their massage sessions."
+                    : "Seluruh ulasan dan kepuasan pelanggan Serena Raga merupakan tangkapan layar percakapan asli langsung dari WhatsApp setelah menikmati sesi pijat relaksasi kami."}
+                </p>
               </div>
             </div>
-          </div>
+          )}
 
           {/* PART 2: FREQUENTLY ASKED QUESTIONS (FAQS) */}
-          <div id="faq" className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start pt-10 sm:pt-16 border-t border-stone-800/60">
+          <div id="faq" className="scroll-mt-16 sm:scroll-mt-20 md:scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start pt-10 sm:pt-16 border-t border-stone-800/60">
             {/* Left: Heading & Accordion List */}
             <div className="lg:col-span-7 space-y-5 sm:space-y-6">
               <div>
@@ -1248,7 +1465,7 @@ export default function LandingPage() {
       </section>
 
       {/* 10. FINAL LUXURY BOOKING BANNER (MATCHING REFERENCE SCREENSHOT) */}
-      <section className="relative py-14 sm:py-24 lg:py-28 overflow-hidden bg-[#18120f] border-t border-stone-800 flex items-center justify-center">
+      <section id="reservation" className="scroll-mt-16 sm:scroll-mt-20 md:scroll-mt-24 relative py-14 sm:py-24 lg:py-28 overflow-hidden bg-[#18120f] border-t border-stone-800 flex items-center justify-center">
         {/* Full-bleed Warm Spa Background Photo */}
         <div className="absolute inset-0 z-0">
           <img
@@ -1277,13 +1494,13 @@ export default function LandingPage() {
               >
                 {isEn ? (
                   <>
-                    Book your luxury <br />
-                    thai massage now
+                    Book your relaxing <br />
+                    massage session now
                   </>
                 ) : (
                   <>
-                    Pesan relaksasi mewah <br />
-                    pilihan Anda sekarang
+                    Pesan sesi pijat <br />
+                    relaksasi Anda sekarang
                   </>
                 )}
               </h2>
@@ -1291,8 +1508,8 @@ export default function LandingPage() {
               {/* Subtitle */}
               <p className="text-xs sm:text-[14px] text-stone-200/90 font-light tracking-wide mt-2.5 sm:mt-4 max-w-xl mx-auto">
                 {isEn
-                  ? `Escape. Relax. Rejuvenate. Anytime, Anywhere in ${settings.service_areas ? settings.service_areas.split(",")[0] : "Bali"}.`
-                  : "Lepaskan Kepenatan. Nikmati Relaksasi Mewah Kapan Saja, di Mana Saja."}
+                  ? "Escape. Relax. Rejuvenate. In the comfort of your home."
+                  : "Lepaskan kepenatan dan nikmati kenyamanan relaksasi di hunian Anda."}
               </p>
 
               {/* Mocha Fast Banner */}
@@ -1310,7 +1527,7 @@ export default function LandingPage() {
                     WhatsApp
                   </span>
                   <a
-                    href={`https://wa.me/${cleanWhatsAppNumber(settings.whatsapp_number || "6281234567890")}`}
+                    href={`https://wa.me/${cleanWhatsAppNumber(settings.whatsapp_number)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs sm:text-[14px] text-white hover:text-[#eed8a1] font-mono transition-colors block tracking-wide font-medium"
@@ -1325,13 +1542,15 @@ export default function LandingPage() {
                   <span className="text-[10.5px] sm:text-[11px] text-stone-300 uppercase tracking-wider block font-light">
                     {isEn ? "Online Booking" : "Reservasi Online"}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickBook()}
+                  <a
+                    href={`https://wa.me/${cleanWhatsAppNumber(settings.whatsapp_number)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-xs sm:text-[14px] text-white hover:text-[#eed8a1] font-medium underline underline-offset-4 cursor-pointer transition-colors block mx-auto"
+                    suppressHydrationWarning
                   >
                     {isEn ? "Book Now" : "Pesan Sekarang"}
-                  </button>
+                  </a>
                 </div>
               </div>
             </div>
@@ -1343,8 +1562,8 @@ export default function LandingPage() {
               <span>📍</span>
               <span>
                 {isEn
-                  ? `Serving All of ${settings.service_areas ? settings.service_areas.split(",")[0] : "Bali"} – Hotels, Private Residences & More`
-                  : "Melayani Seluruh Wilayah Kota – Hotel, Rumah Tinggal & Apartemen"}
+                  ? `Serving All of ${settings.service_areas ? settings.service_areas.split(",")[0].trim() : "Yogyakarta"} – Hotels, Private Residences & More`
+                  : `Melayani Seluruh ${settings.service_areas || "Wilayah Yogyakarta & Sekitarnya"} – Hotel, Rumah Tinggal & Apartemen`}
               </span>
             </span>
             <p className="text-xs sm:text-[13px] text-stone-200/90 font-light leading-relaxed">
@@ -1356,30 +1575,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 11. LUXURY EDITORIAL FOOTER (CLEAN WHITE MINIMALIST MATCHING REFERENCE) */}
-      <footer className="bg-white text-stone-800 border-t border-stone-200 text-xs sm:text-[13px] pt-16 sm:pt-20 pb-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Top Centered Brand & Contact Info */}
-          <div className="flex flex-col items-center text-center space-y-4 max-w-md mx-auto mb-14 sm:mb-20">
+      {/* 11. LUXURY EDITORIAL FOOTER (CLEAN MINIMALIST SIGNATURE) */}
+      <footer className="bg-white text-stone-800 border-t border-stone-200 text-xs sm:text-[13px] pt-14 sm:pt-16 pb-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Centered Brand & Contact Info */}
+          <div className="flex flex-col items-center text-center space-y-3 max-w-md mx-auto">
             {/* Centered Brand Logo */}
             <Link href="/" className="inline-flex items-center hover:opacity-85 transition-opacity">
               <BrandLogo variant="full" className="h-9 sm:h-11 w-auto text-stone-900" />
             </Link>
 
             {/* Address */}
-            <div className="flex items-center justify-center gap-2 text-stone-600 font-light text-xs sm:text-[13px] pt-2" suppressHydrationWarning>
+            <div className="flex items-center justify-center gap-2 text-stone-600 font-light text-xs sm:text-[13px] pt-1" suppressHydrationWarning>
               <MapPin className="w-3.5 h-3.5 text-stone-500 shrink-0" />
-              <span>{settings.service_areas || "Jakarta Selatan, DKI Jakarta, Indonesia"}</span>
+              <span>{settings.service_areas || "Yogyakarta, Sleman, Bantul, & Sekitarnya"}</span>
             </div>
 
-            {/* Phone */}
+            {/* Phone / WhatsApp */}
             <div className="flex items-center justify-center gap-2 text-stone-600 font-mono text-xs sm:text-[13px]" suppressHydrationWarning>
               <Phone className="w-3.5 h-3.5 text-stone-500 shrink-0" />
               <a
-                href={`tel:${cleanWhatsAppNumber(settings.phone_number || settings.whatsapp_number || "6281234567890")}`}
+                href={`https://wa.me/${cleanWhatsAppNumber(settings.whatsapp_number)}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="hover:text-stone-900 transition-colors"
+                suppressHydrationWarning
               >
-                {formatDisplayPhone(settings.phone_number || settings.whatsapp_number)}
+                {formatDisplayPhone(settings.whatsapp_number)}
               </a>
             </div>
 
@@ -1389,153 +1611,77 @@ export default function LandingPage() {
               <a
                 href={`mailto:${settings.email || "info@serenaraga.com"}`}
                 className="hover:text-stone-900 transition-colors"
+                suppressHydrationWarning
               >
                 {settings.email || "info@serenaraga.com"}
               </a>
             </div>
-          </div>
 
-          {/* Middle 4-Column Grid: Services, Company, Quick Links, Newsletter */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 pb-14 sm:pb-20 items-start">
-            {/* Col 1: Service */}
-            <div className="space-y-3">
-              <span className="text-xs sm:text-sm font-semibold text-stone-900 block mb-1">
-                {isEn ? "Service" : "Layanan"}
-              </span>
-              <ul className="space-y-2 text-stone-600 font-light text-xs sm:text-[13px]">
-                <li>
-                  <a href="#services" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "Massages" : "Pijat Tradisional"}
-                  </a>
-                </li>
-                <li>
-                  <a href="#benefits" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "Massage Gift Vouchers" : "Voucher Hadiah"}
-                  </a>
-                </li>
-                <li>
-                  <a href="#services" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "Pricelist" : "Daftar Tarif"}
-                  </a>
-                </li>
-                <li>
-                  <button onClick={() => handleQuickBook()} className="hover:text-stone-900 transition-colors text-left cursor-pointer">
-                    {isEn ? "Online Booking" : "Reservasi Online"}
-                  </button>
-                </li>
-                <li>
-                  <a href="#about" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "Corporate Wellness" : "Layanan Korporasi"}
-                  </a>
-                </li>
-              </ul>
-            </div>
+            {/* Circular Social Media Icons Grid (Matching User Reference) */}
+            <div className="flex items-center justify-center gap-3 pt-4 pb-1">
+              {/* Instagram */}
+              <a
+                href={getInstagramUrl(settings.instagram_handle)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
+                suppressHydrationWarning
+              >
+                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                </svg>
+              </a>
 
-            {/* Col 2: Company */}
-            <div className="space-y-3">
-              <span className="text-xs sm:text-sm font-semibold text-stone-900 block mb-1">
-                {isEn ? "Company" : "Tentang"}
-              </span>
-              <ul className="space-y-2 text-stone-600 font-light text-xs sm:text-[13px]">
-                <li>
-                  <a href="#about" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "The Philosophy" : "Filosofi Kami"}
-                  </a>
-                </li>
-                <li>
-                  <a href="#steps" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "How it Works" : "Cara Pemesanan"}
-                  </a>
-                </li>
-                <li>
-                  <a href="#testimonials" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "Customer Reviews" : "Ulasan Pelanggan"}
-                  </a>
-                </li>
-                <li>
-                  <a href="#faq" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "FAQ" : "Pusat Bantuan"}
-                  </a>
-                </li>
-                <li>
-                  <Link href="/admin" className="text-[#967259] hover:underline transition-colors">
-                    {isEn ? "Admin Portal" : "Portal Dashboard"}
-                  </Link>
-                </li>
-              </ul>
-            </div>
+              {/* TikTok */}
+              <a
+                href={getTikTokUrl(settings.tiktok_handle)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
+                suppressHydrationWarning
+              >
+                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.85.12V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.49 6.27 6.27 0 0 0 1.86-4.49V8.62a8.3 8.3 0 0 0 4.91 1.6V6.77a4.87 4.87 0 0 1-1-.08z" />
+                </svg>
+              </a>
 
-            {/* Col 3: Quick Access */}
-            <div className="space-y-3">
-              <span className="text-xs sm:text-sm font-semibold text-stone-900 block mb-1">
-                {isEn ? "Quick Access" : "Akses Cepat"}
-              </span>
-              <ul className="space-y-2 text-stone-600 font-light text-xs sm:text-[13px]">
-                <li>
-                  <button onClick={() => handleQuickBook()} className="hover:text-stone-900 transition-colors text-left cursor-pointer">
-                    {isEn ? "Reservation" : "Reservasi Cepat"}
-                  </button>
-                </li>
-                <li>
-                  <a
-                    href={`https://wa.me/${cleanWhatsAppNumber(settings.whatsapp_number || "6281234567890")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-stone-900 transition-colors"
-                  >
-                    {isEn ? "WhatsApp Support" : "Bantuan WhatsApp"}
-                  </a>
-                </li>
-                <li>
-                  <a href="#services" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "Pricing & Packages" : "Paket & Tarif"}
-                  </a>
-                </li>
-                <li>
-                  <a href="#faq" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "Terms & Privacy" : "Syarat & Ketentuan"}
-                  </a>
-                </li>
-                <li>
-                  <a href="#about" className="hover:text-stone-900 transition-colors">
-                    {isEn ? "Sanitary Standards" : "Standar Higienis"}
-                  </a>
-                </li>
-              </ul>
-            </div>
+              {/* Facebook */}
+              <a
+                href={getFacebookUrl(settings.facebook_url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
+                suppressHydrationWarning
+              >
+                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                </svg>
+              </a>
 
-            {/* Col 4: Newsletter */}
-            <div className="space-y-3 md:border-l md:border-stone-200 md:pl-8">
-              <span className="text-sm sm:text-base font-semibold text-stone-900 block mb-1">
-                Newsletter
-              </span>
-              <p className="text-xs text-stone-500 font-light leading-relaxed">
-                {isEn
-                  ? "Do not miss any interesting offers and new introductions"
-                  : "Dapatkan penawaran eksklusif dan info paket relaksasi terbaru"}
-              </p>
-
-              <form onSubmit={handleNewsletterSubmit} className="pt-2 flex flex-col sm:flex-row items-stretch max-w-sm gap-2 sm:gap-0">
-                <input
-                  type="email"
-                  placeholder={isEn ? "Enter email" : "Alamat email"}
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  className="bg-[#e5e5e5] text-stone-800 placeholder:text-stone-500 px-3.5 py-2.5 sm:py-2 text-xs outline-none focus:ring-1 focus:ring-stone-400 w-full rounded-none border-0"
-                />
-                <Button
-                  type="submit"
-                  className="bg-[#967259] hover:bg-[#836048] text-white px-5 py-2.5 sm:py-2 text-xs font-normal rounded-none shadow-none border-0 cursor-pointer shrink-0 transition-colors"
-                >
-                  {isEn ? "Subscribe" : "Langganan"}
-                </Button>
-              </form>
+              {/* Threads */}
+              <a
+                href={getThreadsUrl(settings.threads_handle)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Threads"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
+                suppressHydrationWarning
+              >
+                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="10 15 200 200">
+                  <path d="M141.537 88.9883C140.71 88.5919 139.87 88.2104 139.019 87.8451C137.537 60.5382 122.616 44.905 97.5619 44.745C97.4484 44.7443 97.3355 44.7443 97.222 44.7443C82.2364 44.7443 69.7731 51.1409 62.102 62.7807L75.4377 72.809C81.0827 64.2407 90.0438 60.3396 100.999 60.4093C116.892 60.5103 123.639 71.3093 124.636 88.0805C118.57 87.269 111.97 86.8559 104.978 86.8559C75.6457 86.8559 55.4392 101.401 55.4392 123.238C55.4392 143.914 73.1979 157.771 96.0125 157.771C117.067 157.771 131.624 147.458 137.604 133.483C143.208 143.682 152.99 148.971 166.577 148.971C176.626 148.971 184.977 145.419 191.365 138.431C197.886 131.298 201.218 120.912 201.218 107.575C201.218 57.0601 167.319 23.4795 110.158 23.4795C54.4097 23.4795 18 59.8892 18 115.637C18 171.385 54.4097 207.795 110.158 207.795C140.231 207.795 165.736 198.397 183.924 180.627L172.937 167.87C158.077 182.378 136.634 190.222 110.158 190.222C64.084 190.222 35.5727 158.917 35.5727 115.637C35.5727 72.3579 64.084 41.0531 110.158 41.0531C154.673 41.0531 183.645 66.8647 183.645 107.575C183.645 125.795 174.195 133.864 166.577 133.864C158.261 133.864 153.254 128.536 149.699 120.081C145.395 109.845 143.149 97.4582 141.537 88.9883ZM122.955 118.828C119.52 130.697 109.919 140.279 96.0125 140.279C81.8214 140.279 73.0119 131.782 73.0119 120.467C73.0119 107.649 86.8532 99.4285 107.828 99.4285C112.569 99.4285 117.067 99.7892 121.246 100.493C122.392 106.637 122.955 112.83 122.955 118.828Z" />
+                </svg>
+              </a>
             </div>
           </div>
 
           {/* Bottom Copyright */}
-          <div className="pt-8 border-t border-stone-200/80 text-center text-xs text-stone-500 font-light" suppressHydrationWarning>
-            Copyright {new Date().getFullYear()} {settings.brand_name ? settings.brand_name.toUpperCase() : "SERENA RAGA"}
+          <div className="mt-8 pt-6 border-t border-stone-200/80 text-center text-xs text-stone-500 font-light" suppressHydrationWarning>
+            Copyright {new Date().getFullYear()} {settings.brand_name ? settings.brand_name.toUpperCase() : "SERENA RAGA"}. All rights reserved.
           </div>
         </div>
       </footer>

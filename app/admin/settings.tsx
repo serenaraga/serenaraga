@@ -239,8 +239,8 @@ export function BrandSettingsPage() {
               <Card className="border border-border/70 shadow-none bg-card">
                 <CardHeader className="pb-4 border-b border-border/50">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                      <MessageCircle className="w-5 h-5" />
+                    <div className="p-2 rounded-lg bg-muted text-foreground">
+                      <MessageCircle className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
                       <CardTitle className="text-sm font-bold text-foreground">
@@ -258,7 +258,7 @@ export function BrandSettingsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="whatsapp_number" className="text-xs font-semibold flex items-center gap-1.5">
-                        <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        <MessageCircle className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>{isEn ? "Primary Admin WhatsApp *" : "Nomor WhatsApp Utama Admin *"}</span>
                       </Label>
                       <Input
@@ -279,7 +279,7 @@ export function BrandSettingsPage() {
 
                     <div className="space-y-1.5">
                       <Label htmlFor="phone_number" className="text-xs font-semibold flex items-center gap-1.5">
-                        <PhoneCall className="w-3.5 h-3.5 text-foreground" />
+                        <PhoneCall className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>{isEn ? "Alternative Phone / Hotline" : "Nomor Telepon / Hotline Cadangan"}</span>
                       </Label>
                       <Input
@@ -310,7 +310,7 @@ export function BrandSettingsPage() {
 
                     <div className="space-y-1.5">
                       <Label htmlFor="operational_hours" className="text-xs font-semibold flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-amber-500" />
+                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>{isEn ? "Operating Hours" : "Jam Operasional Layanan"}</span>
                       </Label>
                       <Input
@@ -354,8 +354,8 @@ export function BrandSettingsPage() {
               <Card className="border border-border/70 shadow-none bg-card">
                 <CardHeader className="pb-4 border-b border-border/50">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                      <Building2 className="w-5 h-5" />
+                    <div className="p-2 rounded-lg bg-muted text-foreground">
+                      <Building2 className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
                       <CardTitle className="text-sm font-bold text-foreground">
@@ -372,8 +372,9 @@ export function BrandSettingsPage() {
                 <CardContent className="space-y-4 pt-4 text-xs">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="brand_name" className="text-xs font-semibold">
-                        {isEn ? "Brand / Company Name *" : "Nama Brand / Bisnis *"}
+                      <Label htmlFor="brand_name" className="text-xs font-semibold flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>{isEn ? "Brand / Company Name *" : "Nama Brand / Bisnis *"}</span>
                       </Label>
                       <Input
                         id="brand_name"
@@ -417,47 +418,120 @@ export function BrandSettingsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="website_url" className="text-xs font-semibold flex items-center gap-1">
+                      <Label htmlFor="website_url" className="text-xs font-semibold flex items-center gap-1.5">
                         <Globe className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>Website</span>
                       </Label>
                       <Input
                         id="website_url"
                         placeholder="https://serenaraga.com"
-                        value={formData.website_url}
+                        value={formData.website_url || ""}
                         onChange={(e) => handleChange("website_url", e.target.value)}
-                        className="text-xs h-9 shadow-none"
+                        className="text-xs h-9 shadow-none font-mono"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="instagram_handle" className="text-xs font-semibold flex items-center gap-1">
-                        <AtSign className="w-3.5 h-3.5 text-pink-500" />
-                        <span>Instagram</span>
-                      </Label>
-                      <Input
-                        id="instagram_handle"
-                        placeholder="@serenaraga"
-                        value={formData.instagram_handle}
-                        onChange={(e) => handleChange("instagram_handle", e.target.value)}
-                        className="text-xs h-9 shadow-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="service_areas" className="text-xs font-semibold flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-rose-500" />
-                        <span>{isEn ? "Coverage Area" : "Area Jangkauan"}</span>
+                      <Label htmlFor="service_areas" className="text-xs font-semibold flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>{isEn ? "Coverage Area" : "Area Jangkauan Layanan"}</span>
                       </Label>
                       <Input
                         id="service_areas"
-                        placeholder="Jakarta, Tangerang, Depok, Bekasi"
-                        value={formData.service_areas}
+                        placeholder="Yogyakarta, Sleman, Bantul, & Sekitarnya"
+                        value={formData.service_areas || ""}
                         onChange={(e) => handleChange("service_areas", e.target.value)}
                         className="text-xs h-9 shadow-none"
                       />
+                    </div>
+                  </div>
+
+                  {/* Social Media Channels */}
+                  <div className="pt-2 border-t border-border/50 space-y-3">
+                    <div>
+                      <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>{isEn ? "Official Social Media Accounts" : "Akun & Media Sosial Resmi"}</span>
+                      </span>
+                      <p className="text-[11px] text-muted-foreground">
+                        {isEn
+                          ? "These links and handles will be displayed on the landing page footer and digital invoices."
+                          : "Tautan dan username ini otomatis ditampilkan pada tombol sosmed di footer landing page dan nota digital."}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      {/* Instagram */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="instagram_handle" className="text-xs font-semibold flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 fill-none stroke-current stroke-2 text-muted-foreground shrink-0" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                            <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                            <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                          </svg>
+                          <span>Instagram</span>
+                        </Label>
+                        <Input
+                          id="instagram_handle"
+                          placeholder="@serenaraga"
+                          value={formData.instagram_handle || ""}
+                          onChange={(e) => handleChange("instagram_handle", e.target.value)}
+                          className="text-xs h-9 shadow-none font-mono"
+                        />
+                      </div>
+
+                      {/* TikTok */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="tiktok_handle" className="text-xs font-semibold flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 fill-current text-muted-foreground shrink-0" viewBox="0 0 24 24">
+                            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.85.12V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.49 6.27 6.27 0 0 0 1.86-4.49V8.62a8.3 8.3 0 0 0 4.91 1.6V6.77a4.87 4.87 0 0 1-1-.08z" />
+                          </svg>
+                          <span>TikTok</span>
+                        </Label>
+                        <Input
+                          id="tiktok_handle"
+                          placeholder="@serenaraga"
+                          value={formData.tiktok_handle || ""}
+                          onChange={(e) => handleChange("tiktok_handle", e.target.value)}
+                          className="text-xs h-9 shadow-none font-mono"
+                        />
+                      </div>
+
+                      {/* Facebook */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="facebook_url" className="text-xs font-semibold flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 fill-current text-muted-foreground shrink-0" viewBox="0 0 24 24">
+                            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                          </svg>
+                          <span>Facebook</span>
+                        </Label>
+                        <Input
+                          id="facebook_url"
+                          placeholder="https://facebook.com/serenaraga"
+                          value={formData.facebook_url || ""}
+                          onChange={(e) => handleChange("facebook_url", e.target.value)}
+                          className="text-xs h-9 shadow-none font-mono"
+                        />
+                      </div>
+
+                      {/* Threads */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="threads_handle" className="text-xs font-semibold flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 fill-current text-muted-foreground shrink-0" viewBox="10 15 200 200">
+                            <path d="M141.537 88.9883C140.71 88.5919 139.87 88.2104 139.019 87.8451C137.537 60.5382 122.616 44.905 97.5619 44.745C97.4484 44.7443 97.3355 44.7443 97.222 44.7443C82.2364 44.7443 69.7731 51.1409 62.102 62.7807L75.4377 72.809C81.0827 64.2407 90.0438 60.3396 100.999 60.4093C116.892 60.5103 123.639 71.3093 124.636 88.0805C118.57 87.269 111.97 86.8559 104.978 86.8559C75.6457 86.8559 55.4392 101.401 55.4392 123.238C55.4392 143.914 73.1979 157.771 96.0125 157.771C117.067 157.771 131.624 147.458 137.604 133.483C143.208 143.682 152.99 148.971 166.577 148.971C176.626 148.971 184.977 145.419 191.365 138.431C197.886 131.298 201.218 120.912 201.218 107.575C201.218 57.0601 167.319 23.4795 110.158 23.4795C54.4097 23.4795 18 59.8892 18 115.637C18 171.385 54.4097 207.795 110.158 207.795C140.231 207.795 165.736 198.397 183.924 180.627L172.937 167.87C158.077 182.378 136.634 190.222 110.158 190.222C64.084 190.222 35.5727 158.917 35.5727 115.637C35.5727 72.3579 64.084 41.0531 110.158 41.0531C154.673 41.0531 183.645 66.8647 183.645 107.575C183.645 125.795 174.195 133.864 166.577 133.864C158.261 133.864 153.254 128.536 149.699 120.081C145.395 109.845 143.149 97.4582 141.537 88.9883ZM122.955 118.828C119.52 130.697 109.919 140.279 96.0125 140.279C81.8214 140.279 73.0119 131.782 73.0119 120.467C73.0119 107.649 86.8532 99.4285 107.828 99.4285C112.569 99.4285 117.067 99.7892 121.246 100.493C122.392 106.637 122.955 112.83 122.955 118.828Z" />
+                          </svg>
+                          <span>Threads</span>
+                        </Label>
+                        <Input
+                          id="threads_handle"
+                          placeholder="@serenaraga"
+                          value={formData.threads_handle || ""}
+                          onChange={(e) => handleChange("threads_handle", e.target.value)}
+                          className="text-xs h-9 shadow-none font-mono"
+                        />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -469,8 +543,8 @@ export function BrandSettingsPage() {
               <Card className="border border-border/70 shadow-none bg-card">
                 <CardHeader className="pb-4 border-b border-border/50">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                      <CreditCard className="w-5 h-5" />
+                    <div className="p-2 rounded-lg bg-muted text-foreground">
+                      <CreditCard className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
                       <CardTitle className="text-sm font-bold text-foreground">
@@ -547,8 +621,8 @@ export function BrandSettingsPage() {
               <Card className="border border-border/70 shadow-none bg-card">
                 <CardHeader className="pb-4 border-b border-border/50">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                      <FileText className="w-5 h-5" />
+                    <div className="p-2 rounded-lg bg-muted text-foreground">
+                      <FileText className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
                       <CardTitle className="text-sm font-bold text-foreground">
@@ -654,10 +728,10 @@ export function BrandSettingsPage() {
             <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
+                  <MessageCircle className="w-4 h-4 text-foreground" />
                   {isEn ? "Live WhatsApp Status" : "Status WhatsApp Aktif"}
                 </span>
-                <Badge variant="outline" className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 border-emerald-500/20">
+                <Badge variant="outline" className="text-[10px] font-mono text-foreground font-semibold bg-muted border-border">
                   ONLINE
                 </Badge>
               </div>
@@ -675,9 +749,9 @@ export function BrandSettingsPage() {
                 </div>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 space-y-1">
-                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+              <div className="p-2.5 rounded-lg bg-muted/40 border border-border space-y-1">
+                <span className="text-[10px] font-semibold text-foreground flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" />
                   {isEn ? "Automatically updates:" : "Otomatis memperbarui:"}
                 </span>
                 <ul className="text-[11px] text-muted-foreground space-y-0.5 list-disc list-inside">
@@ -697,7 +771,7 @@ export function BrandSettingsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full text-xs gap-2 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 shadow-none cursor-pointer"
+                  className="w-full text-xs gap-2 border-border text-foreground hover:bg-accent shadow-none cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>{isEn ? "Test Direct WhatsApp Link" : "Uji Coba Kirim Pesan WA"}</span>

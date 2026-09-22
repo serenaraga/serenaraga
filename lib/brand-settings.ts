@@ -12,6 +12,9 @@ export interface BrandSettings {
   email: string;
   website_url: string;
   instagram_handle: string;
+  tiktok_handle?: string;
+  facebook_url?: string;
+  threads_handle?: string;
   operational_hours: string;
   service_areas: string;
   bank_name: string;
@@ -30,13 +33,16 @@ export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   tagline: "Comfortable Home Massage & Spa",
   description:
     "Layanan terapis pijat dan spa profesional langsung ke rumah, hotel, dan apartemen Anda.",
-  whatsapp_number: "6281234567890",
-  phone_number: "+62 812-3456-7890",
+  whatsapp_number: "6289518359037",
+  phone_number: "+62 895-1835-9037",
   email: "support@serenaraga.com",
   website_url: "https://serenaraga.com",
   instagram_handle: "@serenaraga",
+  tiktok_handle: "@serenaraga",
+  facebook_url: "https://facebook.com/serenaraga",
+  threads_handle: "@serenaraga",
   operational_hours: "08:00 - 22:00 WIB (Setiap Hari)",
-  service_areas: "Jakarta, Tangerang, Depok, Bekasi, & Sekitarnya",
+  service_areas: "Yogyakarta, Sleman, Bantul, & Sekitarnya",
   bank_name: "BCA (Bank Central Asia)",
   bank_account_number: "8720-1928-33",
   bank_account_holder: "PT Serena Raga Indonesia",
@@ -56,24 +62,24 @@ export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
 const STORAGE_KEY = "serenaraga_brand_settings";
 
 /**
- * Format raw phone number into clean WhatsApp format (digits only, e.g. 6281234567890)
+ * Format raw phone number into clean WhatsApp format (digits only, e.g. 6289518359037)
  */
 export function cleanWhatsAppNumber(phone?: string): string {
-  if (!phone) return "6281234567890";
+  if (!phone) return "6289518359037";
   let cleaned = phone.replace(/[^\d]/g, "");
   if (cleaned.startsWith("0")) {
     cleaned = "62" + cleaned.slice(1);
   } else if (cleaned.startsWith("8")) {
     cleaned = "62" + cleaned;
   }
-  return cleaned || "6281234567890";
+  return cleaned || "6289518359037";
 }
 
 /**
- * Formats a phone number for display (e.g. +62 812-3456-7890)
+ * Formats a phone number for display (e.g. +62 895-1835-9037)
  */
 export function formatDisplayPhone(phone?: string): string {
-  if (!phone) return "+62 812-3456-7890";
+  if (!phone) return "+62 895-1835-9037";
   const cleaned = cleanWhatsAppNumber(phone);
   if (cleaned.startsWith("62")) {
     const rest = cleaned.slice(2);
@@ -99,6 +105,54 @@ export function getWhatsAppUrl(phone: string, text?: string): string {
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
   }
   return `https://wa.me/${cleanPhone}`;
+}
+
+/**
+ * Generate a valid Instagram URL
+ */
+export function getInstagramUrl(handleOrUrl?: string): string {
+  if (!handleOrUrl) return "https://instagram.com/serenaraga";
+  if (handleOrUrl.startsWith("http://") || handleOrUrl.startsWith("https://")) {
+    return handleOrUrl;
+  }
+  const clean = handleOrUrl.replace(/^@/, "").trim();
+  return `https://instagram.com/${clean || "serenaraga"}`;
+}
+
+/**
+ * Generate a valid TikTok URL
+ */
+export function getTikTokUrl(handleOrUrl?: string): string {
+  if (!handleOrUrl) return "https://tiktok.com/@serenaraga";
+  if (handleOrUrl.startsWith("http://") || handleOrUrl.startsWith("https://")) {
+    return handleOrUrl;
+  }
+  const clean = handleOrUrl.replace(/^@/, "").trim();
+  return `https://tiktok.com/@${clean || "serenaraga"}`;
+}
+
+/**
+ * Generate a valid Facebook URL
+ */
+export function getFacebookUrl(urlOrName?: string): string {
+  if (!urlOrName) return "https://facebook.com/serenaraga";
+  if (urlOrName.startsWith("http://") || urlOrName.startsWith("https://")) {
+    return urlOrName;
+  }
+  const clean = urlOrName.replace(/^\//, "").trim();
+  return `https://facebook.com/${clean || "serenaraga"}`;
+}
+
+/**
+ * Generate a valid Threads URL
+ */
+export function getThreadsUrl(handleOrUrl?: string): string {
+  if (!handleOrUrl) return "https://threads.net/@serenaraga";
+  if (handleOrUrl.startsWith("http://") || handleOrUrl.startsWith("https://")) {
+    return handleOrUrl;
+  }
+  const clean = handleOrUrl.replace(/^@/, "").trim();
+  return `https://threads.net/@${clean || "serenaraga"}`;
 }
 
 /**
@@ -159,7 +213,7 @@ export async function saveBrandSettings(
  * React Hook for consuming Brand Settings throughout the application
  */
 export function useBrandSettings() {
-  const [settings, setSettings] = useState<BrandSettings>(DEFAULT_BRAND_SETTINGS);
+  const [settings, setSettings] = useState<BrandSettings>(() => getCachedBrandSettings());
   const [loading, setLoading] = useState<boolean>(true);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -168,18 +222,13 @@ export function useBrandSettings() {
     let mounted = true;
     setIsMounted(true);
 
-    // Hydrate from localStorage on client mount
-    try {
-      const cached = getCachedBrandSettings();
-      setSettings(cached);
-    } catch (e) {}
-
     async function loadRemoteSettings() {
       try {
         const { data, error } = await supabase
           .from("brand_settings")
           .select("*")
-          .eq("id", 1)
+          .order("id", { ascending: true })
+          .limit(1)
           .maybeSingle();
 
         if (!error && data && mounted) {
@@ -201,17 +250,30 @@ export function useBrandSettings() {
 
     loadRemoteSettings();
 
-    // Listen to local changes
+    // Listen to local changes in the same window
     const handleLocalUpdate = (e: any) => {
       if (e.detail && mounted) {
         setSettings(e.detail);
       }
     };
 
+    // Listen to storage events from other tabs/windows
+    const handleStorageUpdate = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue && mounted) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setSettings({ ...DEFAULT_BRAND_SETTINGS, ...parsed });
+        } catch (err) {}
+      }
+    };
+
     window.addEventListener("brand_settings_updated", handleLocalUpdate);
+    window.addEventListener("storage", handleStorageUpdate);
+
     return () => {
       mounted = false;
       window.removeEventListener("brand_settings_updated", handleLocalUpdate);
+      window.removeEventListener("storage", handleStorageUpdate);
     };
   }, []);
 

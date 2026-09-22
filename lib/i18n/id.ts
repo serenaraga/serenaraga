@@ -433,6 +433,20 @@ export const indonesianMessages: TranslationMessages = {
         paid: "Sudah Ditransfer",
       },
     },
+    testimonials: {
+      name: "Testimoni WhatsApp |||| Testimoni WhatsApp",
+      fields: {
+        id: "ID",
+        customer_name: "Nama Pelanggan",
+        service_name: "Layanan",
+        image_url: "Screenshot Chat WA",
+        caption: "Kutipan Ulasan",
+        rating: "Rating",
+        is_active: "Status Tayang",
+        sort_order: "Urutan Tampil",
+        created_at: "Tanggal Ditambah",
+      },
+    },
     settings: {
       name: "Pengaturan |||| Pengaturan",
     },

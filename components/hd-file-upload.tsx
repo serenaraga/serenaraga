@@ -22,15 +22,20 @@ import {
   Image as ImageIcon,
   ShieldAlert,
   Sparkles,
+  ShieldCheck,
+  Scissors,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImageBlurEditor } from "@/components/image-blur-editor";
 
 interface HDFileUploadProps {
   source: string;
   label?: string;
   helperText?: string;
-  bucketName?: "therapist-documents" | "therapist-photos";
+  bucketName?: "therapist-documents" | "therapist-photos" | "testimonials" | (string & {});
   fileType?: "image" | "document" | "all";
+  enableBlurTool?: boolean;
   maxDimension?: number; // default 2048px for Crisp HD
   quality?: number; // default 0.92 for Ultra Clear Text
   required?: boolean;
@@ -112,6 +117,7 @@ export const HDFileUpload: React.FC<HDFileUploadProps> = ({
   helperText,
   bucketName = "therapist-documents",
   fileType = "image",
+  enableBlurTool,
   maxDimension = 2048,
   quality = 0.92,
   required = false,
@@ -126,10 +132,14 @@ export const HDFileUpload: React.FC<HDFileUploadProps> = ({
   const [locale] = useLocaleState();
   const isEn = locale === "en";
 
+  const isBlurSupported = enableBlurTool ?? (bucketName === "testimonials" || fileType === "image");
+
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState<string>("");
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [blurEditorOpen, setBlurEditorOpen] = React.useState(false);
+  const [pendingFileForBlur, setPendingFileForBlur] = React.useState<File | null>(null);
   const [isDragOver, setIsDragOver] = React.useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -147,34 +157,27 @@ export const HDFileUpload: React.FC<HDFileUploadProps> = ({
     );
   }, [value]);
 
-  const handleFileProcess = async (file: File) => {
+  const uploadProcessedBlob = async (blob: Blob, originalName = "screenshot.webp") => {
     try {
       setIsUploading(true);
       setErrorMessage(null);
-      setUploadProgress(isEn ? "Optimizing in HD..." : "Memproses kualitas HD...");
-
-      // 1. Optimize image in HD
-      const { blob, ext } = await optimizeImageHD(file, maxDimension, quality);
-
       setUploadProgress(isEn ? "Uploading to Cloud..." : "Mengunggah ke Supabase...");
 
-      const randomSuffix = Math.random().toString(36).substring(2, 9);
-      const cleanFileName = file.name
+      const ext = "webp";
+      const cleanFileName = originalName
         .replace(/[^a-zA-Z0-9_-]/g, "_")
         .substring(0, 30);
       const filePath = `${source}/${Date.now()}_${cleanFileName}.${ext}`;
 
-      // 2. Upload to Supabase Storage
       const { data, error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(filePath, blob, {
           cacheControl: "3600",
           upsert: true,
-          contentType: ext === "webp" ? "image/webp" : file.type,
+          contentType: "image/webp",
         });
 
       if (!uploadError && data?.path) {
-        // 3. Get Public URL from Supabase Storage
         const { data: urlData } = supabase.storage
           .from(bucketName)
           .getPublicUrl(data.path);
@@ -185,7 +188,7 @@ export const HDFileUpload: React.FC<HDFileUploadProps> = ({
         }
       }
 
-      // If Supabase storage policy/bucket returns RLS error, gracefully store as HD data URL
+      // Fallback
       console.warn("Storage upload notice:", uploadError?.message);
       const base64Url = await new Promise<string>((resolve) => {
         const reader = new FileReader();
@@ -193,6 +196,32 @@ export const HDFileUpload: React.FC<HDFileUploadProps> = ({
         reader.readAsDataURL(blob);
       });
       onChange(base64Url);
+    } catch (err: any) {
+      console.error("HD Upload error:", err);
+      setErrorMessage(
+        err.message ||
+          (isEn ? "Upload failed. Please try again." : "Gagal mengunggah file. Silakan coba lagi.")
+      );
+    } finally {
+      setIsUploading(false);
+      setUploadProgress("");
+    }
+  };
+
+  const handleFileProcess = async (file: File) => {
+    if (isBlurSupported && file.type.startsWith("image/")) {
+      setPendingFileForBlur(file);
+      setBlurEditorOpen(true);
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setErrorMessage(null);
+      setUploadProgress(isEn ? "Optimizing in HD..." : "Memproses kualitas HD...");
+
+      const { blob, ext } = await optimizeImageHD(file, maxDimension, quality);
+      await uploadProcessedBlob(blob, file.name);
     } catch (err: any) {
       console.error("HD Upload error:", err);
       setErrorMessage(
@@ -386,6 +415,22 @@ export const HDFileUpload: React.FC<HDFileUploadProps> = ({
             </div>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Interactive Blur / Redaction Editor Modal */}
+      {pendingFileForBlur && (
+        <ImageBlurEditor
+          isOpen={blurEditorOpen}
+          onClose={() => {
+            setBlurEditorOpen(false);
+            setPendingFileForBlur(null);
+          }}
+          file={pendingFileForBlur}
+          onSave={(processedBlob) => {
+            uploadProcessedBlob(processedBlob, pendingFileForBlur.name);
+            setPendingFileForBlur(null);
+          }}
+        />
       )}
     </div>
   );

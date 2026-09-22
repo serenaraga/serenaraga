@@ -63,6 +63,10 @@ export const dataProvider: DataProvider = {
             query = query.or(
               `customer_name.ilike.%${value}%,comment.ilike.%${value}%,therapist_name.ilike.%${value}%`
             );
+          } else if (resource === "testimonials") {
+            query = query.or(
+              `customer_name.ilike.%${value}%,service_name.ilike.%${value}%,caption.ilike.%${value}%`
+            );
           }
         } else if (typeof value === "string") {
           query = query.ilike(key, `%${value}%`);
@@ -76,6 +80,10 @@ export const dataProvider: DataProvider = {
 
     const { data, count, error } = await query;
     if (error) {
+      if (error.code === "PGRST205" || error.message?.includes("schema cache") || error.message?.includes("does not exist")) {
+        console.warn(`Table for ${resource} not found in database yet:`, error.message);
+        return { data: [], total: 0 };
+      }
       console.error(`Error in getList on ${resource}:`, error);
       throw error;
     }
@@ -343,6 +351,25 @@ export const dataProvider: DataProvider = {
       dataToInsert.net_amount = Math.max(0, fee + bonus - deduction);
       if (!dataToInsert.payment_status) dataToInsert.payment_status = "paid";
       if (!dataToInsert.payment_date) dataToInsert.payment_date = new Date().toISOString().split("T")[0];
+    } else if (resource === "testimonials") {
+      if (
+        dataToInsert.sort_order === undefined ||
+        dataToInsert.sort_order === null ||
+        isNaN(Number(dataToInsert.sort_order))
+      ) {
+        const { data: latestItem } = await supabase
+          .from("testimonials")
+          .select("sort_order")
+          .order("sort_order", { ascending: false })
+          .limit(1);
+        const maxOrder =
+          latestItem && latestItem.length > 0 && typeof latestItem[0].sort_order === "number"
+            ? latestItem[0].sort_order
+            : -1;
+        dataToInsert.sort_order = maxOrder + 1;
+      } else {
+        dataToInsert.sort_order = Number(dataToInsert.sort_order);
+      }
     }
 
     const { data, error } = await supabase
