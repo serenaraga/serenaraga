@@ -59,8 +59,6 @@ import {
   ChevronRight,
   Plus,
   Minus,
-  Sun,
-  Moon,
   Globe,
   Award,
   HeartHandshake,
@@ -355,14 +353,11 @@ export default function LandingPage() {
 
   const [mounted, setMounted] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [locale, setLocale] = React.useState<"id" | "en">("id");
+  const [locale, setLocale] = React.useState<"id" | "en">("en");
   const isEn = locale === "en";
 
   // Dynamic state from database
   const [services, setServices] = React.useState<any[]>(DEFAULT_SERVICES);
-
-  // Theme mode: "light" | "dark" | "system"
-  const [theme, setTheme] = React.useState<"light" | "dark" | "system">("light");
 
   // Booking simulation state
   const [selectedService, setSelectedService] = React.useState<string>("Traditional Balinese Massage");
@@ -372,27 +367,15 @@ export default function LandingPage() {
   const [datePickerOpen, setDatePickerOpen] = React.useState(false);
   const [invoiceLookupNumber, setInvoiceLookupNumber] = React.useState("");
 
-  // Synchronize theme with document element
+  // Enforce light mode
   React.useEffect(() => {
     setMounted(true);
     if (typeof window !== "undefined") {
       const root = document.documentElement;
-      let effectiveDark = false;
-      if (theme === "dark") {
-        effectiveDark = true;
-      } else if (theme === "system") {
-        effectiveDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      }
-
-      if (effectiveDark) {
-        root.classList.remove("light");
-        root.classList.add("dark");
-      } else {
-        root.classList.remove("dark");
-        root.classList.add("light");
-      }
+      root.classList.remove("dark");
+      root.classList.add("light");
     }
-  }, [theme]);
+  }, []);
 
   // Fetch real services from Supabase if available
   React.useEffect(() => {
@@ -613,8 +596,8 @@ export default function LandingPage() {
               </a>
             ))}
 
-            {/* Action Group: Shadcn Language & Theme Mode Dropdowns */}
-            <div className="flex items-center gap-1 pl-3 border-l border-stone-200">
+            {/* Action Group: Shadcn Language Selector */}
+            <div className="flex items-center pl-3 border-l border-stone-200">
               {/* Shadcn Language Switcher Dropdown */}
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger
@@ -644,58 +627,6 @@ export default function LandingPage() {
                   >
                     <span>Indonesia (ID)</span>
                     <Check className={cn("w-4 h-4 text-[#9a6a43]", locale !== "id" && "hidden")} />
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Shadcn Theme Mode Toggle Dropdown */}
-              <DropdownMenu modal={false}>
-                <DropdownMenuTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-stone-700 hover:text-stone-950 hover:bg-stone-100/80 border-0 shadow-none transition-colors cursor-pointer"
-                    />
-                  }
-                >
-                  {theme === "dark" ? (
-                    <Moon className="w-4 h-4 text-[#9a6a43]" />
-                  ) : (
-                    <Sun className="w-4 h-4 text-[#9a6a43]" />
-                  )}
-                  <span className="sr-only">Toggle theme</span>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-32">
-                  <DropdownMenuItem
-                    onClick={() => setTheme("light")}
-                    className="flex items-center justify-between text-xs cursor-pointer py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Sun className="w-3.5 h-3.5 text-stone-700 dark:text-stone-300" />
-                      <span>{isEn ? "Light" : "Terang"}</span>
-                    </div>
-                    <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "light" && "hidden")} />
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setTheme("dark")}
-                    className="flex items-center justify-between text-xs cursor-pointer py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Moon className="w-3.5 h-3.5 text-stone-700 dark:text-stone-300" />
-                      <span>{isEn ? "Dark" : "Gelap"}</span>
-                    </div>
-                    <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "dark" && "hidden")} />
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setTheme("system")}
-                    className="flex items-center justify-between text-xs cursor-pointer py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-3.5 h-3.5 text-stone-400" />
-                      <span>{isEn ? "System" : "Sistem"}</span>
-                    </div>
-                    <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "system" && "hidden")} />
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -758,7 +689,7 @@ export default function LandingPage() {
                   </nav>
                 </div>
 
-                <div className="pt-5 space-y-4 border-t border-[#eee8df]">
+                <div className="pt-5 space-y-3.5 border-t border-[#eee8df]">
                   {/* Hero Outlined Style WhatsApp CTA */}
                   <button
                     type="button"
@@ -769,98 +700,40 @@ export default function LandingPage() {
                     <span>{isEn ? "Book via WhatsApp" : "Pesan via WhatsApp"}</span>
                   </button>
 
-                  {/* Shadcn UI Language & Theme Selectors for Mobile Drawer */}
-                  <div className="grid grid-cols-2 gap-2 pt-1 font-sans text-xs">
-                    {/* Language Dropdown */}
+                  {/* Shadcn UI Language Selector for Mobile Drawer */}
+                  <div className="pt-1 font-sans text-xs">
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger
                         render={
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="w-full h-8.5 justify-between px-2 text-xs text-stone-700 hover:bg-[#eee7dc]/60 rounded-md font-normal cursor-pointer border-0 shadow-none"
+                            className="w-full h-9 justify-between px-3 text-xs text-stone-700 hover:bg-[#eee7dc]/60 rounded-md font-normal cursor-pointer border border-[#ebe6df]/80 shadow-none bg-white/70"
                           />
                         }
                       >
-                        <div className="flex items-center gap-1.5 truncate">
+                        <div className="flex items-center gap-2 truncate">
                           <Globe className="w-3.5 h-3.5 text-stone-500 shrink-0" />
                           <span className="font-medium text-[#9a6a43] truncate">
-                            {locale === "en" ? "EN" : "ID"}
+                            {locale === "en" ? "English (EN)" : "Bahasa Indonesia (ID)"}
                           </span>
                         </div>
-                        <ChevronDown className="w-3 h-3 text-stone-400 shrink-0" />
+                        <ChevronDown className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-44">
+                      <DropdownMenuContent align="start" className="w-56">
                         <DropdownMenuItem
                           onClick={() => setLocale("en")}
-                          className="flex items-center justify-between text-xs cursor-pointer py-2"
+                          className="flex items-center justify-between text-xs cursor-pointer py-2.5"
                         >
                           <span>English (EN)</span>
                           <Check className={cn("w-4 h-4 text-[#9a6a43]", locale !== "en" && "hidden")} />
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setLocale("id")}
-                          className="flex items-center justify-between text-xs cursor-pointer py-2"
+                          className="flex items-center justify-between text-xs cursor-pointer py-2.5"
                         >
                           <span>Bahasa Indonesia (ID)</span>
                           <Check className={cn("w-4 h-4 text-[#9a6a43]", locale !== "id" && "hidden")} />
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {/* Theme Mode Dropdown */}
-                    <DropdownMenu modal={false}>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full h-8.5 justify-between px-2 text-xs text-stone-700 hover:bg-[#eee7dc]/60 rounded-md font-normal cursor-pointer border-0 shadow-none"
-                          />
-                        }
-                      >
-                        <div className="flex items-center gap-1.5 truncate">
-                          {theme === "dark" ? (
-                            <Moon className="w-3.5 h-3.5 text-[#9a6a43] shrink-0" />
-                          ) : (
-                            <Sun className="w-3.5 h-3.5 text-[#9a6a43] shrink-0" />
-                          )}
-                          <span className="capitalize font-medium text-[#9a6a43] truncate">
-                            {theme === "dark" ? (isEn ? "Dark" : "Gelap") : theme === "light" ? (isEn ? "Light" : "Terang") : (isEn ? "System" : "Sistem")}
-                          </span>
-                        </div>
-                        <ChevronDown className="w-3 h-3 text-stone-400 shrink-0" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-36">
-                        <DropdownMenuItem
-                          onClick={() => setTheme("light")}
-                          className="flex items-center justify-between text-xs cursor-pointer py-2"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Sun className="w-3.5 h-3.5 text-stone-700 dark:text-stone-300" />
-                            <span>{isEn ? "Light" : "Terang"}</span>
-                          </div>
-                          <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "light" && "hidden")} />
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setTheme("dark")}
-                          className="flex items-center justify-between text-xs cursor-pointer py-2"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Moon className="w-3.5 h-3.5 text-stone-600" />
-                            <span>{isEn ? "Dark" : "Gelap"}</span>
-                          </div>
-                          <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "dark" && "hidden")} />
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setTheme("system")}
-                          className="flex items-center justify-between text-xs cursor-pointer py-2"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Sparkles className="w-3.5 h-3.5 text-stone-400" />
-                            <span>{isEn ? "System" : "Sistem"}</span>
-                          </div>
-                          <Check className={cn("w-4 h-4 text-[#9a6a43]", theme !== "system" && "hidden")} />
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
