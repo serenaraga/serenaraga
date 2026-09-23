@@ -309,8 +309,7 @@ function useForkRef<Instance>(
     return () => {
       cleanups.forEach((refCleanup) => refCleanup?.());
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, refs);
+  }, [refs]);
 
   return React.useMemo(() => {
     if (refs.every((ref) => ref == null)) {
@@ -327,7 +326,5 @@ function useForkRef<Instance>(
         cleanupRef.current = refEffect(value);
       }
     };
-    // TODO: uncomment once we enable eslint-plugin-react-compiler // eslint-disable-next-line react-compiler/react-compiler -- intentionally ignoring that the dependency array must be an array literal
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, refs);
+  }, [refs]);
 }

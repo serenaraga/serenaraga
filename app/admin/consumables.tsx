@@ -40,6 +40,11 @@ import {
   Scale,
   DollarSign,
   FileText,
+  Droplet,
+  Droplets,
+  Package,
+  Leaf,
+  Shirt,
 } from "lucide-react";
 import {
   Empty,
@@ -211,14 +216,14 @@ const ConsumableFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
             <TextInput
               source="name"
-              label={isEn ? "Consumable Name *" : "Nama Bahan Habis Pakai *"}
+              label={isEn ? "Consumable Name" : "Nama Bahan Habis Pakai"}
               placeholder={isEn ? "e.g. Pure Olive Massage Oil" : "Contoh: Minyak Pijat Zaitun Murni"}
               validate={required(isEn ? "Consumable name is required" : "Nama bahan wajib diisi")}
               required
             />
             <SelectInput
               source="category"
-              label={isEn ? "Treatment Category *" : "Kategori Perawatan *"}
+              label={isEn ? "Treatment Category" : "Kategori Perawatan"}
               defaultValue="Oil & Lotion"
               choices={consumableCategories}
               required
@@ -270,14 +275,14 @@ const ConsumableFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
             <SelectInput
               source="unit"
-              label={isEn ? "Measurement Unit *" : "Satuan Takaran *"}
+              label={isEn ? "Measurement Unit" : "Satuan Takaran"}
               defaultValue="ml"
               choices={consumableUnits}
               required
             />
             <NumberInput
               source="cost_per_unit"
-              label={isEn ? "Cost per Unit (IDR) *" : "Biaya Pokok per Unit (IDR) *"}
+              label={isEn ? "Cost per Unit (IDR)" : "Biaya Pokok per Unit (IDR)"}
               helperText={isEn ? "Cost for 1 unit (e.g. Rp 150 / ml)" : "Harga modal untuk 1 satuan"}
               defaultValue={mode === "create" ? 150 : undefined}
               min={0}

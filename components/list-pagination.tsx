@@ -11,6 +11,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -117,20 +118,28 @@ export const ListPagination = ({
           </Translate>
         </p>
         <Select
+          items={rowsPerPageOptions.map((pageSize) => ({
+            label: `${pageSize}`,
+            value: `${pageSize}`,
+          }))}
           value={perPage.toString()}
           onValueChange={(value) => {
-            setPerPage(Number(value));
+            if (value) {
+              setPerPage(Number(value));
+            }
           }}
         >
-          <SelectTrigger className="h-8 w-fit">
+          <SelectTrigger size="sm" className="h-8 w-fit min-w-[4.25rem] gap-1 px-2.5 rounded-lg text-xs">
             <SelectValue placeholder={perPage} />
           </SelectTrigger>
-          <SelectContent side="top">
-            {rowsPerPageOptions.map((pageSize) => (
-              <SelectItem key={pageSize} value={`${pageSize}`}>
-                {pageSize}
-              </SelectItem>
-            ))}
+          <SelectContent side="top" className="min-w-[4.25rem] p-1">
+            <SelectGroup>
+              {rowsPerPageOptions.map((pageSize) => (
+                <SelectItem key={pageSize} value={`${pageSize}`} className="text-xs py-1 px-2">
+                  {pageSize}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
       </div>

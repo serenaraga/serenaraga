@@ -151,3 +151,15 @@
   background-color: var(--toast-bg) !important;
   color: var(--toast-text) !important;
 }
+
+/* Smooth Luxury Accordion Expand & Collapse Animation (Pure Height Transition, No Fade) */
+[data-slot="accordion-content"] {
+  overflow: hidden;
+  height: var(--accordion-panel-height);
+  transition: height 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-slot="accordion-content"][data-starting-style],
+[data-slot="accordion-content"][data-ending-style] {
+  height: 0 !important;
+}

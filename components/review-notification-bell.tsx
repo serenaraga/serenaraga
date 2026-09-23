@@ -47,7 +47,9 @@ export function ReviewNotificationBell({ className }: { className?: string }) {
   const hasNewReviews = unreadReviews.length > 0;
 
   const refetchRef = React.useRef(refetchReviews);
-  refetchRef.current = refetchReviews;
+  React.useEffect(() => {
+    refetchRef.current = refetchReviews;
+  }, [refetchReviews]);
 
   // Realtime Supabase channel to listen for new reviews instantly
   React.useEffect(() => {

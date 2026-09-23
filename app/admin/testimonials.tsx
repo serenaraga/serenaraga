@@ -3,6 +3,9 @@
 import * as React from "react";
 import {
   useRecordContext,
+  useResourceContext,
+  useCreatePath,
+  LinkBase,
   useLocaleState,
   useTranslate,
   required,
@@ -31,12 +34,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Eye,
   MessageSquareQuote,
   CheckCircle2,
@@ -48,11 +45,12 @@ import {
 } from "lucide-react";
 
 /**
- * Thumbnail column with click-to-zoom Dialog modal for WhatsApp Screenshots
+ * Thumbnail column with direct navigation to Testimonial Show page (Breadcrumb hierarchy)
  */
 const ScreenshotThumbnailCol = () => {
   const record = useRecordContext();
-  const [isOpen, setIsOpen] = React.useState(false);
+  const createPath = useCreatePath();
+  const resource = useResourceContext();
 
   if (!record || !record.image_url) {
     return (
@@ -62,49 +60,32 @@ const ScreenshotThumbnailCol = () => {
     );
   }
 
-  return (
-    <>
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(true);
-        }}
-        className="group relative w-12 h-16 rounded-md overflow-hidden bg-muted border border-border cursor-pointer shadow-xs hover:ring-2 hover:ring-primary/40 transition-all"
-        title="Klik untuk melihat screenshot penuh"
-      >
-        <img
-          src={record.image_url}
-          alt={record.customer_name || "Screenshot Testimoni WhatsApp"}
-          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
-        />
-        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-          <Eye className="w-4 h-4 text-white drop-shadow" />
-        </div>
-      </div>
+  const showUrl = createPath({
+    resource: resource || "testimonials",
+    type: "show",
+    id: record.id,
+  });
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] p-4 flex flex-col items-center">
-          <DialogHeader className="w-full text-left pb-2 border-b border-border">
-            <DialogTitle className="text-sm font-semibold flex items-center gap-2">
-              <MessageSquareQuote className="w-4 h-4 text-muted-foreground" />
-              <span>{record.customer_name || "Testimoni WhatsApp"}</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="w-full overflow-y-auto max-h-[75vh] flex items-center justify-center p-2 bg-muted/30 rounded-lg">
-            <img
-              src={record.image_url}
-              alt="Full WhatsApp Screenshot"
-              className="max-w-full max-h-[70vh] rounded-md shadow-lg object-contain"
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+  return (
+    <LinkBase
+      to={showUrl}
+      className="group relative block w-12 h-16 rounded-md overflow-hidden bg-muted border border-border cursor-pointer shadow-xs hover:ring-2 hover:ring-primary/40 transition-all"
+      title="Lihat detail testimoni"
+    >
+      <img
+        src={record.image_url}
+        alt={record.customer_name || "Screenshot Testimoni WhatsApp"}
+        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+      />
+      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+        <Eye className="w-4 h-4 text-white drop-shadow" />
+      </div>
+    </LinkBase>
   );
 };
 
 /**
- * Status column badge (Active / Hidden)
+ * Status column plain text (Live on Web / Hidden)
  */
 const StatusCol = () => {
   const record = useRecordContext();
@@ -114,22 +95,16 @@ const StatusCol = () => {
   if (!record) return null;
   const isActive = record.is_active !== false;
 
-  return isActive ? (
-    <Badge
-      variant="outline"
-      className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-medium gap-1 py-0.5"
-    >
-      <CheckCircle2 className="w-3 h-3" />
-      <span>{isEn ? "Live on Web" : "Tayang di Web"}</span>
-    </Badge>
-  ) : (
-    <Badge
-      variant="outline"
-      className="bg-muted text-muted-foreground border-border text-[10px] font-medium gap-1 py-0.5"
-    >
-      <XCircle className="w-3 h-3" />
-      <span>{isEn ? "Hidden" : "Disembunyikan"}</span>
-    </Badge>
+  return (
+    <span className="text-xs font-normal text-foreground">
+      {isActive
+        ? isEn
+          ? "Live on Web"
+          : "Tayang di Web"
+        : isEn
+        ? "Hidden"
+        : "Disembunyikan"}
+    </span>
   );
 };
 
@@ -144,8 +119,8 @@ export const TestimonialList = () => {
     <List
       title={
         isEn
-          ? "WhatsApp Testimonial Screenshots"
-          : "Screenshot Testimoni WhatsApp"
+          ? "Testimonials"
+          : "Testimoni"
       }
     >
       <DataTable>
@@ -233,8 +208,8 @@ export const TestimonialCreate = () => {
     <Create
       title={
         isEn
-          ? "Upload WhatsApp Testimonial Screenshot"
-          : "Tambah Screenshot Testimoni WhatsApp"
+          ? "Add Testimonial"
+          : "Tambah Testimoni"
       }
     >
       <SimpleForm
@@ -250,7 +225,7 @@ export const TestimonialCreate = () => {
             <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-emerald-500" />
               <span>
-                {isEn ? "WhatsApp Chat Screenshot Image *" : "Gambar Screenshot Chat WhatsApp *"}
+                {isEn ? "WhatsApp Chat Screenshot Image" : "Gambar Screenshot Chat WhatsApp"}
               </span>
             </CardTitle>
             <CardDescription className="text-xs">
@@ -264,8 +239,8 @@ export const TestimonialCreate = () => {
               source="image_url"
               label={
                 isEn
-                  ? "WhatsApp Chat Screenshot Image *"
-                  : "Screenshot Chat WhatsApp Asli *"
+                  ? "WhatsApp Chat Screenshot Image"
+                  : "Screenshot Chat WhatsApp Asli"
               }
               bucketName="testimonials"
               fileType="image"
@@ -346,8 +321,8 @@ export const TestimonialEdit = () => {
     <Edit
       title={
         isEn
-          ? "Edit WhatsApp Testimonial"
-          : "Edit Testimoni WhatsApp"
+          ? "Edit Testimonial"
+          : "Edit Testimoni"
       }
     >
       <SimpleForm>
@@ -417,8 +392,49 @@ export const TestimonialEdit = () => {
 // ==========================================
 // 4. TESTIMONIAL SHOW VIEW
 // ==========================================
-export const TestimonialShow = () => {
+const TestimonialShowContent = () => {
   const record = useRecordContext();
+  const [locale] = useLocaleState();
+  const isEn = locale === "en";
+
+  if (!record) return null;
+
+  return (
+    <div className="max-w-4xl space-y-6 pb-8">
+      <Card className="border border-border shadow-xs bg-card">
+        <CardHeader className="pb-3 border-b border-border">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <MessageSquareQuote className="w-4 h-4 text-emerald-500" />
+              <span>{record.customer_name || "Testimoni WhatsApp"}</span>
+            </CardTitle>
+            <StatusCol />
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6 flex flex-col items-center">
+          {record.image_url ? (
+            <div className="w-full flex justify-center p-4 sm:p-6 bg-muted/30 dark:bg-muted/10 rounded-lg border border-border/50">
+              <img
+                src={record.image_url}
+                alt={record.customer_name || "WhatsApp Screenshot"}
+                className="max-h-[720px] w-auto max-w-full object-contain rounded-md shadow-lg"
+              />
+            </div>
+          ) : (
+            <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground space-y-2">
+              <ImageIcon className="w-10 h-10 opacity-30" />
+              <p className="text-xs">
+                {isEn ? "No screenshot image uploaded." : "Tidak ada file gambar screenshot."}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export const TestimonialShow = () => {
   const [locale] = useLocaleState();
   const isEn = locale === "en";
 
@@ -426,36 +442,11 @@ export const TestimonialShow = () => {
     <Show
       title={
         isEn
-          ? "WhatsApp Testimonial Detail"
-          : "Detail Testimoni WhatsApp"
+          ? "Testimonial Detail"
+          : "Detail Testimoni"
       }
     >
-      <div className="max-w-3xl space-y-6 pb-8">
-        <Card className="border border-border shadow-xs">
-          <CardHeader className="pb-3 border-b border-border">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <MessageSquareQuote className="w-4 h-4 text-emerald-500" />
-                <span>{record?.customer_name || "Testimoni WhatsApp"}</span>
-              </CardTitle>
-              <StatusCol />
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4 flex flex-col items-center">
-            {record?.image_url ? (
-              <div className="w-full flex justify-center p-4 bg-stone-950/40 rounded-lg">
-                <img
-                  src={record.image_url}
-                  alt="WhatsApp Screenshot"
-                  className="max-h-[600px] w-auto object-contain rounded shadow-lg"
-                />
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">Tidak ada gambar.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <TestimonialShowContent />
     </Show>
   );
 };

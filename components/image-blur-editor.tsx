@@ -35,6 +35,49 @@ interface BlurRect {
   h: number;
 }
 
+// Helper to blur a specific rectangle on the canvas
+function applyBlurToArea(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  rect: BlurRect,
+  radius: number
+) {
+  const { x, y, w, h } = rect;
+  if (w <= 0 || h <= 0) return;
+
+  // Fast and realistic box/gaussian blur approximation
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = w;
+  tempCanvas.height = h;
+  const tempCtx = tempCanvas.getContext("2d");
+  if (!tempCtx) return;
+
+  // Draw source region to temp canvas
+  tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+
+  // Apply multiple blur passes or scaled down/up pixelation blur
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  // Use CSS canvas filter blur
+  ctx.filter = `blur(${radius}px)`;
+  ctx.drawImage(
+    canvas,
+    x - radius,
+    y - radius,
+    w + radius * 2,
+    h + radius * 2,
+    x - radius,
+    y - radius,
+    w + radius * 2,
+    h + radius * 2
+  );
+  ctx.filter = "none";
+  ctx.restore();
+}
+
 export const ImageBlurEditor: React.FC<ImageBlurEditorProps> = ({
   isOpen,
   onClose,
@@ -108,49 +151,6 @@ export const ImageBlurEditor: React.FC<ImageBlurEditorProps> = ({
   React.useEffect(() => {
     redrawCanvas();
   }, [redrawCanvas]);
-
-  // Helper to blur a specific rectangle on the canvas
-  const applyBlurToArea = (
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    rect: BlurRect,
-    radius: number
-  ) => {
-    const { x, y, w, h } = rect;
-    if (w <= 0 || h <= 0) return;
-
-    // Fast and realistic box/gaussian blur approximation
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = w;
-    tempCanvas.height = h;
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) return;
-
-    // Draw source region to temp canvas
-    tempCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
-
-    // Apply multiple blur passes or scaled down/up pixelation blur
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x, y, w, h);
-    ctx.clip();
-
-    // Use CSS canvas filter blur
-    ctx.filter = `blur(${radius}px)`;
-    ctx.drawImage(
-      canvas,
-      x - radius,
-      y - radius,
-      w + radius * 2,
-      h + radius * 2,
-      x - radius,
-      y - radius,
-      w + radius * 2,
-      h + radius * 2
-    );
-    ctx.filter = "none";
-    ctx.restore();
-  };
 
   // Coordinate mapping from mouse/touch event to actual image canvas pixels
   const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement>) => {

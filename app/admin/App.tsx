@@ -18,6 +18,12 @@ import {
   TestimonialCreate,
   TestimonialShow,
 } from "./testimonials";
+import {
+  PromotionList,
+  PromotionCreate,
+  PromotionEdit,
+  PromotionShow,
+} from "./promotions";
 import { InvoiceList, InvoiceCreate, InvoiceShow } from "./invoices";
 import { PayoutCreate, PayoutShow } from "./payouts";
 import { BrandSettingsPage } from "./settings";
@@ -33,6 +39,7 @@ import {
   SlidersHorizontal,
   UserCog,
   MessageSquareQuote,
+  TicketPercent,
 } from "lucide-react";
 
 const App = () => (
@@ -144,6 +151,18 @@ const App = () => (
             show={TestimonialShow}
             recordRepresentation="customer_name"
             icon={MessageSquareQuote}
+          />
+        ) : null,
+        isAdmin ? (
+          <Resource
+            key="promotions"
+            name="promotions"
+            list={PromotionList}
+            edit={PromotionEdit}
+            create={PromotionCreate}
+            show={PromotionShow}
+            recordRepresentation="name"
+            icon={TicketPercent}
           />
         ) : null,
         isAdmin ? (

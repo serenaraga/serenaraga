@@ -5,9 +5,10 @@ import type { RaRecord } from "ra-core";
 import { useFieldValue, useTranslate, useResourceContext } from "ra-core";
 import { cn } from "@/lib/utils";
 import type { FieldProps } from "@/lib/field.type";
+import { resolveChoiceIcon } from "@/components/select-input";
 
 /**
- * Displays a clean, seamless text status field without badges or icons.
+ * Displays a clean, seamless status field with matching Lucide status icons.
  */
 export const BadgeField = <RecordType extends RaRecord = RaRecord>({
   defaultValue,
@@ -15,6 +16,7 @@ export const BadgeField = <RecordType extends RaRecord = RaRecord>({
   record,
   empty,
   className,
+  showIcon = true,
 }: BadgeFieldProps<RecordType>) => {
   const value = useFieldValue({ defaultValue, source, record });
   const translate = useTranslate();
@@ -49,14 +51,17 @@ export const BadgeField = <RecordType extends RaRecord = RaRecord>({
       .join(" ");
   }
 
+  const icon = showIcon ? resolveChoiceIcon(strValue) : null;
+
   return (
     <span
       className={cn(
-        "text-xs font-medium text-foreground tracking-tight whitespace-nowrap capitalize",
+        "text-xs font-medium text-foreground tracking-tight whitespace-nowrap inline-flex items-center gap-1.5",
         className
       )}
     >
-      {label}
+      {icon}
+      <span>{label}</span>
     </span>
   );
 };
@@ -66,5 +71,6 @@ export interface BadgeFieldProps<RecordType extends RaRecord = RaRecord>
   defaultValue?: any;
   variant?: "default" | "outline" | "secondary" | "destructive";
   className?: string;
+  showIcon?: boolean;
 }
 

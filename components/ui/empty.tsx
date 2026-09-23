@@ -19,7 +19,7 @@ const emptyMediaVariants = cva(
   }
 );
 
-export interface EmptyProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type EmptyProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function Empty({ className, ...props }: EmptyProps) {
   return (
@@ -34,7 +34,7 @@ export function Empty({ className, ...props }: EmptyProps) {
   );
 }
 
-export interface EmptyHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type EmptyHeaderProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function EmptyHeader({ className, ...props }: EmptyHeaderProps) {
   return (
@@ -64,7 +64,7 @@ export function EmptyMedia({
   );
 }
 
-export interface EmptyTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {}
+export type EmptyTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
 
 export function EmptyTitle({ className, ...props }: EmptyTitleProps) {
   return (
@@ -76,8 +76,7 @@ export function EmptyTitle({ className, ...props }: EmptyTitleProps) {
   );
 }
 
-export interface EmptyDescriptionProps
-  extends React.HTMLAttributes<HTMLParagraphElement> {}
+export type EmptyDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
 
 export function EmptyDescription({ className, ...props }: EmptyDescriptionProps) {
   return (
@@ -89,7 +88,7 @@ export function EmptyDescription({ className, ...props }: EmptyDescriptionProps)
   );
 }
 
-export interface EmptyContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type EmptyContentProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function EmptyContent({ className, ...props }: EmptyContentProps) {
   return (

@@ -21,6 +21,7 @@ import {
   type PayoutSlipData,
   type BookingBreakdownItem,
 } from "@/components/payout-slip-card";
+import { calculateBookingFinancials } from "@/lib/financial-calculator";
 import {
   Card,
   CardContent,
@@ -34,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
@@ -47,13 +49,16 @@ import {
   FormSkeleton,
   DocumentSlipSkeleton,
 } from "@/components/ui/skeleton";
+import { SearchableCombobox } from "@/components/searchable-combobox";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { resolveChoiceIcon } from "@/components/select-input";
 import {
   Wallet,
   Calendar as CalendarIcon,
@@ -113,11 +118,10 @@ export const PayoutCreate = () => {
   );
   const [selectedTherapist, setSelectedTherapist] = React.useState<any>(null);
 
-  // Period state: default to this month
+  // Period state: default to today
   const today = new Date();
-  const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const [startDate, setStartDate] = React.useState<string>(
-    formatDateToLocalISO(defaultStart)
+    formatDateToLocalISO(today)
   );
   const [endDate, setEndDate] = React.useState<string>(
     formatDateToLocalISO(today)
@@ -126,6 +130,7 @@ export const PayoutCreate = () => {
   // Calculation & Form State
   const [bookings, setBookings] = React.useState<any[]>([]);
   const [loadingBookings, setLoadingBookings] = React.useState<boolean>(false);
+  const [alreadySettledCount, setAlreadySettledCount] = React.useState<number>(0);
   const [bonusAmount, setBonusAmount] = React.useState<number>(0);
   const [deductionAmount, setDeductionAmount] = React.useState<number>(0);
   const [paymentStatus, setPaymentStatus] = React.useState<string>("paid");
@@ -185,16 +190,51 @@ export const PayoutCreate = () => {
     setSelectedTherapist(found || null);
   };
 
-  // Fetch bookings for therapist in date range
+  // Fetch bookings for therapist in date range with invoice & promo sync, excluding already-settled bookings
   const fetchEligibleBookings = React.useCallback(async () => {
     if (!selectedTherapistId || !startDate || !endDate) return;
 
     try {
       setLoadingBookings(true);
-      const { data, error } = await supabase
+
+      // 1. Fetch existing payouts for this therapist to prevent double payout
+      const { data: existingPayouts } = await supabase
+        .from("therapist_payouts")
+        .select("id, payout_number, period_start, period_end, payment_status, bookings_breakdown")
+        .eq("therapist_id", selectedTherapistId);
+
+      const paidBookingIds = new Set<number>();
+
+      if (existingPayouts && existingPayouts.length > 0) {
+        for (const p of existingPayouts) {
+          if (Array.isArray(p.bookings_breakdown) && p.bookings_breakdown.length > 0) {
+            for (const item of p.bookings_breakdown) {
+              if (item?.id) paidBookingIds.add(Number(item.id));
+            }
+          } else if (p.period_start && p.period_end) {
+            // Fallback if json column was not stored: check previous period bookings
+            const { data: prevPeriodBookings } = await supabase
+              .from("bookings")
+              .select("id")
+              .eq("therapist_id", selectedTherapistId)
+              .gte("booking_date", p.period_start)
+              .lte("booking_date", p.period_end)
+              .in("status", ["confirmed", "completed"]);
+
+            if (prevPeriodBookings) {
+              for (const pb of prevPeriodBookings) {
+                paidBookingIds.add(Number(pb.id));
+              }
+            }
+          }
+        }
+      }
+
+      // 2. Fetch raw bookings in current requested date range
+      const { data: bData, error } = await supabase
         .from("bookings")
         .select(
-          "id, booking_date, booking_time, total_price, status, payment_status, service_id, services(name), customers(full_name)"
+          "id, booking_date, booking_time, total_price, status, payment_status, service_id, services(name, price, consumables_cost), customers(full_name)"
         )
         .eq("therapist_id", selectedTherapistId)
         .gte("booking_date", startDate)
@@ -204,28 +244,82 @@ export const PayoutCreate = () => {
 
       if (error) {
         console.error("Fetch bookings error:", error);
-      } else {
-        setBookings(data || []);
+        return;
       }
+
+      const allActive = bData || [];
+      // Filter out bookings that were already settled in a previous payout
+      const activeBookings = allActive.filter((b) => !paidBookingIds.has(Number(b.id)));
+      setAlreadySettledCount(allActive.length - activeBookings.length);
+
+      const bookingIds = activeBookings.map((b) => b.id);
+
+      // 3. Fetch corresponding invoices if any
+      let invoicesData: any[] = [];
+      if (bookingIds.length > 0) {
+        const { data: invData } = await supabase
+          .from("invoices")
+          .select("*")
+          .in("booking_id", bookingIds);
+        invoicesData = invData || [];
+      }
+
+      // 4. Fetch promotions to know deduct_from_therapist_commission policy
+      const { data: promosData } = await supabase
+        .from("promotions")
+        .select("*");
+
+      const commRate = Number(selectedTherapist?.commission_rate || 60);
+
+      // 5. Compute unified financial items for each eligible booking
+      const computedList = activeBookings.map((b: any) => {
+        const matchedInv = invoicesData.find(
+          (inv: any) => Number(inv.booking_id) === Number(b.id)
+        );
+
+        const fin = calculateBookingFinancials({
+          bookingPrice: Number(b.total_price || b.services?.price || 0),
+          servicePrice: Number(b.services?.price || 0),
+          consumablesCost: Number(b.services?.consumables_cost || 0),
+          commissionRate: commRate,
+          invoice: matchedInv,
+          promotions: promosData,
+        });
+
+        return {
+          ...b,
+          financial: fin,
+        };
+      });
+
+      setBookings(computedList);
     } catch (e) {
       console.error(e);
     } finally {
       setLoadingBookings(false);
     }
-  }, [selectedTherapistId, startDate, endDate]);
+  }, [selectedTherapistId, startDate, endDate, selectedTherapist]);
 
   React.useEffect(() => {
     fetchEligibleBookings();
   }, [fetchEligibleBookings]);
 
-  // Financial calculations
+  // Financial calculations using synchronized financial breakdown
   const totalBookingsCount = bookings.length;
   const grossRevenue = bookings.reduce(
-    (sum, b) => sum + Number(b.total_price || 0),
+    (sum, b) => sum + Number(b.financial?.treatmentGrossPrice ?? b.total_price ?? 0),
     0
   );
   const commissionRate = Number(selectedTherapist?.commission_rate || 60);
-  const therapistCommissionFee = (grossRevenue * commissionRate) / 100;
+  const therapistCommissionFee = bookings.reduce(
+    (sum, b) =>
+      sum +
+      Number(
+        b.financial?.therapistFee ??
+          Math.round(((Number(b.total_price || 0)) * commissionRate) / 100)
+      ),
+    0
+  );
   const companyShare = Math.max(0, grossRevenue - therapistCommissionFee);
   const netDisbursementAmount = Math.max(
     0,
@@ -260,8 +354,13 @@ export const PayoutCreate = () => {
       booking_time: b.booking_time,
       customer_name: b.customers?.full_name || "Pelanggan",
       service_name: b.services?.name || "Treatment",
-      total_price: Number(b.total_price || 0),
-      therapist_fee: (Number(b.total_price || 0) * commissionRate) / 100,
+      total_price: b.financial?.treatmentGrossPrice ?? Number(b.total_price || 0),
+      discount_amount: b.financial?.discountAmount ?? 0,
+      applied_promo_name: b.financial?.appliedPromoName,
+      is_post_discount: b.financial?.isPostDiscountPolicy,
+      commission_base: b.financial?.commissionBase ?? Number(b.total_price || 0),
+      therapist_fee: b.financial?.therapistFee ?? Math.round((Number(b.total_price || 0) * commissionRate) / 100),
+      invoice_number: b.financial?.invoiceNumber,
     })),
   };
 
@@ -278,7 +377,7 @@ export const PayoutCreate = () => {
       const payload = {
         therapist_id: selectedTherapist.id,
         therapist_name: selectedTherapist.name,
-        period_type: "custom",
+        period_type: startDate === endDate ? "daily" : "custom",
         period_start: startDate,
         period_end: endDate,
         total_bookings: totalBookingsCount,
@@ -295,6 +394,7 @@ export const PayoutCreate = () => {
         payment_status: paymentStatus,
         payment_date: paymentDate,
         notes: notes,
+        bookings_breakdown: previewPayout.bookings_breakdown,
       };
 
       await create(
@@ -446,55 +546,16 @@ export const PayoutCreate = () => {
                     </span>
                   )}
                 </Label>
-                <Select
+                <SearchableCombobox
+                  options={therapists.map((t) => ({
+                    value: String(t.id),
+                    label: `${t.name} (Komisi ${t.commission_rate ?? 60}%)`,
+                  }))}
                   value={selectedTherapistId}
+                  placeholder={isEn ? "Select therapist..." : "Pilih nama terapis..."}
+                  searchPlaceholder={isEn ? "Search therapist name..." : "Cari nama terapis..."}
                   onValueChange={handleTherapistSelect}
-                >
-                  <SelectTrigger className="w-full h-10 text-xs">
-                    <SelectValue placeholder={isEn ? "Select therapist..." : "Pilih terapis..."}>
-                      {selectedTherapist ? (
-                        <div className="flex items-center gap-2 text-left truncate">
-                          <Avatar className="h-5 w-5 shrink-0 rounded-full border border-border">
-                            <AvatarImage src={selectedTherapist.photo_url || ""} />
-                            <AvatarFallback className="text-[9px] bg-muted font-bold">
-                              {selectedTherapist.name?.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium truncate text-foreground">
-                            {selectedTherapist.name}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground shrink-0">
-                            ({selectedTherapist.commission_rate ?? 60}%)
-                          </span>
-                        </div>
-                      ) : (
-                        <span>{isEn ? "Select therapist..." : "Pilih nama terapis..."}</span>
-                      )}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-72">
-                    {therapists.map((t) => (
-                      <SelectItem key={t.id} value={String(t.id)} className="cursor-pointer py-2">
-                        <div className="flex items-center gap-2.5">
-                          <Avatar className="h-6 w-6 shrink-0 rounded-full border border-border">
-                            <AvatarImage src={t.photo_url || ""} />
-                            <AvatarFallback className="text-[10px] bg-muted font-bold">
-                              {t.name?.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col text-left">
-                            <span className="font-semibold text-foreground text-xs leading-none">
-                              {t.name}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground mt-0.5">
-                              Komisi: {t.commission_rate ?? 60}% • Bank: {t.bank_name || "BCA"} ({t.bank_account_number || "-"})
-                            </span>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
 
               {/* Date Range Picker with Shadcn Calendar */}
@@ -520,6 +581,16 @@ export const PayoutCreate = () => {
                     setEndDate(e);
                   }}
                 />
+                {alreadySettledCount > 0 && (
+                  <Alert className="rounded-none border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 py-2 px-2.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <AlertDescription className="text-[11px] text-amber-900 dark:text-amber-200 leading-normal font-medium">
+                      {isEn
+                        ? `${alreadySettledCount} order(s) in this date range were already paid in previous payout slips and excluded automatically to prevent double payment.`
+                        : `${alreadySettledCount} pesanan pada rentang ini sudah pernah dibayarkan pada slip payout sebelumnya dan otomatis dilewati agar tidak terjadi duplikasi.`}
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
 
               {/* Therapist Selected Mini Badge */}
@@ -548,7 +619,7 @@ export const PayoutCreate = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Bonus */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-foreground flex items-center gap-1">
@@ -562,7 +633,7 @@ export const PayoutCreate = () => {
                     value={bonusAmount}
                     onChange={(e) => setBonusAmount(Number(e.target.value) || 0)}
                     placeholder="0"
-                    className="h-9 text-xs font-medium"
+                    className="h-9 text-xs font-medium bg-background"
                   />
                 </div>
 
@@ -579,13 +650,13 @@ export const PayoutCreate = () => {
                     value={deductionAmount}
                     onChange={(e) => setDeductionAmount(Number(e.target.value) || 0)}
                     placeholder="0"
-                    className="h-9 text-xs font-medium"
+                    className="h-9 text-xs font-medium bg-background"
                   />
                 </div>
               </div>
 
               {/* Payment Date & Status */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Disbursement Date using Shadcn Popover DatePicker */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold text-foreground">
@@ -634,23 +705,46 @@ export const PayoutCreate = () => {
                   <Label className="text-xs font-semibold text-foreground">
                     {isEn ? "Payment Status" : "Status Pembayaran"}
                   </Label>
-                  <Select value={paymentStatus} onValueChange={(val) => val && setPaymentStatus(val)}>
-                    <SelectTrigger className="w-full h-9 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="paid">
-                        <span className="font-normal text-foreground">
-                          {isEn ? "Paid / Disbursed" : "Sudah Ditransfer (Paid)"}
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="pending">
-                        <span className="font-normal text-foreground">
-                          {isEn ? "Pending" : "Menunggu Transfer (Pending)"}
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {(() => {
+                    const statusItems = [
+                      { value: "paid", label: isEn ? "Paid / Disbursed" : "Sudah Ditransfer (Paid)" },
+                      { value: "pending", label: isEn ? "Pending" : "Menunggu Transfer (Pending)" },
+                    ];
+                    return (
+                      <Select
+                        items={statusItems}
+                        value={paymentStatus}
+                        onValueChange={(val) => {
+                          if (val) setPaymentStatus(val);
+                        }}
+                      >
+                        <SelectTrigger className="w-full h-8 text-xs bg-background">
+                          <SelectValue placeholder={isEn ? "Select status..." : "Pilih status..."}>
+                            {(val) => {
+                              const item = statusItems.find((s) => s.value === val);
+                              if (!item) return isEn ? "Select status..." : "Pilih status...";
+                              return (
+                                <span className="flex items-center gap-1.5 truncate">
+                                  <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
+                                  <span className="truncate">{item.label}</span>
+                                </span>
+                              );
+                            }}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="z-50 max-h-60 rounded-lg">
+                          <SelectGroup>
+                            {statusItems.map((item) => (
+                              <SelectItem key={item.value} value={item.value} className="text-xs py-1 px-2 flex items-center gap-1.5">
+                                <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
+                                <span>{item.label}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -741,7 +835,113 @@ const PayoutShowContent = () => {
   const [locale] = useLocaleState();
   const isEn = locale === "en";
 
+  const [breakdown, setBreakdown] = React.useState<BookingBreakdownItem[]>(
+    Array.isArray(record?.bookings_breakdown) ? record.bookings_breakdown : []
+  );
+  const [loadingBreakdown, setLoadingBreakdown] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!record) return;
+
+    if (Array.isArray(record.bookings_breakdown) && record.bookings_breakdown.length > 0) {
+      setBreakdown(record.bookings_breakdown);
+      return;
+    }
+
+    if (record.therapist_id && record.period_start && record.period_end) {
+      const therapistId = record.therapist_id;
+      const periodStart = record.period_start;
+      const periodEnd = record.period_end;
+      const commRate = Number(record.commission_rate || 60);
+
+      let isMounted = true;
+      setLoadingBreakdown(true);
+
+      async function loadBreakdown() {
+        try {
+          const { data: bData, error } = await supabase
+            .from("bookings")
+            .select(
+              "id, booking_date, booking_time, total_price, status, payment_status, service_id, services(name, price, consumables_cost), customers(full_name)"
+            )
+            .eq("therapist_id", therapistId)
+            .gte("booking_date", periodStart)
+            .lte("booking_date", periodEnd)
+            .in("status", ["confirmed", "completed"])
+            .order("booking_date", { ascending: false });
+
+          if (error || !bData || !isMounted) return;
+
+          const bookingIds = bData.map((b) => b.id);
+          let invoicesData: any[] = [];
+          if (bookingIds.length > 0) {
+            const { data: invData } = await supabase
+              .from("invoices")
+              .select("*")
+              .in("booking_id", bookingIds);
+            invoicesData = invData || [];
+          }
+
+          const { data: promosData } = await supabase
+            .from("promotions")
+            .select("*");
+
+          const computedItems: BookingBreakdownItem[] = bData.map((b: any) => {
+            const matchedInv = invoicesData.find(
+              (inv: any) => Number(inv.booking_id) === Number(b.id)
+            );
+
+            const fin = calculateBookingFinancials({
+              bookingPrice: Number(b.total_price || b.services?.price || 0),
+              servicePrice: Number(b.services?.price || 0),
+              consumablesCost: Number(b.services?.consumables_cost || 0),
+              commissionRate: commRate,
+              invoice: matchedInv,
+              promotions: promosData,
+            });
+
+            return {
+              id: b.id,
+              booking_date: b.booking_date,
+              booking_time: b.booking_time,
+              customer_name: b.customers?.full_name || "Pelanggan",
+              service_name: b.services?.name || "Treatment",
+              total_price: fin.treatmentGrossPrice ?? Number(b.total_price || 0),
+              discount_amount: fin.discountAmount ?? 0,
+              applied_promo_name: fin.appliedPromoName,
+              is_post_discount: fin.isPostDiscountPolicy,
+              commission_base: fin.commissionBase ?? Number(b.total_price || 0),
+              therapist_fee:
+                fin.therapistFee ??
+                Math.round((Number(b.total_price || 0) * commRate) / 100),
+              invoice_number: fin.invoiceNumber,
+            };
+          });
+
+          if (isMounted) {
+            setBreakdown(computedItems);
+          }
+        } catch (e) {
+          console.error("Error loading payout breakdown:", e);
+        } finally {
+          if (isMounted) setLoadingBreakdown(false);
+        }
+      }
+
+      loadBreakdown();
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [record]);
+
   if (!record) return null;
+
+  const enrichedPayout = {
+    ...record,
+    bookings_breakdown: breakdown,
+  };
 
   return (
     <div className="space-y-4 pb-8">
@@ -790,7 +990,7 @@ const PayoutShowContent = () => {
       </div>
 
       <div className="max-w-4xl mx-auto">
-        <PayoutSlipCard payout={record as any} showShareActions={true} />
+        <PayoutSlipCard payout={enrichedPayout as any} showShareActions={true} />
       </div>
     </div>
   );

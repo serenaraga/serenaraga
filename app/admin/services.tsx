@@ -26,8 +26,10 @@ import { TextInput } from "@/components/text-input";
 import { NumberInput } from "@/components/number-input";
 import { BooleanInput } from "@/components/boolean-input";
 import { SelectInput } from "@/components/select-input";
+import { SearchableCombobox } from "@/components/searchable-combobox";
 import { RowActions } from "@/components/row-actions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Boxes,
@@ -41,6 +43,11 @@ import {
   Percent,
   CheckCircle2,
   Info,
+  Activity,
+  HeartPulse,
+  Footprints,
+  Flame,
+  Award,
 } from "lucide-react";
 import {
   Empty,
@@ -97,7 +104,7 @@ export const ServiceList = () => {
   return (
     <List actions={<ServiceListActions />}>
       <DataTable>
-        <DataTableCol source="id" label="#" headerClassName="w-14" cellClassName="text-xs text-muted-foreground font-mono" />
+        <DataTableCol source="id" label="#" headerClassName="w-14" cellClassName="text-xs font-bold text-primary" />
         <DataTableCol source="name" cellClassName="font-medium text-foreground text-xs" />
         <DataTableCol source="category" cellClassName="text-xs text-muted-foreground" />
         <DataTableCol
@@ -346,17 +353,17 @@ const ServiceConsumablesEditor: React.FC<{
                   <label className="text-[10px] text-muted-foreground block mb-1 font-medium">
                     {isEn ? "Select Material" : "Pilih Bahan"}
                   </label>
-                  <select
-                    value={item.consumable_id}
-                    onChange={(e) => handleItemChange(idx, Number(e.target.value))}
-                    className="w-full h-8 px-2.5 rounded-md border border-input bg-background text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
-                  >
-                    {availableConsumables.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({formatIDR(c.cost_per_unit)}/{c.unit})
-                      </option>
-                    ))}
-                  </select>
+                  <SearchableCombobox
+                    size="sm"
+                    options={availableConsumables.map((c) => ({
+                      value: String(c.id),
+                      label: `${c.name} (${formatIDR(c.cost_per_unit)}/${c.unit})`,
+                    }))}
+                    value={String(item.consumable_id)}
+                    placeholder={isEn ? "Select material..." : "Pilih bahan..."}
+                    searchPlaceholder={isEn ? "Search material..." : "Cari nama bahan..."}
+                    onValueChange={(val) => handleItemChange(idx, Number(val))}
+                  />
                 </div>
 
                 {/* 2. Quantity Input */}
@@ -364,13 +371,13 @@ const ServiceConsumablesEditor: React.FC<{
                   <label className="text-[10px] text-muted-foreground block mb-1 font-medium">
                     {isEn ? `Quantity (${unit})` : `Takaran (${unit})`}
                   </label>
-                  <input
+                  <Input
                     type="number"
                     min={0}
                     step="any"
                     value={item.quantity}
                     onChange={(e) => handleQuantityChange(idx, parseFloat(e.target.value) || 0)}
-                    className="w-full h-8 px-2.5 rounded-md border border-input bg-background text-xs font-mono text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
+                    className="h-8 px-2.5 text-xs font-mono"
                   />
                 </div>
 
@@ -386,14 +393,16 @@ const ServiceConsumablesEditor: React.FC<{
 
                 {/* 4. Delete Action */}
                 <div className="sm:col-span-1 flex items-end justify-end sm:justify-center">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleRemoveItem(idx)}
-                    className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     title={isEn ? "Remove Material" : "Hapus Bahan"}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             );
@@ -448,14 +457,14 @@ const ServiceFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }) =
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
             <TextInput
               source="name"
-              label={isEn ? "Service Name *" : "Nama Layanan *"}
+              label={isEn ? "Service Name" : "Nama Layanan"}
               required
               placeholder={isEn ? "e.g. Traditional Balinese Massage" : "Contoh: Traditional Balinese Massage"}
               validate={required(isEn ? "Service name is required" : "Nama layanan wajib diisi")}
             />
             <SelectInput
               source="category"
-              label={isEn ? "Category *" : "Kategori *"}
+              label={isEn ? "Category" : "Kategori"}
               defaultValue="Body Massage"
               choices={serviceCategories}
               required
@@ -465,7 +474,7 @@ const ServiceFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }) =
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
             <NumberInput
               source="duration_minutes"
-              label={isEn ? "Duration (Minutes) *" : "Durasi Waktu (Menit) *"}
+              label={isEn ? "Duration (Minutes)" : "Durasi Waktu (Menit)"}
               defaultValue={60}
               min={15}
               step={15}
@@ -473,10 +482,10 @@ const ServiceFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }) =
             />
             <NumberInput
               source="price"
-              label={isEn ? "Selling Price (IDR) *" : "Harga Jual Layanan (IDR) *"}
+              label={isEn ? "Selling Price (IDR)" : "Harga Jual Layanan (IDR)"}
               defaultValue={150000}
               min={0}
-              step={5000}
+              step={1}
               required
             />
           </div>

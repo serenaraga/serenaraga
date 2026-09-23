@@ -4,12 +4,14 @@ import * as React from "react";
 import type { InputProps } from "ra-core";
 import { useInput, FieldTitle, useResourceContext, useLocaleState } from "ra-core";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+} from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { FormField, FormLabel, FormError } from "@/components/form";
 import { InputHelperText } from "@/components/input-helper-text";
@@ -122,48 +124,86 @@ export const PhoneInput = (props: PhoneInputProps) => {
         </FormLabel>
       )}
       <div className="flex items-center gap-2">
-        {/* Country Code Selector */}
-        <Select value={countryCode} onValueChange={handleCountryChange}>
-          <SelectTrigger
-            aria-invalid={hasError}
-            className={cn(
-              "w-[105px] shrink-0 bg-background text-xs h-9 px-2.5",
-              hasError && "border-destructive text-destructive"
-            )}
+        {/* Country Code Selector via Combobox */}
+        <div className="shrink-0">
+          <Combobox
+            key={`country-combobox:${countryCode}`}
+            items={COUNTRIES.map((c) => ({
+              value: c.dialCode,
+              label: `${c.flag} ${c.dialCode} (${c.name})`,
+              country: c,
+            }))}
+            value={(() => {
+              const c = COUNTRIES.find((item) => item.dialCode === countryCode) || COUNTRIES[0];
+              return {
+                value: c.dialCode,
+                label: `${c.flag} ${c.dialCode} (${c.name})`,
+                country: c,
+              };
+            })()}
+            onValueChange={(item) => {
+              if (item) handleCountryChange(item.value);
+            }}
+            itemToStringLabel={(item) => item?.label ?? ""}
+            itemToStringValue={(item) => item?.value ?? ""}
           >
-            <span className="flex items-center gap-1.5 truncate">
-              <span className="text-base leading-none">
-                {COUNTRIES.find((c) => c.dialCode === countryCode)?.flag || "🇮🇩"}
+            <ComboboxTrigger
+              render={
+                <button
+                  type="button"
+                  aria-invalid={hasError}
+                  className={cn(
+                    "flex w-[105px] h-9 items-center justify-between rounded-md border border-input bg-background px-2.5 text-xs shadow-xs transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                    hasError && "border-destructive text-destructive"
+                  )}
+                />
+              }
+            >
+              <span className="flex items-center gap-1.5 truncate">
+                <span className="text-base leading-none">
+                  {COUNTRIES.find((c) => c.dialCode === countryCode)?.flag || "🇮🇩"}
+                </span>
+                <span className="font-semibold text-foreground text-xs">
+                  {countryCode}
+                </span>
               </span>
-              <span className="font-semibold text-foreground text-xs">
-                {countryCode}
-              </span>
-            </span>
-          </SelectTrigger>
-          <SelectContent
-            align="start"
-            alignItemWithTrigger={false}
-            className="w-[260px] min-w-[260px] p-1.5 shadow-xl border border-border bg-popover rounded-lg"
-          >
-            {COUNTRIES.map((c) => (
-              <SelectItem
-                key={c.code}
-                value={c.dialCode}
-                className="py-2 px-2 text-xs cursor-pointer rounded-md"
-              >
-                <div className="flex items-center gap-2.5 w-full">
-                  <span className="text-base leading-none shrink-0">{c.flag}</span>
-                  <span className="font-semibold text-foreground w-9 shrink-0 text-left">
-                    {c.dialCode}
-                  </span>
-                  <span className="text-muted-foreground text-xs truncate flex-1 text-left">
-                    ({c.name})
-                  </span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            </ComboboxTrigger>
+            <ComboboxContent
+              align="start"
+              className="w-[260px] min-w-[260px] p-1 shadow-xl border border-border bg-popover rounded-lg text-popover-foreground z-50"
+            >
+              <ComboboxInput
+                showTrigger={false}
+                showClear={true}
+                placeholder={locale === "en" ? "Search country..." : "Cari negara..."}
+                className="h-8 text-xs mb-1"
+                autoFocus
+              />
+              <ComboboxEmpty className="py-2 text-center text-xs text-muted-foreground">
+                {locale === "en" ? "No countries found." : "Negara tidak ditemukan."}
+              </ComboboxEmpty>
+              <ComboboxList className="max-h-56 overflow-y-auto">
+                {(item) => (
+                  <ComboboxItem
+                    key={item.country.code}
+                    value={item}
+                    className="py-1.5 px-2 text-xs cursor-pointer rounded-md"
+                  >
+                    <div className="flex items-center gap-2.5 w-full">
+                      <span className="text-base leading-none shrink-0">{item.country.flag}</span>
+                      <span className="font-semibold text-foreground w-9 shrink-0 text-left">
+                        {item.country.dialCode}
+                      </span>
+                      <span className="text-muted-foreground text-xs truncate flex-1 text-left">
+                        ({item.country.name})
+                      </span>
+                    </div>
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
+        </div>
 
         {/* National Number Input */}
         <Input

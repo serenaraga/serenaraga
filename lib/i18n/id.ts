@@ -355,7 +355,7 @@ export const indonesianMessages: TranslationMessages = {
       },
     },
     invoices: {
-      name: "Invoices |||| Invoices",
+      name: "Nota & Invoice |||| Nota & Invoice",
       fields: {
         id: "ID",
         invoice_number: "No. Invoice",
@@ -434,7 +434,7 @@ export const indonesianMessages: TranslationMessages = {
       },
     },
     testimonials: {
-      name: "Testimoni WhatsApp |||| Testimoni WhatsApp",
+      name: "Testimoni |||| Testimoni",
       fields: {
         id: "ID",
         customer_name: "Nama Pelanggan",
@@ -445,6 +445,27 @@ export const indonesianMessages: TranslationMessages = {
         is_active: "Status Tayang",
         sort_order: "Urutan Tampil",
         created_at: "Tanggal Ditambah",
+      },
+    },
+    promotions: {
+      name: "Diskon |||| Diskon",
+      fields: {
+        id: "ID",
+        name: "Nama Promo",
+        code: "Kode Voucher",
+        type: "Tipe Diskon",
+        value: "Nilai Diskon",
+        scope: "Kriteria Penerima",
+        min_orders_count: "Syarat Min. Order",
+        min_order_amount: "Min. Nilai Transaksi",
+        max_discount_cap: "Batas Maksimal Diskon",
+        deduct_from_therapist_commission: "Dasar Komisi Terapis",
+        commission_basis: "Dasar Komisi Terapis",
+        pre_discount: "Sebelum Diskon (Harga Normal)",
+        post_discount: "Setelah Diskon (Harga Bersih)",
+        is_active: "Status Aktif",
+        description: "Syarat & Ketentuan",
+        created_at: "Dibuat Pada",
       },
     },
     settings: {

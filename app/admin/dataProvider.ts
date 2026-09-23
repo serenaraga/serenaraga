@@ -67,6 +67,10 @@ export const dataProvider: DataProvider = {
             query = query.or(
               `customer_name.ilike.%${value}%,service_name.ilike.%${value}%,caption.ilike.%${value}%`
             );
+          } else if (resource === "promotions") {
+            query = query.or(
+              `name.ilike.%${value}%,code.ilike.%${value}%,description.ilike.%${value}%,scope.ilike.%${value}%`
+            );
           }
         } else if (typeof value === "string") {
           query = query.ilike(key, `%${value}%`);
@@ -185,8 +189,25 @@ export const dataProvider: DataProvider = {
     } else if (resource === "bookings") {
       let resolvedCustomerId = dataToInsert.customer_id;
 
-      // If customer_phone and customer_name are provided, lookup or create customer
-      if (dataToInsert.customer_phone) {
+      // If customer_id is already provided from autocomplete
+      if (resolvedCustomerId) {
+        const address = String(dataToInsert.service_address || "").trim();
+        if (address) {
+          const { data: existingCustomer } = await supabase
+            .from("customers")
+            .select("id, address")
+            .eq("id", resolvedCustomerId)
+            .maybeSingle();
+
+          if (existingCustomer && !existingCustomer.address) {
+            await supabase
+              .from("customers")
+              .update({ address })
+              .eq("id", resolvedCustomerId);
+          }
+        }
+      } else if (dataToInsert.customer_phone) {
+        // If customer_phone and customer_name are provided, lookup or create customer
         const phone = String(dataToInsert.customer_phone).trim();
         const fullName = String(dataToInsert.customer_name || "Pelanggan").trim();
         const address = String(dataToInsert.service_address || "").trim();
@@ -228,6 +249,10 @@ export const dataProvider: DataProvider = {
       dataToInsert.customer_id = resolvedCustomerId;
       delete dataToInsert.customer_name;
       delete dataToInsert.customer_phone;
+      delete dataToInsert.city_area;
+      delete dataToInsert.customers;
+      delete dataToInsert.services;
+      delete dataToInsert.therapists;
 
       // Ensure default booking_date if missing or invalid
       if (
@@ -283,6 +308,13 @@ export const dataProvider: DataProvider = {
         dataToInsert.status = "pending";
       }
     } else if (resource === "invoices") {
+      delete dataToInsert.applied_promo_name;
+      delete dataToInsert.discount_name;
+      delete dataToInsert.customers;
+      delete dataToInsert.bookings;
+      delete dataToInsert.services;
+      delete dataToInsert.therapists;
+
       // Auto-generate invoice number: SR-YYMMDD-XXXX
       if (!dataToInsert.invoice_number) {
         const today = new Date();
@@ -302,16 +334,33 @@ export const dataProvider: DataProvider = {
       dataToInsert.transport_fee = transport;
       dataToInsert.total_amount = Math.max(0, sub + transport - disc);
 
-      if (!dataToInsert.payment_method) dataToInsert.payment_method = "cash";
+      if (!dataToInsert.payment_method) dataToInsert.payment_method = "qris";
       if (!dataToInsert.payment_status) dataToInsert.payment_status = "paid";
 
-      // If associated with a booking and paid, update the booking's payment_status
-      if (dataToInsert.booking_id && dataToInsert.payment_status === "paid") {
-        await supabase
-          .from("bookings")
-          .update({ payment_status: "paid", status: "confirmed" })
-          .eq("id", dataToInsert.booking_id);
+      // If associated with a booking, sync the booking's status & payment
+      if (dataToInsert.booking_id) {
+        const bookingUpdate: any = {};
+        if (dataToInsert.booking_status) {
+          bookingUpdate.status = dataToInsert.booking_status;
+        } else if (dataToInsert.payment_status === "paid") {
+          bookingUpdate.status = "confirmed";
+        }
+        if (dataToInsert.payment_status) {
+          bookingUpdate.payment_status = dataToInsert.payment_status;
+        }
+        if (dataToInsert.payment_method) {
+          bookingUpdate.payment_method = dataToInsert.payment_method;
+        }
+
+        if (Object.keys(bookingUpdate).length > 0) {
+          await supabase
+            .from("bookings")
+            .update(bookingUpdate)
+            .eq("id", dataToInsert.booking_id);
+        }
       }
+
+      delete dataToInsert.booking_status;
     } else if (resource === "therapists") {
       // Default new therapists to null rating until real customer reviews arrive
       if (!dataToInsert.rating) {
@@ -372,11 +421,28 @@ export const dataProvider: DataProvider = {
       }
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from(table)
       .insert(dataToInsert)
       .select()
       .single();
+
+    // Resilient fallback: If database schema cache is missing optional json/extra columns like bookings_breakdown
+    if (
+      error &&
+      (error.code === "PGRST204" || error.message?.includes("column")) &&
+      "bookings_breakdown" in dataToInsert
+    ) {
+      console.warn("Retrying insert without bookings_breakdown column:", error.message);
+      const { bookings_breakdown, ...cleanedData } = dataToInsert;
+      const retryResult = await supabase
+        .from(table)
+        .insert(cleanedData)
+        .select()
+        .single();
+      data = retryResult.data;
+      error = retryResult.error;
+    }
 
     if (error) {
       console.error(`Error in create on ${resource}:`, error);
@@ -412,14 +478,46 @@ export const dataProvider: DataProvider = {
         dataToUpdate.password_hash = dataToUpdate.password;
         delete dataToUpdate.password;
       }
+    } else if (resource === "bookings") {
+      delete dataToUpdate.customer_name;
+      delete dataToUpdate.customer_phone;
+      delete dataToUpdate.city_area;
+      delete dataToUpdate.customers;
+      delete dataToUpdate.services;
+      delete dataToUpdate.therapists;
+    } else if (resource === "invoices") {
+      delete dataToUpdate.booking_status;
+      delete dataToUpdate.applied_promo_name;
+      delete dataToUpdate.discount_name;
+      delete dataToUpdate.customers;
+      delete dataToUpdate.bookings;
+      delete dataToUpdate.services;
+      delete dataToUpdate.therapists;
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from(table)
       .update(dataToUpdate)
       .eq("id", params.id)
       .select()
       .single();
+
+    if (
+      error &&
+      (error.code === "PGRST204" || error.message?.includes("column")) &&
+      "bookings_breakdown" in dataToUpdate
+    ) {
+      console.warn("Retrying update without bookings_breakdown column:", error.message);
+      const { bookings_breakdown, ...cleanedData } = dataToUpdate;
+      const retryResult = await supabase
+        .from(table)
+        .update(cleanedData)
+        .eq("id", params.id)
+        .select()
+        .single();
+      data = retryResult.data;
+      error = retryResult.error;
+    }
 
     if (error) {
       console.error(`Error in update on ${resource} (${params.id}):`, error);

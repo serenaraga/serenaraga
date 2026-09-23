@@ -25,13 +25,6 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -52,12 +45,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Sparkles,
   ShieldCheck,
   Clock,
@@ -75,23 +62,12 @@ import {
   Plus,
   Minus,
   Globe,
-  Eye,
   MessageSquareQuote,
-  ImageIcon,
-  ZoomIn,
-  Award,
-  HeartHandshake,
-  Droplets,
   Calendar as CalendarIcon,
   Menu,
   X,
-  Home,
-  Building2,
   Heart,
-  CalendarClock,
-  Sparkle,
   Search,
-  ReceiptText,
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -108,7 +84,7 @@ const SacredLotusLogo = ({ className = "w-8 h-8 sm:w-9 sm:h-9" }: { className?: 
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    {/* Geometric 8-petal sacred lotus bloom matching reference */}
+    {/* Geometric 8-petal sacred lotus bloom */}
     <ellipse cx="50" cy="28" rx="14" ry="22" />
     <ellipse cx="50" cy="72" rx="14" ry="22" />
     <ellipse cx="28" cy="50" rx="22" ry="14" />
@@ -333,7 +309,7 @@ const FAQ_ITEMS = [
 ];
 
 export default function LandingPage() {
-  const { settings, adminWhatsAppUrl, formattedPhone } = useBrandSettings();
+  const { settings } = useBrandSettings();
 
   const [mounted, setMounted] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -345,10 +321,8 @@ export default function LandingPage() {
 
   // Booking simulation state
   const [selectedService, setSelectedService] = React.useState<string>("Traditional Balinese Massage");
-  const [selectedDuration, setSelectedDuration] = React.useState<string>("90");
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
   const [selectedTimeSlot, setSelectedTimeSlot] = React.useState<string>("15:00");
-  const [datePickerOpen, setDatePickerOpen] = React.useState(false);
   const [invoiceLookupNumber, setInvoiceLookupNumber] = React.useState("");
 
   // Enforce light mode
@@ -475,7 +449,6 @@ export default function LandingPage() {
     window.location.href = `/invoice/${cleanInv}`;
   };
 
-  const [promoVisible, setPromoVisible] = React.useState(true);
   const [activeBenefitIndex, setActiveBenefitIndex] = React.useState(0);
 
   const benefitsData = [
@@ -541,8 +514,6 @@ export default function LandingPage() {
   // Dynamic Testimonials from Supabase
   const [testimonials, setTestimonials] = React.useState<TestimonialItem[]>([]);
   const [isLoadingTestimonials, setIsLoadingTestimonials] = React.useState(true);
-  const [activeTestimonialIndex, setActiveTestimonialIndex] = React.useState(0);
-  const [openFaqIndex, setOpenFaqIndex] = React.useState<number | null>(0);
 
   React.useEffect(() => {
     const fetchTestimonials = async () => {
@@ -871,7 +842,7 @@ export default function LandingPage() {
                     <span>{isEn ? "Book via WhatsApp" : "Pesan via WhatsApp"}</span>
                   </button>
 
-                  {/* Shadcn UI Language Selector for Mobile Drawer */}
+                  {/* Seamless Language Selector for Mobile Drawer */}
                   <div className="pt-1 font-sans text-xs">
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger
@@ -879,7 +850,7 @@ export default function LandingPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="w-full h-9 justify-between px-3 text-xs text-stone-700 hover:bg-[#eee7dc]/60 rounded-md font-normal cursor-pointer border border-[#ebe6df]/80 shadow-none bg-white/70"
+                            className="w-full h-9 justify-between px-1.5 text-xs text-stone-700 hover:bg-stone-100/50 hover:text-stone-900 rounded-none font-normal cursor-pointer border-0 shadow-none bg-transparent transition-colors"
                           />
                         }
                       >
@@ -1477,41 +1448,36 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* Clean Luxury Accordion */}
-              <div className="space-y-3 pt-1">
-                {FAQ_ITEMS.map((item, idx) => {
-                  const isOpen = openFaqIndex === idx;
-                  return (
-                    <div
-                      key={idx}
-                      className="border-b border-stone-800/80 pb-3 transition-colors"
+              {/* Clean Luxury Accordion using official Shadcn Base UI */}
+              <Accordion
+                defaultValue={["faq-0"]}
+                className="space-y-2 pt-1 w-full"
+              >
+                {FAQ_ITEMS.map((item, idx) => (
+                  <AccordionItem
+                    key={idx}
+                    value={`faq-${idx}`}
+                    className="border-b border-stone-800/80 pb-2.5 transition-colors"
+                  >
+                    <AccordionTrigger
+                      showChevron={false}
+                      className="w-full flex items-center justify-between text-left py-2 gap-3 group/accordion-trigger cursor-pointer hover:no-underline"
                     >
-                      <button
-                        type="button"
-                        onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                        className="w-full flex items-center justify-between text-left py-2 gap-3 group cursor-pointer"
-                      >
-                        <span className="text-[13px] sm:text-[14.5px] font-medium text-stone-100 group-hover:text-[#eed7a1] transition-colors">
-                          {isEn ? item.q_en : item.q_id}
-                        </span>
-                        <span className="text-stone-400 shrink-0">
-                          {isOpen ? (
-                            <Minus className="w-4 h-4 text-stone-300" />
-                          ) : (
-                            <Plus className="w-4 h-4 text-stone-400 group-hover:text-stone-200" />
-                          )}
-                        </span>
-                      </button>
+                      <span className="text-[13px] sm:text-[14.5px] font-medium text-stone-100 group-hover/accordion-trigger:text-[#eed7a1] transition-colors">
+                        {isEn ? item.q_en : item.q_id}
+                      </span>
+                      <span className="text-stone-400 shrink-0 ml-auto pl-3">
+                        <Plus className="w-4 h-4 text-stone-400 group-hover/accordion-trigger:text-stone-200 group-aria-expanded/accordion-trigger:hidden block" />
+                        <Minus className="w-4 h-4 text-stone-300 group-aria-expanded/accordion-trigger:block hidden" />
+                      </span>
+                    </AccordionTrigger>
 
-                      {isOpen && (
-                        <div className="pt-1.5 pb-1 pr-2 text-xs sm:text-[13px] text-stone-400 font-light leading-relaxed animate-in fade-in duration-300">
-                          {isEn ? item.a_en : item.a_id}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    <AccordionContent className="pt-1 pb-1 pr-2 text-xs sm:text-[13px] text-stone-400 font-light leading-relaxed">
+                      {isEn ? item.a_en : item.a_id}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </div>
 
             {/* Right: Faceless Relaxing Back Massage Photo */}
@@ -1737,8 +1703,8 @@ export default function LandingPage() {
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
                 suppressHydrationWarning
               >
-                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="10 15 200 200">
-                  <path d="M141.537 88.9883C140.71 88.5919 139.87 88.2104 139.019 87.8451C137.537 60.5382 122.616 44.905 97.5619 44.745C97.4484 44.7443 97.3355 44.7443 97.222 44.7443C82.2364 44.7443 69.7731 51.1409 62.102 62.7807L75.4377 72.809C81.0827 64.2407 90.0438 60.3396 100.999 60.4093C116.892 60.5103 123.639 71.3093 124.636 88.0805C118.57 87.269 111.97 86.8559 104.978 86.8559C75.6457 86.8559 55.4392 101.401 55.4392 123.238C55.4392 143.914 73.1979 157.771 96.0125 157.771C117.067 157.771 131.624 147.458 137.604 133.483C143.208 143.682 152.99 148.971 166.577 148.971C176.626 148.971 184.977 145.419 191.365 138.431C197.886 131.298 201.218 120.912 201.218 107.575C201.218 57.0601 167.319 23.4795 110.158 23.4795C54.4097 23.4795 18 59.8892 18 115.637C18 171.385 54.4097 207.795 110.158 207.795C140.231 207.795 165.736 198.397 183.924 180.627L172.937 167.87C158.077 182.378 136.634 190.222 110.158 190.222C64.084 190.222 35.5727 158.917 35.5727 115.637C35.5727 72.3579 64.084 41.0531 110.158 41.0531C154.673 41.0531 183.645 66.8647 183.645 107.575C183.645 125.795 174.195 133.864 166.577 133.864C158.261 133.864 153.254 128.536 149.699 120.081C145.395 109.845 143.149 97.4582 141.537 88.9883ZM122.955 118.828C119.52 130.697 109.919 140.279 96.0125 140.279C81.8214 140.279 73.0119 131.782 73.0119 120.467C73.0119 107.649 86.8532 99.4285 107.828 99.4285C112.569 99.4285 117.067 99.7892 121.246 100.493C122.392 106.637 122.955 112.83 122.955 118.828Z" />
+                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="0 0 512 512">
+                  <path d="M363.2 239.6c-1.9-.9-3.9-1.8-5.9-2.7c-3.5-63.7-38.3-100.2-96.7-100.6h-.8c-35 0-64 14.9-81.9 42.1l32.2 22.1c13.4-20.3 34.4-24.6 49.8-24.6h.5c19.2.1 33.8 5.7 43.2 16.6c6.8 7.9 11.4 18.9 13.7 32.8c-17.1-2.9-35.5-3.8-55.3-2.7c-55.6 3.2-91.3 35.6-88.9 80.7c1.2 22.8 12.6 42.5 32 55.3c16.4 10.9 37.6 16.2 59.6 15c29.1-1.6 51.9-12.7 67.8-33c12.1-15.4 19.7-35.4 23.1-60.5c13.9 8.4 24.1 19.4 29.8 32.6c9.6 22.5 10.2 59.4-19.9 89.5c-26.4 26.4-58.2 37.8-106.1 38.2c-53.2-.4-93.5-17.5-119.6-50.7c-24.5-31.2-37.2-76.1-37.6-133.7c.5-57.6 13.1-102.6 37.6-133.7C166 89 206.2 72 259.4 71.6c53.6.4 94.6 17.5 121.7 51c13.3 16.4 23.4 37 30 61l37.7-10.1c-8-29.6-20.7-55.1-37.8-76.2c-34.8-42.9-85.8-64.8-151.4-65.3h-.3c-65.5.5-115.9 22.5-149.7 65.5c-30.1 38.3-45.6 91.6-46.2 158.3v.4c.5 66.8 16.1 120 46.2 158.3c33.8 43 84.2 65.1 149.7 65.5h.3c58.2-.4 99.3-15.7 133.1-49.4C436.9 386.4 435.6 331 421 297c-10.5-24.4-30.4-44.2-57.7-57.3Zm-100.6 94.6c-24.4 1.4-49.7-9.6-50.9-33c-.9-17.4 12.4-36.7 52.4-39c4.6-.3 9.1-.4 13.5-.4c14.5 0 28.2 1.4 40.5 4.1c-4.6 57.6-31.7 67-55.5 68.3" />
                 </svg>
               </a>
             </div>

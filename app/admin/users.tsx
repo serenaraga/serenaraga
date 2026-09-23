@@ -164,13 +164,13 @@ export const UserCreate = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           <TextInput
             source="full_name"
-            label={isEn ? "Full Name *" : "Nama Lengkap Staf *"}
+            label={isEn ? "Full Name" : "Nama Lengkap Staf"}
             placeholder={isEn ? "e.g. Budi (Cashier Shift A)" : "Contoh: Budi (Kasir Shift Pagi)"}
             validate={required()}
           />
           <TextInput
             source="username"
-            label={isEn ? "Username / Login Email *" : "Username / Email Login *"}
+            label={isEn ? "Username / Login Email" : "Username / Email Login"}
             placeholder={isEn ? "kasir1@serenaraga.com" : "kasir1@serenaraga.com atau kasir1"}
             validate={required()}
           />
@@ -179,14 +179,14 @@ export const UserCreate = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           <TextInput
             source="password"
-            label={isEn ? "Login Password *" : "Kata Sandi Login *"}
+            label={isEn ? "Login Password" : "Kata Sandi Login"}
             type="password"
             placeholder="••••••••"
             validate={required()}
           />
           <SelectInput
             source="role"
-            label="Role / Peran *"
+            label="Role / Peran"
             choices={[
               { id: "cashier", name: isEn ? "Kasir / Cashier (Bookings & Invoices only)" : "Kasir (Hanya Booking & Invoice)" },
               { id: "admin", name: isEn ? "Administrator (Full Access)" : "Administrator (Akses Penuh)" },
@@ -224,12 +224,12 @@ export const UserEdit = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
           <TextInput
             source="full_name"
-            label={isEn ? "Full Name *" : "Nama Lengkap Staf *"}
+            label={isEn ? "Full Name" : "Nama Lengkap Staf"}
             validate={required()}
           />
           <TextInput
             source="username"
-            label={isEn ? "Username / Login Email *" : "Username / Email Login *"}
+            label={isEn ? "Username / Login Email" : "Username / Email Login"}
             validate={required()}
           />
         </div>
@@ -243,7 +243,7 @@ export const UserEdit = () => {
           />
           <SelectInput
             source="role"
-            label="Role / Peran *"
+            label="Role / Peran"
             choices={[
               { id: "cashier", name: isEn ? "Kasir / Cashier (Bookings & Invoices only)" : "Kasir (Hanya Booking & Invoice)" },
               { id: "admin", name: isEn ? "Administrator (Full Access)" : "Administrator (Akses Penuh)" },

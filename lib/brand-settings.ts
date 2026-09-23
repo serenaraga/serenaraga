@@ -215,12 +215,10 @@ export async function saveBrandSettings(
 export function useBrandSettings() {
   const [settings, setSettings] = useState<BrandSettings>(() => getCachedBrandSettings());
   const [loading, setLoading] = useState<boolean>(true);
-  const [isMounted, setIsMounted] = useState<boolean>(false);
 
   // Load from localStorage and sync with Supabase on mount
   useEffect(() => {
     let mounted = true;
-    setIsMounted(true);
 
     async function loadRemoteSettings() {
       try {

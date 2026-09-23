@@ -46,6 +46,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+} from "@/components/ui/alert-dialog";
+import {
   UserCheck,
   ShieldCheck,
   Phone,
@@ -61,14 +76,19 @@ import {
   Check,
   HeartPulse,
   Building,
+  Building2,
   User,
   Star,
+  CheckCircle2,
+  Clock,
+  XCircle,
   ArrowRight,
   ArrowLeft,
-  CheckCircle2,
   ReceiptText,
   Wallet,
   CalendarDays,
+  MoreHorizontal,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { cleanWhatsAppNumber } from "@/lib/brand-settings";
@@ -121,8 +141,8 @@ export const TherapistList = () => {
         <DataTableCol
           source="id"
           label="#"
-          headerClassName="w-12"
-          cellClassName="text-xs text-muted-foreground"
+          headerClassName="w-14"
+          cellClassName="text-xs font-bold text-primary"
         />
         <DataTableCol
           source="name"
@@ -265,9 +285,10 @@ const TherapistWizardForm: React.FC<{ mode: "create" | "edit" }> = ({ mode }) =>
             const isActive = currentStep === step.id;
 
             return (
-              <button
+              <Button
                 key={step.id}
                 type="button"
+                variant="ghost"
                 onClick={() => {
                   if (step.id > 1 && !validateStep(1)) {
                     setCurrentStep(1);
@@ -276,7 +297,7 @@ const TherapistWizardForm: React.FC<{ mode: "create" | "edit" }> = ({ mode }) =>
                   setCurrentStep(step.id);
                 }}
                 className={cn(
-                  "flex flex-col sm:flex-row items-center sm:items-start gap-2.5 p-2.5 rounded-lg text-left transition-all",
+                  "h-auto flex flex-col sm:flex-row items-center sm:items-start gap-2.5 p-2.5 rounded-lg text-left transition-all justify-start",
                   isActive
                     ? "bg-primary/10 border border-primary/30"
                     : isCompleted
@@ -310,7 +331,7 @@ const TherapistWizardForm: React.FC<{ mode: "create" | "edit" }> = ({ mode }) =>
                     {step.subtitle}
                   </span>
                 </div>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -666,6 +687,159 @@ export const TherapistCreate = () => {
 };
 
 /**
+ * Row Actions Dropdown for Payout Slips with reactive Optimistic Deletion & Sonner Undo support
+ */
+interface PayoutRowActionsProps {
+  payout: any;
+  onDeleted?: (deletedId: number | string) => void;
+  onRestore?: () => void;
+}
+
+const PayoutRowActions = ({ payout, onDeleted, onRestore }: PayoutRowActionsProps) => {
+  const navigate = useNavigate();
+  const [locale] = useLocaleState();
+  const isEn = locale === "en";
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+
+  const confirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteDialogOpen(false);
+
+    // 1. Optimistic removal from table immediately
+    if (onDeleted) {
+      onDeleted(payout.id);
+    }
+
+    let isCancelled = false;
+
+    // 2. Set timeout before executing permanent DB deletion
+    const timer = setTimeout(async () => {
+      if (isCancelled) return;
+      try {
+        const { error } = await supabase
+          .from("therapist_payouts")
+          .delete()
+          .eq("id", payout.id);
+
+        if (error) {
+          console.error("Error deleting payout:", error);
+          toast.error(
+            isEn ? "Failed to delete payout slip" : "Gagal menghapus slip bagi hasil"
+          );
+          if (onRestore) onRestore();
+        }
+      } catch (err: any) {
+        console.error("Delete payout error:", err);
+        if (onRestore) onRestore();
+      }
+    }, 5500);
+
+    // 3. Show Toast with interactive Undo Action Button
+    toast(
+      isEn
+        ? `Payout slip ${payout.payout_number} deleted`
+        : `Slip bagi hasil ${payout.payout_number} berhasil dihapus`,
+      {
+        duration: 5000,
+        action: {
+          label: isEn ? "Undo" : "Batalkan",
+          onClick: () => {
+            isCancelled = true;
+            clearTimeout(timer);
+            if (onRestore) onRestore();
+            toast.success(
+              isEn
+                ? "Payout slip restored successfully"
+                : "Penghapusan slip berhasil dibatalkan"
+            );
+          },
+        },
+      }
+    );
+  };
+
+  return (
+    <>
+      <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md cursor-pointer"
+              />
+            }
+          >
+            <span className="sr-only">Open action menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44 z-50">
+            <DropdownMenuItem
+              onClick={() => navigate(`/payouts/${payout.id}/show`)}
+              className="cursor-pointer gap-2"
+            >
+              <ReceiptText className="h-3.5 w-3.5 text-primary" />
+              <span>{isEn ? "View Slip" : "Buka Slip"}</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteDialogOpen(true);
+              }}
+              className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>{isEn ? "Delete Slip" : "Hapus Slip"}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Confirmation AlertDialog for Deleting Payout Slip with Undo Capability */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-card border-border" onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground">
+              {isEn ? "Delete Payout Slip?" : "Hapus Slip Bagi Hasil?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground text-xs leading-relaxed">
+              {isEn
+                ? `Delete payout slip ${payout?.payout_number}? You will be able to undo this action from the notification banner.`
+                : `Hapus slip bagi hasil ${payout?.payout_number}? Anda dapat membatalkan (Undo) penghapusan ini melalui notifikasi setelahnya.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteDialogOpen(false);
+              }}
+              className="h-8 text-xs shadow-none cursor-pointer"
+            >
+              {isEn ? "Cancel" : "Batal"}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={confirmDelete}
+              className="h-8 text-xs shadow-none cursor-pointer gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{isEn ? "Delete Slip" : "Hapus Slip"}</span>
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+/**
  * Show View: Comprehensive Therapist Dossier
  */
 const TherapistShowView = () => {
@@ -682,23 +856,29 @@ const TherapistShowView = () => {
 
   const therapistId = record?.id;
 
-  React.useEffect(() => {
+  const loadPayoutHistory = React.useCallback(async () => {
     if (!therapistId) return;
-    async function loadPayoutHistory() {
-      try {
-        setLoadingPayouts(true);
-        const { data } = await supabase
-          .from("therapist_payouts")
-          .select("*")
-          .eq("therapist_id", therapistId)
-          .order("created_at", { ascending: false });
-        setPayoutsHistory(data || []);
-      } finally {
-        setLoadingPayouts(false);
+    try {
+      setLoadingPayouts(true);
+      const { data, error } = await supabase
+        .from("therapist_payouts")
+        .select("*")
+        .eq("therapist_id", therapistId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error loading payout history:", error);
+        return;
       }
+      setPayoutsHistory(data || []);
+    } finally {
+      setLoadingPayouts(false);
     }
-    loadPayoutHistory();
   }, [therapistId]);
+
+  React.useEffect(() => {
+    loadPayoutHistory();
+  }, [loadPayoutHistory]);
 
   if (!record) return null;
 
@@ -1078,7 +1258,11 @@ const TherapistShowView = () => {
                 </TableHeader>
                 <TableBody>
                   {payoutsHistory.map((p) => (
-                    <TableRow key={p.id} className="hover:bg-muted/30">
+                    <TableRow
+                      key={p.id}
+                      onClick={() => navigate(`/payouts/${p.id}/show`)}
+                      className="hover:bg-muted/50 cursor-pointer transition-colors"
+                    >
                       <TableCell className="font-mono text-xs font-semibold text-foreground">
                         {p.payout_number}
                       </TableCell>
@@ -1095,22 +1279,30 @@ const TherapistShowView = () => {
                         {formatIDR(p.net_amount)}
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-xs font-medium text-foreground">
-                          {p.payment_status === "paid"
-                            ? isEn ? "Paid" : "Ditransfer"
-                            : isEn ? "Pending" : "Menunggu"}
+                        <span className="text-xs font-medium text-foreground tracking-tight whitespace-nowrap inline-flex items-center gap-1.5 justify-center">
+                          {p.payment_status === "paid" ? (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                              <span>{isEn ? "Paid" : "Ditransfer"}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                              <span>{isEn ? "Pending" : "Menunggu"}</span>
+                            </>
+                          )}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => navigate(`/payouts/${p.id}/show`)}
-                          className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10 gap-1 px-2 cursor-pointer"
-                        >
-                          <ReceiptText className="w-3.5 h-3.5" />
-                          <span>{isEn ? "View Slip" : "Buka Slip"}</span>
-                        </Button>
+                        <PayoutRowActions
+                          payout={p}
+                          onDeleted={(deletedId) => {
+                            setPayoutsHistory((prev) =>
+                              prev.filter((item) => String(item.id) !== String(deletedId))
+                            );
+                          }}
+                          onRestore={loadPayoutHistory}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

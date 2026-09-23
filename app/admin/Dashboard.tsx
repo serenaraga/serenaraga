@@ -13,13 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SearchableCombobox } from "@/components/searchable-combobox";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { resolveChoiceIcon } from "@/components/select-input";
 import {
   CalendarCheck,
   Users,
@@ -36,6 +39,8 @@ import {
   Activity,
   CheckCircle2,
   Calendar,
+  CalendarDays,
+  History,
   Phone,
   MessageSquareQuote,
   Check,
@@ -440,39 +445,52 @@ export const Dashboard = () => {
         {/* Header Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Synchronized Timeframe Filter (Defaults to Today) */}
-          <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-2.5 h-9 shadow-none">
-            <Filter className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-            <Select
-              value={timeRange}
-              onValueChange={(val) => setTimeRange(val || "today")}
-            >
-              <SelectTrigger className="h-8 border-0 bg-transparent text-xs font-medium focus:ring-0 min-w-[130px] px-1 shadow-none">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end" className="z-50 bg-popover border border-border text-xs shadow-md">
-                <SelectItem value="today" className="text-xs font-medium">
-                  {isEn ? "Today (Default)" : "Hari Ini (Default)"}
-                </SelectItem>
-                <SelectItem value="yesterday" className="text-xs">
-                  {isEn ? "Yesterday" : "Kemarin"}
-                </SelectItem>
-                <SelectItem value="7d" className="text-xs">
-                  {isEn ? "Last 7 Days" : "7 Hari Terakhir"}
-                </SelectItem>
-                <SelectItem value="30d" className="text-xs">
-                  {isEn ? "Last 30 Days" : "30 Hari Terakhir"}
-                </SelectItem>
-                <SelectItem value="this_month" className="text-xs">
-                  {isEn ? "This Month" : "Bulan Ini"}
-                </SelectItem>
-                <SelectItem value="this_year" className="text-xs">
-                  {isEn ? "This Year" : "Tahun Ini"}
-                </SelectItem>
-                <SelectItem value="all" className="text-xs">
-                  {isEn ? "All Time" : "Semua Waktu"}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="w-48">
+            {(() => {
+              const timeRangeItems = [
+                { value: "today", label: isEn ? "Today (Default)" : "Hari Ini (Default)" },
+                { value: "yesterday", label: isEn ? "Yesterday" : "Kemarin" },
+                { value: "7d", label: isEn ? "Last 7 Days" : "7 Hari Terakhir" },
+                { value: "30d", label: isEn ? "Last 30 Days" : "30 Hari Terakhir" },
+                { value: "this_month", label: isEn ? "This Month" : "Bulan Ini" },
+                { value: "this_year", label: isEn ? "This Year" : "Tahun Ini" },
+                { value: "all", label: isEn ? "All Time" : "Semua Waktu" },
+              ];
+              return (
+                <Select
+                  items={timeRangeItems}
+                  value={timeRange}
+                  onValueChange={(val) => {
+                    if (val) setTimeRange(val);
+                  }}
+                >
+                  <SelectTrigger className="w-full h-8 text-xs bg-background">
+                    <SelectValue placeholder={isEn ? "Select timeframe..." : "Pilih periode..."}>
+                      {(val) => {
+                        const item = timeRangeItems.find((t) => t.value === val);
+                        if (!item) return isEn ? "Select timeframe..." : "Pilih periode...";
+                        return (
+                          <span className="flex items-center gap-1.5 truncate">
+                            <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
+                            <span className="truncate">{item.label}</span>
+                          </span>
+                        );
+                      }}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="z-50 max-h-60 rounded-lg">
+                    <SelectGroup>
+                      {timeRangeItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value} className="text-xs py-1.5 px-2 flex items-center gap-1.5">
+                          <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
+                          <span>{item.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              );
+            })()}
           </div>
 
           <Button
@@ -664,23 +682,23 @@ export const Dashboard = () => {
               </BarChart>
             </ChartContainer>
 
-            {/* Bottom Chart Stats Summary */}
+            {/* Bottom Chart Stats Summary (Seamless) */}
             <div className="grid grid-cols-3 gap-2 pt-4 mt-2 border-t border-border/50 text-center">
-              <div className="p-2 rounded-lg bg-[#8b5e3c]/5 dark:bg-[#d49b6a]/5 border border-[#8b5e3c]/20 dark:border-[#d49b6a]/20">
-                <span className="text-[10px] text-muted-foreground block">{isEn ? "Total Net Profit" : "Total Laba Bersih"}</span>
-                <span className="text-xs font-bold text-[#8b5e3c] dark:text-[#d49b6a]">
+              <div className="py-1.5 px-2">
+                <span className="text-[11px] text-muted-foreground block">{isEn ? "Total Net Profit" : "Total Laba Bersih"}</span>
+                <span className="text-sm font-bold text-[#8b5e3c] dark:text-[#d49b6a] block mt-0.5">
                   {formatIDR(netProfit)}
                 </span>
               </div>
-              <div className="p-2 rounded-lg bg-muted/20 border border-border/40">
-                <span className="text-[10px] text-muted-foreground block">{isEn ? "Daily Average Profit" : "Rata-rata Laba/Hari"}</span>
-                <span className="text-xs font-bold text-foreground">
+              <div className="py-1.5 px-2">
+                <span className="text-[11px] text-muted-foreground block">{isEn ? "Daily Average Profit" : "Rata-rata Laba/Hari"}</span>
+                <span className="text-sm font-bold text-foreground block mt-0.5">
                   Rp {Math.round((totalPeriodProfit / Math.max(chartData.length, 1)) / 1000).toLocaleString("id-ID")}k
                 </span>
               </div>
-              <div className="p-2 rounded-lg bg-muted/20 border border-border/40">
-                <span className="text-[10px] text-muted-foreground block">{isEn ? "Net Profit Margin" : "Margin Laba Bersih"}</span>
-                <span className="text-xs font-bold text-foreground">
+              <div className="py-1.5 px-2">
+                <span className="text-[11px] text-muted-foreground block">{isEn ? "Net Profit Margin" : "Margin Laba Bersih"}</span>
+                <span className="text-sm font-bold text-foreground block mt-0.5">
                   {netMarginPercent}%
                 </span>
               </div>

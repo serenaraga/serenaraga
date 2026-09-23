@@ -192,7 +192,7 @@ export const englishMessages: TranslationMessages = {
       },
     },
     invoices: {
-      name: "Invoices |||| Invoices",
+      name: "Invoice |||| Invoices",
       fields: {
         id: "ID",
         invoice_number: "Invoice #",
@@ -271,7 +271,7 @@ export const englishMessages: TranslationMessages = {
       },
     },
     testimonials: {
-      name: "WhatsApp Testimonials |||| WhatsApp Testimonials",
+      name: "Testimonial |||| Testimonials",
       fields: {
         id: "ID",
         customer_name: "Customer Name",
@@ -282,6 +282,27 @@ export const englishMessages: TranslationMessages = {
         is_active: "Display Status",
         sort_order: "Sort Order",
         created_at: "Added Date",
+      },
+    },
+    promotions: {
+      name: "Discount |||| Discounts",
+      fields: {
+        id: "ID",
+        name: "Promo Name",
+        code: "Voucher Code",
+        type: "Discount Type",
+        value: "Discount Value",
+        scope: "Target Audience",
+        min_orders_count: "Min. Completed Orders",
+        min_order_amount: "Min. Order Amount",
+        max_discount_cap: "Max Discount Cap",
+        deduct_from_therapist_commission: "Commission Basis",
+        commission_basis: "Commission Basis",
+        pre_discount: "Pre-Discount (Gross Price)",
+        post_discount: "Post-Discount (Net Price)",
+        is_active: "Active Status",
+        description: "Terms & Conditions",
+        created_at: "Created At",
       },
     },
     settings: {

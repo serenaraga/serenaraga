@@ -14,13 +14,16 @@ import {
   Clock,
   MapPin,
   Loader2,
+  User,
+  CreditCard,
+  ReceiptText,
 } from "lucide-react";
 import { useLocaleState } from "ra-core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useBrandSettings, cleanWhatsAppNumber } from "@/lib/brand-settings";
 import { BrandLogo } from "@/components/brand-logo";
-import { cn, formatIDR } from "@/lib/utils";
+import { cn, formatIDR, localizePromoName } from "@/lib/utils";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
 
@@ -44,7 +47,10 @@ export interface InvoiceData {
   total_amount: number;
   payment_method?: string;
   payment_status?: string;
+  booking_status?: string;
   notes?: string;
+  discount_name?: string;
+  applied_promo_name?: string;
   created_at?: string;
 }
 
@@ -239,6 +245,9 @@ export const InvoiceCard = ({
           outline: "none",
           borderRadius: "0px",
           margin: "0",
+          transform: "none",
+          transformOrigin: "top left",
+          width: "540px",
         },
       });
 
@@ -294,7 +303,7 @@ export const InvoiceCard = ({
     settings.invoice_support_text === defaultEnSupportText ||
     settings.invoice_support_text.includes("Dokumen ini merupakan bukti transaksi resmi");
 
-  const displaySupportText = (
+    const displaySupportText = (
     isDefaultSupportText
       ? isEn
         ? defaultEnSupportText
@@ -302,18 +311,67 @@ export const InvoiceCard = ({
       : settings.invoice_support_text
   ).replace(/\{whatsapp\}/g, formattedPhone);
 
+  // Extract promo name from notes if formatted as [Promo: Name]
+  const promoMatch = invoice.notes?.match(/\[Promo:\s*([^\]]+)\]/i);
+  const promoNameFromNotes = promoMatch ? promoMatch[1].trim() : null;
+  const cleanNotes = invoice.notes
+    ? invoice.notes.replace(/\[Promo:\s*[^\]]+\]/gi, "").trim()
+    : "";
+  const rawDiscountName =
+    invoice.discount_name || invoice.applied_promo_name || promoNameFromNotes;
+  const displayDiscountName = rawDiscountName
+    ? localizePromoName(rawDiscountName, isEn)
+    : null;
+
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const docRef = React.useRef<HTMLDivElement>(null);
+  const [scale, setScale] = React.useState(1);
+  const [wrapperHeight, setWrapperHeight] = React.useState<number | undefined>(undefined);
+
+  const updateScale = React.useCallback(() => {
+    if (containerRef.current && docRef.current) {
+      const containerWidth = containerRef.current.clientWidth;
+      const targetWidth = 540;
+      if (containerWidth < targetWidth && containerWidth > 0) {
+        const newScale = containerWidth / targetWidth;
+        setScale(newScale);
+        setWrapperHeight(docRef.current.offsetHeight * newScale);
+      } else {
+        setScale(1);
+        setWrapperHeight(undefined);
+      }
+    }
+  }, []);
+
+  React.useEffect(() => {
+    updateScale();
+    window.addEventListener("resize", updateScale);
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && docRef.current) {
+      ro = new ResizeObserver(updateScale);
+      ro.observe(docRef.current);
+      if (containerRef.current) ro.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateScale);
+      ro?.disconnect();
+    };
+  }, [updateScale]);
+
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-3 sm:space-y-4 max-w-xl mx-auto w-full", className)}>
       {/* Top Action Bar (Flat shadcn styling matching Dashboard with subtle Serena accents) */}
       {showShareActions && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-muted/40 border border-[#8b5e3c]/20 dark:border-[#d49b6a]/20 rounded-xl shadow-none print:hidden">
-          <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-muted/40 border border-border/70 rounded-none shadow-none print:hidden">
+          <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-semibold text-foreground">
               {invoice.invoice_number}
             </span>
             <span
               className={cn(
-                "text-[11px] font-semibold tracking-wider uppercase",
+                "text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase",
                 isPaid
                   ? "text-[#8b5e3c] dark:text-[#d49b6a]"
                   : "text-muted-foreground"
@@ -323,15 +381,15 @@ export const InvoiceCard = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              className="h-8 text-xs gap-1.5 shadow-none border-border hover:border-[#8b5e3c]/30 hover:text-[#8b5e3c] dark:hover:text-[#d49b6a]"
+              className="h-7 sm:h-8 text-[11px] sm:text-xs gap-1 sm:gap-1.5 shadow-none border-border hover:border-[#8b5e3c]/30 hover:text-[#8b5e3c] dark:hover:text-[#d49b6a] cursor-pointer px-2 sm:px-3"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" /> : <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />}
               {isEn ? "Copy Link" : "Salin Link"}
             </Button>
 
@@ -341,12 +399,12 @@ export const InvoiceCard = ({
               size="sm"
               onClick={handleDownloadPng}
               disabled={isDownloading}
-              className="h-8 text-xs gap-1.5 shadow-none border-border hover:border-[#8b5e3c]/30 hover:text-[#8b5e3c] dark:hover:text-[#d49b6a]"
+              className="h-7 sm:h-8 text-[11px] sm:text-xs gap-1 sm:gap-1.5 shadow-none border-border hover:border-[#8b5e3c]/30 hover:text-[#8b5e3c] dark:hover:text-[#d49b6a] cursor-pointer px-2 sm:px-3"
             >
               {isDownloading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#8b5e3c] dark:text-[#d49b6a]" />
+                <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin text-[#8b5e3c] dark:text-[#d49b6a]" />
               ) : (
-                <Download className="w-3.5 h-3.5" />
+                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
               )}
               {isDownloading
                 ? (isEn ? "Exporting..." : "Mengunduh...")
@@ -357,180 +415,220 @@ export const InvoiceCard = ({
               type="button"
               size="sm"
               onClick={handleShareWhatsApp}
-              className="h-8 text-xs gap-1.5 bg-[#8b5e3c] hover:bg-[#785033] dark:bg-[#d49b6a] dark:hover:bg-[#c28a5a] text-white dark:text-zinc-950 font-medium shadow-none transition-colors"
+              className="h-7 sm:h-8 text-[11px] sm:text-xs gap-1 sm:gap-1.5 bg-[#8b5e3c] hover:bg-[#785033] dark:bg-[#d49b6a] dark:hover:bg-[#c28a5a] text-white dark:text-zinc-950 font-medium shadow-none transition-colors cursor-pointer px-2.5 sm:px-3"
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               {isEn ? "Share WA" : "Kirim WhatsApp"}
             </Button>
           </div>
         </div>
       )}
 
-      {/* Clean Minimalist Nota Card (Shadow-none flat shadcn Card with subtle luxury brown/cream borders) */}
-      <Card
-        id="invoice-document"
-        className="relative bg-card text-card-foreground border border-[#8b5e3c]/20 dark:border-[#d49b6a]/25 rounded-xl p-6 sm:p-8 shadow-none overflow-hidden print:border-none print:shadow-none print:p-0"
+      {/* Clean Minimalist Nota Card (Auto-Scaled on Mobile to prevent horizontal scroll while keeping Desktop Layout & Download Ratio) */}
+      <div
+        ref={containerRef}
+        className="w-full flex justify-center overflow-visible"
+        style={{ height: wrapperHeight ? `${wrapperHeight}px` : undefined }}
       >
-        {/* Subtle Watermark Background */}
-        <InvoiceWatermark />
+        <div
+          style={{
+            width: "540px",
+            transform: scale < 1 ? `scale(${scale})` : undefined,
+            transformOrigin: "top center",
+          }}
+          className="shrink-0 transition-transform duration-100 ease-out"
+        >
+          <Card
+            ref={docRef}
+            id="invoice-document"
+            className="relative bg-card text-card-foreground border border-border/80 shadow-sm rounded-none overflow-hidden print:border-none print:shadow-none w-[540px]"
+          >
+            {/* Subtle Watermark Background */}
+            <InvoiceWatermark />
 
-        {/* Content Container (z-10 over watermark) */}
-        <div className="relative z-10 space-y-6">
-          {/* Header Section */}
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pb-5 border-b border-[#8b5e3c]/15 dark:border-[#d49b6a]/15">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <BrandLogo variant="full" className="h-7 w-auto text-foreground" />
-              </div>
-              <p className="text-[11px] tracking-wider text-muted-foreground uppercase font-medium">
-                {settings.tagline === "Comfortable Home Massage & Spa" || !settings.tagline
-                  ? isEn
-                    ? "Comfortable Home Massage & Spa"
-                    : "Layanan Pijat & Spa ke Rumah"
-                  : settings.tagline}
-              </p>
-              <p className="text-[11px] text-muted-foreground/80 mt-0.5 font-sans">
-                WhatsApp: {formattedPhone} • {settings.website_url ? settings.website_url.replace(/^https?:\/\//, "") : "serenaraga.com"}
-              </p>
-            </div>
-
-            <div className="sm:text-right space-y-0.5">
-              <span className="text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase block">
-                {isEn ? "INVOICE NUMBER" : "NOMOR INVOICE"}
-              </span>
-              <div className="text-base font-bold tracking-tight text-foreground">
-                {invoice.invoice_number}
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                {isEn ? "Issued:" : "Diterbitkan:"}{" "}
-                <span className="text-foreground font-medium">{formattedDate}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Client & Appointment Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
-            {/* Left: Client */}
-            <div className="space-y-1">
-              <span className="text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
-                {isEn ? "CLIENT" : "PELANGGAN"}
-              </span>
-              <p className="text-sm font-semibold text-foreground pt-0.5">
-                {invoice.customer_name || (isEn ? "General Client" : "Pelanggan")}
-              </p>
-              {invoice.customer_phone && (
-                <p className="text-xs text-muted-foreground">
-                  {invoice.customer_phone}
+          {/* Content Container (z-10 over watermark) */}
+          <CardContent className="relative z-10 p-6 md:p-7 space-y-5">
+            {/* Header Section */}
+            <div className="flex flex-row items-center justify-between gap-4 pb-4 border-b border-border/70">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <BrandLogo variant="full" className="h-7 w-auto text-foreground" />
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {settings.tagline === "Comfortable Home Massage & Spa" || !settings.tagline
+                    ? isEn
+                      ? "Comfortable Home Massage & Spa"
+                      : "Layanan Pijat & Spa ke Rumah"
+                    : settings.tagline}
                 </p>
-              )}
-              {invoice.service_address && (
-                <p className="text-xs text-muted-foreground pt-0.5 leading-relaxed">
-                  {invoice.service_address}
+                <p className="text-[10px] text-muted-foreground/80">
+                  WhatsApp: {formattedPhone} • {settings.website_url ? settings.website_url.replace(/^https?:\/\//, "") : "serenaraga.com"}
                 </p>
-              )}
-            </div>
+              </div>
 
-            {/* Right: Appointment Schedule */}
-            <div className="space-y-1 sm:text-right">
-              <span className="text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
-                {isEn ? "APPOINTMENT DETAILS" : "DETAIL JADWAL"}
-              </span>
-              <p className="text-sm font-semibold text-foreground pt-0.5">
-                {formattedDate} {invoice.booking_time ? `• ${invoice.booking_time} WIB` : ""}
-              </p>
-            </div>
-          </div>
-
-          {/* Clean Itemized Table */}
-          <div>
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-[#8b5e3c]/20 dark:border-[#d49b6a]/20 text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
-                  <th className="pb-2.5">{isEn ? "ITEM DESCRIPTION" : "RINCIAN LAYANAN"}</th>
-                  <th className="pb-2.5 text-right">{isEn ? "AMOUNT" : "JUMLAH"}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/30">
-                <tr>
-                  <td className="py-3 pr-4">
-                    <p className="font-medium text-foreground text-xs sm:text-sm">
-                      {invoice.service_name || (isEn ? "Home Massage Service" : "Layanan Pijat di Rumah")}
-                    </p>
-                    {invoice.notes && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                        {invoice.notes}
-                      </p>
-                    )}
-                  </td>
-                  <td className="py-3 text-right font-semibold text-xs sm:text-sm text-foreground align-top">
-                    {formattedSubtotal}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pricing Summary & Payment Details */}
-          <div className="pt-4 border-t border-[#8b5e3c]/15 dark:border-[#d49b6a]/15 flex flex-col sm:flex-row justify-between items-start gap-6 text-xs">
-            {/* Payment Method & Compact Status */}
-            <div className="space-y-1">
-              <span className="text-[10px] font-semibold tracking-widest text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
-                {isEn ? "PAYMENT METHOD" : "METODE PEMBAYARAN"}
-              </span>
-              <p className="text-xs font-medium text-foreground capitalize">
-                {invoice.payment_method === "qris"
-                  ? "QRIS"
-                  : invoice.payment_method === "bank_transfer"
-                    ? isEn ? "Bank Transfer" : "Transfer Bank"
-                    : isEn ? "Cash on Service" : "Tunai (Cash)"}
-              </p>
-              <p className="text-[10.5px] text-muted-foreground pt-0.5">
-                <span className="opacity-75">{isEn ? "Status:" : "Status:"}</span>{" "}
-                <span className="font-semibold tracking-wide uppercase text-[#8b5e3c] dark:text-[#d49b6a]">
-                  {isPaid ? (isEn ? "Paid" : "Lunas") : isEn ? "Unpaid" : "Belum Lunas"}
+              <div className="text-right space-y-0.5 shrink-0">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                  {isEn ? "INVOICE NUMBER" : "NOMOR INVOICE"}
                 </span>
+                <span className="text-sm font-bold font-mono text-foreground block">
+                  {invoice.invoice_number}
+                </span>
+                <div className="pt-0.5 text-xs text-muted-foreground font-medium">
+                  <span>
+                    {isEn ? "Issued:" : "Diterbitkan:"}{" "}
+                    <span className="text-foreground font-medium">{formattedDate}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Client & Appointment Info (2 Columns Side-by-Side) */}
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              {/* Left: Client */}
+              <div className="space-y-2">
+                <div className="px-2.5 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[10px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 w-full">
+                  <User className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
+                  <span>{isEn ? "CLIENT" : "PELANGGAN"}</span>
+                </div>
+                <div className="px-1 space-y-0.5">
+                  <p className="text-sm font-bold text-foreground">
+                    {invoice.customer_name || (isEn ? "General Client" : "Pelanggan")}
+                  </p>
+                  {invoice.customer_phone && (
+                    <p className="text-xs text-muted-foreground">
+                      {invoice.customer_phone}
+                    </p>
+                  )}
+                  {invoice.service_address && (
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {invoice.service_address}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: Appointment Schedule */}
+              <div className="space-y-2">
+                <div className="px-2.5 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[10px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 w-full">
+                  <Calendar className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
+                  <span>{isEn ? "APPOINTMENT DETAILS" : "DETAIL JADWAL"}</span>
+                </div>
+                <div className="px-1 space-y-0.5">
+                  <p className="text-sm font-bold text-foreground capitalize">
+                    {formattedDate}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {invoice.booking_time ? `${invoice.booking_time} WIB` : "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Clean Itemized Table */}
+            <div className="space-y-2 w-full">
+              <div className="px-3 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[11px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <ReceiptText className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
+                  <span>{isEn ? "ITEM DESCRIPTION" : "RINCIAN LAYANAN"}</span>
+                </span>
+                <span>{isEn ? "AMOUNT" : "JUMLAH"}</span>
+              </div>
+              <div className="w-full px-1">
+                <table className="w-full text-left text-xs">
+                  <tbody className="divide-y divide-border/40">
+                    <tr className="hover:bg-muted/20">
+                      <td className="py-2.5 px-2 align-top pr-2">
+                        <p className="font-semibold text-foreground text-sm break-words">
+                          {invoice.service_name || (isEn ? "Home Massage Service" : "Layanan Pijat di Rumah")}
+                        </p>
+                        {cleanNotes ? (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed break-words">
+                            {cleanNotes}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="py-2.5 px-2 text-right font-bold text-sm text-foreground align-top shrink-0 whitespace-nowrap pl-4">
+                        {formattedSubtotal}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Pricing Summary & Payment Details (Side-by-Side) */}
+            <div className="pt-2 border-t border-border/60 flex flex-row justify-between items-start gap-6 text-xs">
+              {/* Payment Method & Compact Status */}
+              <div className="space-y-2 w-auto">
+                <div className="px-2.5 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[10px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 w-fit">
+                  <CreditCard className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
+                  <span>{isEn ? "PAYMENT METHOD" : "METODE PEMBAYARAN"}</span>
+                </div>
+                <div className="px-1 space-y-0.5">
+                  <p className="text-xs font-semibold text-foreground capitalize">
+                    {invoice.payment_method === "qris"
+                      ? "QRIS"
+                      : invoice.payment_method === "bank_transfer"
+                        ? isEn ? "Bank Transfer" : "Transfer Bank"
+                        : isEn ? "Cash on Service" : "Tunai (Cash)"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    <span>{isEn ? "Status:" : "Status:"}</span>{" "}
+                    <span className="font-bold tracking-wide uppercase text-[#8b5e3c] dark:text-[#d49b6a]">
+                      {isPaid ? (isEn ? "Paid" : "Lunas") : isEn ? "Unpaid" : "Belum Lunas"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Totals Breakdown */}
+              <div className="w-64 space-y-2 text-xs">
+                <div className="flex justify-between text-muted-foreground px-1">
+                  <span className="text-[11px] font-medium">{isEn ? "Subtotal" : "Subtotal"}</span>
+                  <span className="font-semibold text-foreground">{formattedSubtotal}</span>
+                </div>
+
+                {Number(invoice.transport_fee || 0) > 0 && (
+                  <div className="flex justify-between text-muted-foreground px-1">
+                    <span className="text-[11px] font-medium">{isEn ? "Transport Fee" : "Biaya Transport"}</span>
+                    <span className="font-semibold text-foreground">+{formattedTransport}</span>
+                  </div>
+                )}
+
+                {Number(invoice.discount || 0) > 0 && (
+                  <div className="flex justify-between items-start text-emerald-700 dark:text-emerald-400 px-1">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-medium">{isEn ? "Discount" : "Diskon"}</span>
+                      {displayDiscountName && (
+                        <span className="text-[9.5px] opacity-90 font-normal">
+                          ({displayDiscountName})
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-bold">-{formattedDiscount}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-baseline pt-2 border-t border-border/60 px-1">
+                  <span className="text-xs uppercase tracking-wider font-bold text-foreground">{isEn ? "Total" : "Total Biaya"}</span>
+                  <span className="text-lg font-black text-[#8b5e3c] dark:text-[#d49b6a]">{formattedTotal}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Minimalist Footer */}
+            <div className="pt-4 border-t border-border/60 text-center space-y-1">
+              <p className="text-[11px] font-medium text-foreground">
+                {displayFooterNote}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {displaySupportText}
               </p>
             </div>
-
-            {/* Totals Breakdown */}
-            <div className="w-full sm:w-60 space-y-1.5 text-xs">
-              <div className="flex justify-between text-muted-foreground">
-                <span className="text-[11px]">{isEn ? "Subtotal" : "Subtotal"}</span>
-                <span className="font-medium">{formattedSubtotal}</span>
-              </div>
-
-              {Number(invoice.transport_fee || 0) > 0 && (
-                <div className="flex justify-between text-muted-foreground">
-                  <span className="text-[11px]">{isEn ? "Transport Fee" : "Biaya Transport"}</span>
-                  <span className="font-medium">+{formattedTransport}</span>
-                </div>
-              )}
-
-              {Number(invoice.discount || 0) > 0 && (
-                <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                  <span className="text-[11px]">{isEn ? "Discount" : "Diskon"}</span>
-                  <span className="font-medium">-{formattedDiscount}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-baseline pt-2.5 border-t border-[#8b5e3c]/20 dark:border-[#d49b6a]/20 text-sm font-bold text-foreground">
-                <span className="text-xs uppercase tracking-wider">{isEn ? "Total" : "Total Biaya"}</span>
-                <span className="text-base text-[#8b5e3c] dark:text-[#d49b6a] font-bold">{formattedTotal}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Minimalist Footer */}
-          <div className="pt-5 border-t border-[#8b5e3c]/15 dark:border-[#d49b6a]/15 text-center space-y-1">
-            <p className="text-[11px] font-medium text-foreground">
-              {displayFooterNote}
-            </p>
-            <p className="text-[10px] text-muted-foreground">
-              {displaySupportText}
-            </p>
-          </div>
+          </CardContent>
+        </Card>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

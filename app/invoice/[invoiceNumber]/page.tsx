@@ -98,12 +98,12 @@ export default function PublicInvoicePage() {
         setLoading(true);
 
         // Search by invoice_number first, then by id
-        let query = supabase
+        const query = supabase
           .from("invoices")
           .select("*")
           .eq("invoice_number", rawId);
 
-        let { data, error: fetchErr } = await query.maybeSingle();
+        let { data } = await query.maybeSingle();
 
         if (!data && !isNaN(Number(rawId))) {
           const { data: byIdData } = await supabase
@@ -380,7 +380,7 @@ export default function PublicInvoicePage() {
       {/* Main Invoice Card Container */}
       <div className="max-w-3xl mx-auto space-y-6">
         {loading ? (
-          <Card className="p-16 text-center border border-border/70 shadow-none bg-card space-y-3">
+          <Card className="p-16 text-center border border-border/70 shadow-none bg-card space-y-3 rounded-none">
             <Loader2 className="w-6 h-6 animate-spin text-foreground mx-auto" />
             <p className="text-xs text-muted-foreground">
               {isEn ? "Loading official Serena Raga receipt..." : "Memuat nota resmi Serena Raga..."}
@@ -396,8 +396,8 @@ export default function PublicInvoicePage() {
               className="shadow-none"
             />
 
-            {/* Leave Review Section (Shadcn Card with shadow-none) */}
-            <Card className="border border-border/70 shadow-none bg-card">
+            {/* Leave Review Section (Shadcn Card with shadow-none and rounded-none) */}
+            <Card className="border border-border/70 shadow-none bg-card rounded-none">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-500" />
@@ -412,7 +412,7 @@ export default function PublicInvoicePage() {
 
               <CardContent className="space-y-4 pt-0">
                 {reviewSubmitted ? (
-                  <div className="p-5 rounded-xl bg-muted/40 border border-border/70 text-center space-y-2 shadow-none">
+                  <div className="p-5 rounded-none bg-muted/40 border border-border/70 text-center space-y-2 shadow-none">
                     <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 mx-auto">
                       <Heart className="w-4 h-4 fill-amber-600 text-amber-600 dark:fill-amber-500 dark:text-amber-500" />
                     </div>
@@ -477,7 +477,7 @@ export default function PublicInvoicePage() {
                             : "Contoh: Terapis sangat ramah, pijatannya pas dan membuat badan segar kembali..."
                         }
                         rows={3}
-                        className="text-xs bg-background border-border text-foreground resize-none shadow-none focus-visible:ring-1"
+                        className="text-xs bg-background border-border text-foreground resize-none shadow-none focus-visible:ring-1 rounded-none"
                       />
                     </div>
 
@@ -485,7 +485,7 @@ export default function PublicInvoicePage() {
                     <Button
                       type="submit"
                       disabled={submittingReview}
-                      className="w-full h-9 text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 gap-2 shadow-none cursor-pointer"
+                      className="w-full h-9 text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 gap-2 shadow-none cursor-pointer rounded-none"
                     >
                       {submittingReview ? (
                         <>
@@ -505,7 +505,7 @@ export default function PublicInvoicePage() {
             </Card>
           </>
         ) : (
-          <Card className="p-12 text-center border border-border/70 shadow-none bg-card space-y-3">
+          <Card className="p-12 text-center border border-border/70 shadow-none bg-card space-y-3 rounded-none">
             <ShieldCheck className="w-8 h-8 text-muted-foreground mx-auto" />
             <h2 className="text-base font-semibold text-foreground">
               {isEn ? "Receipt Not Found" : "Nota Tidak Ditemukan"}
