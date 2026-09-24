@@ -1,0 +1,59 @@
+﻿id,created_at,category,category_label,name,price,details,is_bestseller,is_featured,featured_image,featured_description,featured_duration,sort_order,is_bundle,bundle_child_ids,estimated_duration
+049a88ed-3da9-4814-98fa-9dec91d5324f,2026-04-08T02:50:27.172476+00:00,packages,Massage Packages,Special Package Lactaflow,290000,"Massage Ibu Postpartum 60 menit, Scrub Full body 10 menit, Totok Wajah 5 menit, Head massage 5 menit, Oksitosin Massage 30 menit Laktasi Massage 30 menit, Free Pilis",True,True,/featured-lactaflow.png,Perawatan khusus ibu postpartum yang menggabungkan pijat oksitosin dan laktasi untuk pemulihan optimal.,155 Min,8,True,"[""3e5b626a-fc11-4563-b796-5b2f5045cc5d"", ""f73d2545-fe80-4104-9564-97a4aeae081e""]",140
+2ea3b342-c9a2-4cc5-b4d4-d550106cd199,2026-04-08T02:50:27.172476+00:00,services,Massage Services,Essential Relax,110000,Massage Full Body 60 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,1,False,[],60
+de6379ef-da45-441f-bd12-ab339f80bcb1,2026-04-08T02:50:27.172476+00:00,services,Massage Services,Relax Flow,135000,Massage Full Body 90 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,2,False,[],95
+6293b4f4-f7cf-4b87-94d1-ed986868f507,2026-04-08T02:50:27.172476+00:00,reflexology,Refleksi Service,Comfort,100000,Refleksi 60 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,1,False,[],65
+fd270043-45ac-415c-9cb2-2b04972bc55c,2026-04-08T02:50:27.172476+00:00,packages,Massage Packages,Special Package Refine,195000,"Massage Full Body 120 menit, Lulur Full Body 10 menit, Totok Wajah 5 menit, Head Massage Free Masker",True,True,/featured-refine.png,"Transformasi kesegaran total dengan kombinasi Full Body Massage, Lulur, Totok Wajah, dan Head Massage.",145 Min,1,False,[],140
+f73d2545-fe80-4104-9564-97a4aeae081e,2026-04-10T13:34:50.359126+00:00,split_items,Internal Split Item,Paket Lactaflow Pijat Laktasi,140000,pembagian pijat laktasi untuk paket lactaflow,False,False,,,,2,False,,90
+3e5b626a-fc11-4563-b796-5b2f5045cc5d,2026-04-10T13:34:15.72671+00:00,split_items,Internal Split Item,Paket Lactaflow Pijat Body,135000,pembagian pijat body untuk paket lactaflow,False,False,,,,1,False,,90
+1614aca9-7fc6-4410-9b52-050dc48355e0,2026-04-08T02:50:27.172476+00:00,services,Massage Services,Endorfin / Induksi,200000,Massage Endorfin 120 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,6,False,[],125
+f3b19457-935c-4b94-8084-df5bb9dfb2d0,2026-04-08T02:50:27.172476+00:00,services,Massage Services,Ultimate,235000,Massage Full Body 150 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,7,False,[],155
+b6a33df0-1067-4d70-985e-9755d686e915,2026-04-08T02:50:27.172476+00:00,packages,Massage Packages,Special Package Balance,200000,"Massage Full Body 90 menit, Kerik, Scrub Full Body 10 menit, Totok Wajah 5 menit, Head Massage Free Masker",False,False,,,,5,False,[],145
+c81d4e38-a477-4f38-bbc5-5c4d325c7ef5,2026-07-07T21:14:26.218659+00:00,addons,Add-On Service,Manicure,100000,,False,False,,,,9,False,[],45
+8e125f9f-08df-454a-81cb-472565514109,2026-07-07T21:15:03.386524+00:00,addons,Add-On Service,Pedicure,120000,,False,False,,,,10,False,[],45
+8ca0a3c3-a5e3-43e6-9e8d-22e76e5335b9,2026-04-08T02:50:27.172476+00:00,services,Massage Services,Deep Relax,155000,Massage Full Body 120 menit Free Totok Wajah & Head Massage 5 menit,True,False,,,,3,False,[],125
+b28293f8-92c2-4642-bb3a-1e2e86b555a3,2026-04-08T02:50:27.172476+00:00,packages,Massage Packages,Special Package Recover,220000,"Massage Full Body 90 menit, Refleksi 30 menit, Scrub Full Body 10 menit, Totok Wajah 5 menit, Head Massage Free Masker",False,False,,,,4,False,[],140
+eb54a742-bd2a-4e89-8540-22f30c678b05,2026-07-07T21:15:30.858218+00:00,addons,Add-On Service,Waxing Under Arm,45000,,False,False,,,,11,False,[],30
+894b1e2a-e171-46ab-b629-19378fa704f7,2026-04-08T02:50:27.172476+00:00,addons,Add-On Service,Kerik,35000,Durasi menyesuaikan kondisi tubuh,False,False,,,,4,False,[],20
+74c61a4f-44db-49d1-afb1-c6c1d3417887,2026-07-07T21:15:48.68948+00:00,addons,Add-On Service,Waxing Brazilian,125000,,False,False,,,,12,False,[],30
+811955e8-4473-41a2-a4df-421b8b56eb77,2026-07-07T21:17:16.475872+00:00,addons,Add-On Service,Whitening Mask,30000,,False,False,,,,16,False,[],15
+8d8eeef3-e973-4949-a2e1-6c8fafe3e819,2026-07-07T21:17:37.846995+00:00,addons,Add-On Service,Whiteng Scrub Full Body,50000,,False,False,,,,17,False,[],15
+fb79c8d0-4fec-4666-a272-962e3ea0bc75,2026-04-08T02:50:27.172476+00:00,reflexology,Refleksi Service,Reflex Flow,135000,Refleksi 90 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,2,False,[],95
+5945b0a8-2a27-4317-9158-f3cc5eac2848,2026-04-08T02:50:27.172476+00:00,reflexology,Refleksi Service,Reflex Plus,160000,Refleksi 120 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,3,False,[],125
+7be43b90-5ca4-4ae1-88a8-79b8124d43d9,2026-04-08T02:50:27.172476+00:00,addons,Add-On Service,Full Body Massage,65000,Durasi 30 menit,False,False,,,,5,False,[],30
+cdabfda1-50a0-4a20-9709-7d3a1fd5f390,2026-04-08T02:50:27.172476+00:00,addons,Add-On Service,Masker,10000,Durasi 10 menit,False,False,,,,1,False,[],10
+bb634ded-292a-43e6-bcd6-5db97e49605f,2026-04-08T02:50:27.172476+00:00,addons,Add-On Service,Totok Wajah,30000,Durasi 15 menit,False,False,,,,2,False,[],15
+56b5a022-acb6-4dd6-b901-367092051d8d,2026-07-12T15:28:10.680561+00:00,couple_package,Couple Package,Cheris Package,250000,"Massage Full Body Wanita 60 menit
+Massage Full Body Pria 60 menit",False,False,,,,1,False,[],120
+c36812dd-e9fb-481d-ae13-0dfec668f0a8,2026-04-08T02:50:27.172476+00:00,addons,Add-On Service,Lulur,55000,Durasi 30 menit,False,False,,,,6,False,[],30
+a96efa7d-d8eb-4ec3-9702-8eb26aea402f,2026-04-08T02:50:27.172476+00:00,addons,Add-On Service,Refleksi Massage,60000,Durasi 30 menit,False,False,,,,7,False,[],30
+79011416-d18b-463b-ab4f-cf94b69cf947,2026-04-08T02:50:27.172476+00:00,addons,Add-On Service,Scrub,60000,Durasi 30 menit,False,False,,,,8,False,[],30
+428db453-23a0-4d18-a6a8-33ef6185f242,2026-04-08T02:50:27.172476+00:00,packages,Massage Packages,Special Package Revive,225000,"Massage Full Body 120 menit, Kerik, Scrub Full Body 10 menit, Totok Wajah 5 menit, Head Massage Free Masker",False,False,,,,7,False,[],140
+e4fc8214-0283-4f1e-9c95-b284b64f978d,2026-04-08T02:50:27.172476+00:00,packages,Massage Packages,Special Package Release,230000,"Massage Full Body 90 menit, Kerik, Lulur Full Body 10 menit, Totok Wajah 5 menit, Head Massage Free Masker",False,False,,,,2,False,[],145
+23437fae-a172-4e9a-921d-55252b72ec1a,2026-04-08T02:50:27.172476+00:00,services,Massage Services,Post Partum,185000,Massage Ibu Post Partum Full Body 120 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,4,False,[],125
+04054221-7234-45ce-9107-96cdd319e8e8,2026-04-08T02:50:27.172476+00:00,services,Massage Services,Pregnancy,190000,Massage Ibu Hamil Full Body 120 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,5,False,[],120
+efb9751c-1893-49b1-903b-aa90b8278466,2026-07-07T21:16:02.05177+00:00,addons,Add-On Service,Waxing Full Arm,65000,,False,False,,,,13,False,[],30
+b8ca0c32-aa3b-46a8-8f92-af98a9c630db,2026-07-07T21:16:20.452328+00:00,addons,Add-On Service,Waxing Whole Leg,140000,,False,False,,,,14,False,[],30
+91eff69d-bde9-440d-b47b-8aad0e9995cf,2026-07-07T21:17:02.153334+00:00,addons,Add-On Service,Waxing Under Arm+Brazilian+Whole Leg,275000,,False,False,,,,15,False,[],90
+8a9aad05-45f7-458f-8d71-a8b7bae9e6a5,2026-04-08T02:50:27.172476+00:00,addons,Add-On Service,Head Massage,50000,Durasi 15 menit,False,False,,,,3,False,[],15
+f73040b9-90c0-4883-a142-502b419916f9,2026-07-12T15:29:41.995311+00:00,couple_package,Couple Package,Embrace Package,300000,"Massage Full Body Wanita 90 menit
+Massage Full Body Pria 90 menit",False,False,,,,2,False,[],180
+3b5cbb0f-8a9c-4e63-9f77-d266f9c9932c,2026-04-08T02:50:27.172476+00:00,packages,Massage Packages,Special Package Restore,190000,"Massage Full Body 120 menit, Scrub Full Body 10 menit, Totok Wajah 5 menit, Head Massage Free Masker",False,False,,,,3,False,[],140
+4e327440-0cc3-49db-9457-a5b4fd75d31e,2026-07-12T15:31:52.847257+00:00,couple_package,Couple Package,Devotion Package,340000,"Massage Full Body Wanita 120 menit
+Massage Full Body Pria 120 menit",False,False,,,,3,False,[],240
+5f02e29d-2280-4b83-a5a9-d8e04916442f,2026-07-12T15:33:28.965251+00:00,couple_package,Couple Package,Aurora Package,310000,"Massage Full Body Wanita 60 menit + kerik 15 menit
+Massage Full Body Pria 60 menit + kerik 15 menit",False,False,,,,4,False,[],150
+49940c82-3941-4e83-848c-ec1d34c863a1,2026-07-12T15:34:11.656805+00:00,couple_package,Couple Package,Lumina Package,360000,"Massage Full Body Wanita 90 menit + kerik 15 menit
+Massage Full Body Pria 90 menit + kerik 15 menit",False,False,,,,5,False,[],220
+a8c41ef1-3597-4803-b94d-910afc088b2e,2026-07-12T15:35:36.699851+00:00,couple_package,Couple Package,Elysian Package,420000,"Massage Full Body Wanita 90 menit + Refleksi 30 menit
+Massage Full Body Pria 90 menit + Refleksi 30 menit",False,False,,,,7,False,[],240
+03b59b64-f187-4207-8336-bce628577767,2026-07-12T15:35:03.232074+00:00,couple_package,Couple Package,Celeste Package,370000,"Massage Full Body Wanita 60 menit + Refleksi 30 menit
+Massage Full Body Pria 60 menit + Refleksi 30 menit",False,False,,,,6,False,[],180
+99004d10-db2a-4f98-83b1-5d11c177777a,2026-07-12T16:18:16.816315+00:00,kid_mom,Kids & Mom Services,Little Relax,85000,Kids Full Body Massage 45 menit,False,False,,,,2,False,[],45
+c2cd2cb4-9881-40c2-873e-d3bde1c50aba,2026-07-12T16:18:40.809535+00:00,kid_mom,Kids & Mom Services,Dreamy Kids,105000,Kids Full Body Massage 60 menit,False,False,,,,3,False,[],60
+9645e664-1a4c-4f99-9db2-4a03435759c3,2026-07-12T16:19:04.954857+00:00,kid_mom,Kids & Mom Services,Dreamland,130000,Kids Full Body Massage 90 menit,False,False,,,,4,False,[],90
+d694d658-0970-4151-9b3d-5b7b62e45e90,2026-07-12T16:38:20.667666+00:00,kid_mom,Kids & Mom Services,Sweet Moment,170000,Kids Full Body Massage 30 menit Mom Full Body Massage 60 menit Free Totok Wajah & Head Massage 5 menit,False,False,,,,5,False,[],95
+a36debab-2204-4508-b2e4-168344e9e564,2026-07-12T16:39:45.776597+00:00,kid_mom,Kids & Mom Services,Cherished Moment,215000,Kids Full Body Massage 45 menit Mom Full Body Massage 90 menit Free Totok Wajah & Head Masage 5 menit,False,False,,,,6,False,[],140
+e4a2d97f-9163-4b5f-b4d5-9ff80d260a7e,2026-07-12T16:17:55.011096+00:00,kid_mom,Kids & Mom Services,Little Calm,65000,Kids Full Body Massage 30 menit,False,False,,,,1,False,[],30
+d4e454fb-2daa-4a84-b8ba-e3dc483a5394,2026-04-08T02:50:27.172476+00:00,packages,Massage Packages,Special Package Renewal,220000,"Massage Full Body 120 menit, Refleksi 30 menit, Scrub Full Body 10 menit, Totok Wajah 5 menit, Head Massage Free Masker",True,True,/featured-renewal.png,Pemulihan mendalam dengan tambahan Refleksi 30 menit untuk keseimbangan energi tubuh yang maksimal.,175 Min,6,False,[],155
+7b86b611-85a5-4df3-aa28-637dafbaca1e,2026-07-22T06:04:10.536175+00:00,addons,Add-On Service,Waxing Half Leg,70000,,False,False,,,,18,False,[],30

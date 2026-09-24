@@ -82,6 +82,7 @@ import {
   startOfYear,
   endOfYear,
 } from "date-fns";
+import { calculateBookingFinancials } from "@/lib/financial-calculator";
 
 export const Dashboard = () => {
   const translate = useTranslate();
@@ -93,26 +94,40 @@ export const Dashboard = () => {
 
   // Fetch real data from Supabase backend
   const { data: bookings = [], isPending: loadingBookings } = useGetList("bookings", {
-    pagination: { page: 1, perPage: 200 },
+    pagination: { page: 1, perPage: 5000 },
     sort: { field: "id", order: "DESC" },
   });
   const { data: invoices = [], isPending: loadingInvoices } = useGetList("invoices", {
-    pagination: { page: 1, perPage: 200 },
+    pagination: { page: 1, perPage: 5000 },
     sort: { field: "id", order: "DESC" },
   });
   const { data: therapists = [], isPending: loadingTherapists } = useGetList("therapists", {
-    pagination: { page: 1, perPage: 100 },
+    pagination: { page: 1, perPage: 500 },
   });
   const { data: services = [] } = useGetList("services", {
-    pagination: { page: 1, perPage: 100 },
+    pagination: { page: 1, perPage: 500 },
   });
   const { data: customers = [] } = useGetList("customers", {
-    pagination: { page: 1, perPage: 100 },
+    pagination: { page: 1, perPage: 5000 },
   });
   const { data: reviews = [] } = useGetList("reviews", {
-    pagination: { page: 1, perPage: 100 },
+    pagination: { page: 1, perPage: 1000 },
     sort: { field: "id", order: "DESC" },
   });
+  const { data: promotions = [] } = useGetList("promotions", {
+    pagination: { page: 1, perPage: 500 },
+  });
+
+  // Invoice Map for fast O(1) lookup
+  const invoiceByBookingId = React.useMemo(() => {
+    const map = new Map<number, any>();
+    invoices.forEach((inv) => {
+      if (inv.booking_id) {
+        map.set(Number(inv.booking_id), inv);
+      }
+    });
+    return map;
+  }, [invoices]);
 
   // Calculate synchronized date interval based on timeRange
   const filterDateRange = React.useMemo(() => {
@@ -188,81 +203,55 @@ export const Dashboard = () => {
   const completedBookings = filteredBookings.filter((b) => b.status === "completed").length;
   const totalBookingsCount = filteredBookings.length;
 
-  // 2. Financial Metrics for the Period
-  const grossRevenue = React.useMemo(() => {
-    if (filteredInvoices.length > 0) {
-      return filteredInvoices.reduce((sum, inv) => {
-        if (inv.payment_status === "paid") {
-          return sum + (Number(inv.total_amount) || 0);
-        }
-        return sum;
-      }, 0);
-    }
-    return filteredBookings.reduce((sum, b) => {
+  // 2. Financial Metrics for the Period (Unified via calculateBookingFinancials)
+  const financialMetrics = React.useMemo(() => {
+    let gross = 0;
+    let therapistFees = 0;
+    let bhp = 0;
+    let net = 0;
+    let paidCount = 0;
+
+    filteredBookings.forEach((b) => {
       if (b.payment_status === "paid") {
-        return sum + (Number(b.total_price) || 0);
+        paidCount++;
+        const matchedInv = invoiceByBookingId.get(Number(b.id));
+        const srv = services.find((s) => s.id === b.service_id);
+        const th = therapists.find((t) => t.id === b.therapist_id);
+
+        const fin = calculateBookingFinancials({
+          bookingPrice: Number(b.total_price || srv?.price || 0),
+          servicePrice: Number(srv?.price || 0),
+          consumablesCost: Number(srv?.consumables_cost || 0),
+          commissionRate: Number(th?.commission_rate || 60),
+          invoice: matchedInv,
+          promotions,
+        });
+
+        gross += fin.finalCustomerTotal;
+        therapistFees += fin.therapistFee;
+        bhp += fin.consumablesCost;
+        net += fin.netSerenaRaga;
       }
-      return sum;
-    }, 0);
-  }, [filteredInvoices, filteredBookings]);
+    });
 
-  // Paid orders count
-  const paidOrdersCount = React.useMemo(() => {
-    if (filteredInvoices.length > 0) {
-      return filteredInvoices.filter((i) => i.payment_status === "paid").length;
-    }
-    return filteredBookings.filter((b) => b.payment_status === "paid").length;
-  }, [filteredInvoices, filteredBookings]);
+    return {
+      grossRevenue: gross,
+      therapistFeeCost: therapistFees,
+      bhpCost: bhp,
+      netProfit: net,
+      paidOrdersCount: paidCount,
+      netMarginPercent: gross > 0 ? ((net / gross) * 100).toFixed(1) : "0.0",
+    };
+  }, [filteredBookings, invoiceByBookingId, services, therapists, promotions]);
 
-  // Therapist Fee Cost (Calculated based on therapist commission rate, default 60%)
-  const therapistFeeCost = React.useMemo(() => {
-    let total = 0;
-    if (filteredInvoices.length > 0) {
-      filteredInvoices.forEach((inv) => {
-        if (inv.payment_status === "paid") {
-          const therapist = therapists.find((t) => t.id === inv.therapist_id);
-          const rate = therapist?.commission_rate ? Number(therapist.commission_rate) / 100 : 0.6;
-          const serviceAmt = Number(inv.subtotal) || Number(inv.total_amount) || 0;
-          total += serviceAmt * rate;
-        }
-      });
-    } else {
-      filteredBookings.forEach((b) => {
-        if (b.payment_status === "paid") {
-          const therapist = therapists.find((t) => t.id === b.therapist_id);
-          const rate = therapist?.commission_rate ? Number(therapist.commission_rate) / 100 : 0.6;
-          const serviceAmt = Number(b.total_price) || 0;
-          total += serviceAmt * rate;
-        }
-      });
-    }
-    return Math.round(total);
-  }, [filteredInvoices, filteredBookings, therapists]);
-
-  // Consumables / Supplies Cost (BHP: Akumulasi biaya bahan riil dari master service yang dipesan)
-  const bhpCost = React.useMemo(() => {
-    let total = 0;
-    if (filteredInvoices.length > 0) {
-      filteredInvoices.forEach((inv) => {
-        if (inv.payment_status === "paid") {
-          const service = services.find((s) => s.id === inv.service_id);
-          total += Number(service?.consumables_cost) || 0;
-        }
-      });
-    } else {
-      filteredBookings.forEach((b) => {
-        if (b.payment_status === "paid") {
-          const service = services.find((s) => s.id === b.service_id);
-          total += Number(service?.consumables_cost) || 0;
-        }
-      });
-    }
-    return Math.round(total);
-  }, [filteredInvoices, filteredBookings, services]);
-
-  // Net Profit & Net Margin (%)
-  const netProfit = Math.max(0, grossRevenue - therapistFeeCost - bhpCost);
-  const netMarginPercent = grossRevenue > 0 ? ((netProfit / grossRevenue) * 100).toFixed(1) : "0.0";
+  const {
+    grossRevenue,
+    therapistFeeCost,
+    bhpCost,
+    netProfit,
+    paidOrdersCount,
+    netMarginPercent,
+  } = financialMetrics;
 
   // 3. Operational Roster & Performance Metrics
   const availableTherapists = therapists.filter((t) => t.status === "available").length;
@@ -330,24 +319,26 @@ export const Dashboard = () => {
         return b.booking_date.startsWith(dateKey);
       });
 
-      let dayRevenue = 0;
-      let dayTherapistFee = 0;
-      let dayBhpCost = 0;
+      let dayProfit = 0;
 
       dayBookings.forEach((b) => {
         if (b.payment_status === "paid") {
+          const matchedInv = invoiceByBookingId.get(Number(b.id));
           const srv = services.find((s) => s.id === b.service_id);
           const th = therapists.find((t) => t.id === b.therapist_id);
-          const price = Number(b.total_price) || 0;
-          const commissionRate = th?.commission_rate ? Number(th.commission_rate) / 100 : 0.6;
 
-          dayRevenue += price;
-          dayTherapistFee += Math.round(price * commissionRate);
-          dayBhpCost += Number(srv?.consumables_cost) || 0;
+          const fin = calculateBookingFinancials({
+            bookingPrice: Number(b.total_price || srv?.price || 0),
+            servicePrice: Number(srv?.price || 0),
+            consumablesCost: Number(srv?.consumables_cost || 0),
+            commissionRate: Number(th?.commission_rate || 60),
+            invoice: matchedInv,
+            promotions,
+          });
+
+          dayProfit += fin.netSerenaRaga;
         }
       });
-
-      const dayProfit = Math.max(0, dayRevenue - dayTherapistFee - dayBhpCost);
 
       data.push({
         date: label,
@@ -356,7 +347,7 @@ export const Dashboard = () => {
       });
     }
     return data;
-  }, [bookings, services, therapists, timeRange, isEn]);
+  }, [bookings, invoiceByBookingId, services, therapists, promotions, timeRange, isEn]);
 
   const totalPeriodProfit = React.useMemo(() => {
     return chartData.reduce((acc, d) => acc + d.profit, 0);
@@ -521,11 +512,11 @@ export const Dashboard = () => {
         variants={itemVariants}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5"
       >
-        {/* Card 1: Incoming Bookings */}
+        {/* Card 1: Bookings */}
         <Card className="border border-border shadow-none bg-card hover:border-border transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
             <span className="text-xs font-medium text-muted-foreground">
-              {isEn ? "Incoming Bookings" : "Booking Masuk"}
+              {isEn ? "Bookings" : "Pemesanan"}
             </span>
             <CalendarCheck className="w-4 h-4 text-[#8b5e3c] dark:text-[#d49b6a]" />
           </CardHeader>
@@ -638,7 +629,7 @@ export const Dashboard = () => {
           </CardHeader>
           <CardContent className="pt-2">
             <ChartContainer config={chartConfig} className="h-64 w-full aspect-auto">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+              <BarChart data={chartData} margin={{ top: 10, right: 15, left: 15, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
                 <XAxis
                   dataKey="date"
@@ -649,10 +640,18 @@ export const Dashboard = () => {
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <YAxis
+                  width={68}
                   tickLine={false}
                   axisLine={false}
                   fontSize={11}
-                  tickFormatter={(val) => `Rp${(val / 1000).toFixed(0)}k`}
+                  tickMargin={4}
+                  tickFormatter={(val) => {
+                    if (val >= 1000000) {
+                      const m = (val / 1000000).toFixed(1).replace(/\.0$/, '');
+                      return `Rp ${m}M`;
+                    }
+                    return `Rp ${Math.round(val / 1000)}k`;
+                  }}
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <ChartTooltip

@@ -316,12 +316,30 @@ export const InvoiceCard = ({
       : settings.invoice_support_text
   ).replace(/\{whatsapp\}/g, formattedPhone);
 
-  // Extract promo name from notes if formatted as [Promo: Name]
-  const promoMatch = invoice.notes?.match(/\[Promo:\s*([^\]]+)\]/i);
-  const promoNameFromNotes = promoMatch ? promoMatch[1].trim() : null;
-  const cleanNotes = invoice.notes
-    ? invoice.notes.replace(/\[Promo:\s*[^\]]+\]/gi, "").trim()
+  // Extract promo name and parse JSON metadata from notes if present
+  let meta: any = null;
+  let rawNotesText = invoice.notes || "";
+  if (rawNotesText.trim().startsWith("{") && rawNotesText.trim().endsWith("}")) {
+    try {
+      meta = JSON.parse(rawNotesText.trim());
+      rawNotesText = meta.raw_notes || "";
+    } catch (e) {}
+  }
+
+  const promoMatch = rawNotesText?.match(/\[Promo:\s*([^\]]+)\]/i);
+  const promoNameFromNotes = promoMatch ? promoMatch[1].trim() : (meta?.promo_name || null);
+  const cleanNotes = rawNotesText
+    ? rawNotesText
+        .replace(/\[Invoice:\s*[^\]]+\]/gi, "")
+        .replace(/\[Promo:\s*[^\]]+\]/gi, "")
+        .trim()
     : "";
+
+  const itemsList: Array<{ name: string; price: number }> =
+    meta?.items && Array.isArray(meta.items) && meta.items.length > 0
+      ? meta.items
+      : [];
+
   const rawDiscountName =
     invoice.discount_name || invoice.applied_promo_name || promoNameFromNotes;
   const displayDiscountName = rawDiscountName
@@ -505,22 +523,40 @@ export const InvoiceCard = ({
                   <span>{isEn ? "PRICE" : "HARGA"}</span>
                 </div>
 
-                {/* Item Row */}
-                <div className="py-2 flex justify-between items-start gap-4">
-                  <div className="space-y-1 pr-2">
-                    <p className="font-bold text-sm text-foreground leading-tight">
-                      {invoice.service_name || (isEn ? "Home Massage Service" : "Layanan Pijat di Rumah")}
-                    </p>
-                    {cleanNotes ? (
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        {cleanNotes}
-                      </p>
-                    ) : null}
+                {/* Item Rows */}
+                {itemsList.length > 0 ? (
+                  <div className="divide-y divide-border/30">
+                    {itemsList.map((it, idx) => (
+                      <div key={idx} className="py-2 flex justify-between items-start gap-4">
+                        <div className="space-y-0.5 pr-2">
+                          <p className="font-bold text-sm text-foreground leading-tight">
+                            {it.name}
+                          </p>
+                        </div>
+                        <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
+                          {formatIDR(it.price)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
-                    {formattedSubtotal}
-                  </span>
-                </div>
+                ) : (
+                  <div className="py-2 flex justify-between items-start gap-4">
+                    <div className="space-y-1 pr-2">
+                      <p className="font-bold text-sm text-foreground leading-tight">
+                        {invoice.service_name || (isEn ? "Home Massage Service" : "Layanan Pijat di Rumah")}
+                      </p>
+                    </div>
+                    <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
+                      {formattedSubtotal}
+                    </span>
+                  </div>
+                )}
+
+                {cleanNotes ? (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
+                    {cleanNotes}
+                  </p>
+                ) : null}
               </div>
 
               {/* Pricing Breakdown (Subtotal, Discounts, Total) */}

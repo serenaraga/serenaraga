@@ -59,7 +59,7 @@ export const List = <RecordType extends RaRecord = RaRecord>(
   const {
     debounce,
     disableAuthentication,
-    disableSyncWithLocation = true,
+    disableSyncWithLocation = false,
     exporter,
     filter,
     filterDefaultValues,

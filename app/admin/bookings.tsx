@@ -828,11 +828,11 @@ const BookingShowContent = () => {
   );
 
   const { data: invoices = [] } = useGetList("invoices", {
-    pagination: { page: 1, perPage: 100 },
+    pagination: { page: 1, perPage: 5000 },
   });
 
   const { data: promotions = [] } = useGetList("promotions", {
-    pagination: { page: 1, perPage: 100 },
+    pagination: { page: 1, perPage: 500 },
   });
 
   if (!record) return null;
@@ -1009,87 +1009,119 @@ const BookingShowContent = () => {
           </div>
         </CardHeader>
 
-        <CardContent className="pt-4 space-y-4">
-          {/* Invoice Itemized Breakdown if available */}
-          {fin.hasInvoice ? (
-            <div className="p-3.5 rounded-xl bg-muted/25 border border-border/60 text-xs space-y-2">
+        <CardContent className="pt-4 space-y-5">
+          {/* 1. Itemized Table if line items exist (Exact Old Database Format) */}
+          {fin.itemsList && fin.itemsList.length > 0 ? (
+            <div className="space-y-2">
+              <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase block">
+                {isEn ? "Itemized Services & Therapist Fees" : "Rincian Item & Jasa Terapis"}
+              </span>
+              <div className="rounded-xl border border-border/60 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase border-b border-border/50">
+                      <tr>
+                        <th className="py-2.5 px-3">{isEn ? "Service Name" : "Nama Layanan"}</th>
+                        <th className="py-2.5 px-3 text-right">{isEn ? "Price" : "Harga"}</th>
+                        <th className="py-2.5 px-3">{isEn ? "Assigned Therapist" : "Assign Terapis"}</th>
+                        <th className="py-2.5 px-3 text-right">{isEn ? "Commission" : "Komisi"}</th>
+                        <th className="py-2.5 px-3 text-right">{isEn ? "COGS (BHP)" : "BHP"}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {fin.itemsList.map((item, idx) => {
+                        const isPureTransport = item.name.toLowerCase().includes("transport") && item.commission === item.price;
+                        return (
+                          <tr key={idx} className="hover:bg-muted/20 transition-colors">
+                            <td className="py-2.5 px-3 font-medium text-foreground">
+                              <div>{item.name}</div>
+                              {item.basis_deduction && item.basis_deduction > 0 ? (
+                                <div className="text-[10px] text-muted-foreground font-normal">
+                                  ↳ {isEn ? "Basis Deduction:" : "Potong Basis:"} -{formatIDR(item.basis_deduction)}
+                                </div>
+                              ) : null}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-medium text-foreground">
+                              {formatIDR(item.price)}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="font-medium text-foreground">{item.therapist || therapist?.name || "Terapis"}</div>
+                              <div className="text-[10px] text-muted-foreground">
+                                {isEn ? "Rate:" : "Rate:"} {item.rate || fin.commissionRate}%
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              <div className="font-bold text-amber-700 dark:text-amber-400">
+                                {formatIDR(item.commission)}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">
+                                {isPureTransport
+                                  ? isEn ? "(100% Transport)" : "(100% Transport)"
+                                  : `(${item.rate || fin.commissionRate}% dari ${formatIDR(item.price - (item.basis_deduction || 0))})`}
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-medium text-muted-foreground">
+                              {item.bhp > 0 ? formatIDR(item.bhp) : "-"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* 2. Rincian Finansial Transaksi */}
+          <div className="space-y-2">
+            <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase block">
+              {isEn ? "Financial Audit Breakdown" : "Rincian Finansial Transaksi"}
+            </span>
+            <div className="p-4 rounded-xl bg-muted/20 border border-border/60 text-xs space-y-2.5">
               <div className="flex justify-between items-center text-muted-foreground">
-                <span>{isEn ? "Treatment Gross Price:" : "Harga Layanan Treatment:"}</span>
+                <span>{isEn ? "Total Gross Services (Gross):" : "Total Jasa Kotor (Gross):"}</span>
                 <span className="font-semibold text-foreground">{formatIDR(fin.treatmentGrossPrice)}</span>
               </div>
 
               {fin.discountAmount > 0 && (
                 <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span>{isEn ? "Promo Discount:" : "Potongan Diskon Promo:"}</span>
+                    <span>{isEn ? "Total Customer Discount:" : "Total Diskon Pelanggan:"}</span>
                     {fin.appliedPromoName && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 font-semibold">
-                        {fin.appliedPromoName}
+                        ↳ {fin.appliedPromoName}
                       </span>
                     )}
-                    <span className="text-[10px] text-muted-foreground">
-                      ({fin.isPostDiscountPolicy
-                        ? isEn
-                          ? "Post-Discount Policy: Commission base adjusted"
-                          : "Kebijakan Net: Dasar komisi terapis disesuaikan"
-                        : isEn
-                          ? "Pre-Discount Policy: Standard gross commission"
-                          : "Kebijakan Gross: Komisi dihitung dari harga normal"})
-                    </span>
                   </div>
                   <span className="font-bold">-{formatIDR(fin.discountAmount)}</span>
                 </div>
               )}
 
-              {fin.transportFee > 0 && (
-                <div className="flex justify-between items-center text-muted-foreground">
-                  <span>{isEn ? "Transport / Travel Surcharge:" : "Biaya Transport / Lokasi:"}</span>
-                  <span className="font-semibold text-foreground">+{formatIDR(fin.transportFee)}</span>
-                </div>
-              )}
-
-              <div className="pt-2 border-t border-border/50 flex justify-between items-center font-bold text-foreground">
-                <span className="text-xs">{isEn ? "Total Paid by Customer (Net):" : "Total Pembayaran Pelanggan (Lunas):"}</span>
-                <span className="text-primary text-sm font-bold">{formatIDR(fin.finalCustomerTotal)}</span>
+              <div className="pt-2 border-t border-border/40 flex justify-between items-center font-medium text-foreground">
+                <span>{isEn ? "Total Customer Payment (DPP):" : "Total Penerimaan Pelanggan (DPP):"}</span>
+                <span className="font-bold text-foreground">{formatIDR(fin.finalCustomerTotal)}</span>
               </div>
-            </div>
-          ) : null}
 
-          {/* 3 Metric Cards for Profit & Commission */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 rounded-xl bg-background border border-border/60 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-[11px] font-medium">{isEn ? "Therapist Fee:" : "Hak Terapis:"}</span>
-                <span className="text-[10px] text-muted-foreground">
-                  {fin.isPostDiscountPolicy ? "Net Base" : "Gross Base"}
+              <div className="flex justify-between items-center text-amber-700 dark:text-amber-400 font-medium">
+                <span>{isEn ? "Therapist Service & Travel Commission:" : "Komisi Jasa & Transport Terapis:"}</span>
+                <span className="font-bold">-{formatIDR(fin.therapistFee)}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-muted-foreground font-medium">
+                <span>{isEn ? "Consumables Supplies (BHP):" : "Biaya Bahan Habis Pakai (BHP):"}</span>
+                <span className="font-bold">-{formatIDR(fin.consumablesCost)}</span>
+              </div>
+
+              {/* Net Income Owner Highlight Box */}
+              <div className="mt-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex justify-between items-center">
+                <span className="font-bold text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm">
+                  {isEn ? "Net Income Owner (Net Profit):" : "Net Income Owner (Pendapatan Bersih):"}
+                </span>
+                <span className="font-black text-emerald-700 dark:text-emerald-400 text-sm sm:text-base">
+                  {formatIDR(fin.netSerenaRaga)}
                 </span>
               </div>
-              <span className="font-bold text-foreground text-base block">
-                {formatIDR(fin.therapistFee)}
-              </span>
-              <span className="text-[10px] text-muted-foreground block">
-                {fin.commissionRate}% × {formatIDR(fin.commissionBase)}
-              </span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-background border border-border/60 space-y-1">
-              <span className="text-muted-foreground block text-[11px] font-medium">{isEn ? "Consumables (HPP):" : "Biaya Bahan (HPP):"}</span>
-              <span className="font-bold text-amber-700 dark:text-amber-400 text-base block">
-                {formatIDR(fin.consumablesCost)}
-              </span>
-              <span className="text-[10px] text-muted-foreground block">
-                {isEn ? "Standard Service COGS" : "Bahan habis pakai per layanan"}
-              </span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
-              <span className="text-emerald-700 dark:text-emerald-400 block text-[11px] font-semibold">{isEn ? "Net Serena Raga:" : "Laba Bersih Serena Raga:"}</span>
-              <span className="font-bold text-emerald-700 dark:text-emerald-400 text-base block">
-                {formatIDR(fin.netSerenaRaga)}
-              </span>
-              <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 block">
-                {isEn ? "Net Company Margin" : "Laba bersih setelah komisi & bahan"}
-              </span>
             </div>
           </div>
         </CardContent>

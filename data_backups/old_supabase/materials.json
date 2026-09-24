@@ -1,0 +1,72 @@
+[
+  {
+    "id": "aca14df4-79b5-4bb5-8bd1-b52fc899d285",
+    "name": "Masker",
+    "pack_label": "1",
+    "pack_price": 2000,
+    "customers_per_pack": 1,
+    "is_global": false,
+    "notes": "",
+    "created_at": "2026-04-09T13:40:26.784804+00:00"
+  },
+  {
+    "id": "ce844904-57ff-4eb9-9631-467ba3c9a2a5",
+    "name": "Kapas",
+    "pack_label": "1 pack",
+    "pack_price": 7000,
+    "customers_per_pack": 10,
+    "is_global": false,
+    "notes": "",
+    "created_at": "2026-04-09T13:48:28.254424+00:00"
+  },
+  {
+    "id": "eab11ee6-6ca3-4388-bd7d-26743bfc090e",
+    "name": "Minyak pijat",
+    "pack_label": "1liter",
+    "pack_price": 60000,
+    "customers_per_pack": 20,
+    "is_global": false,
+    "notes": "",
+    "created_at": "2026-04-09T13:44:03.410317+00:00"
+  },
+  {
+    "id": "d92b665f-f410-4297-a27a-890e04fd6d94",
+    "name": "Scrub",
+    "pack_label": "1 botol",
+    "pack_price": 45000,
+    "customers_per_pack": 5,
+    "is_global": false,
+    "notes": "",
+    "created_at": "2026-04-09T13:41:18.163819+00:00"
+  },
+  {
+    "id": "8b004fde-38eb-4302-9766-fdfe4d81828e",
+    "name": "Lulur",
+    "pack_label": "1kg",
+    "pack_price": 50000,
+    "customers_per_pack": 10,
+    "is_global": false,
+    "notes": "",
+    "created_at": "2026-04-09T13:46:31.149049+00:00"
+  },
+  {
+    "id": "2ca91552-ed89-4164-a75b-0516dad8e248",
+    "name": "Milk Cleanser",
+    "pack_label": "1 botol",
+    "pack_price": 20000,
+    "customers_per_pack": 10,
+    "is_global": false,
+    "notes": "",
+    "created_at": "2026-04-09T13:44:38.2582+00:00"
+  },
+  {
+    "id": "953b352a-536b-4ab1-b916-c117df9b0c28",
+    "name": "Face Tonic",
+    "pack_label": "1 botol",
+    "pack_price": 20000,
+    "customers_per_pack": 10,
+    "is_global": false,
+    "notes": "",
+    "created_at": "2026-04-09T13:45:18.916664+00:00"
+  }
+]

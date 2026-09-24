@@ -38,16 +38,82 @@ export const dataProvider: DataProvider = {
             );
           } else if (resource === "therapists") {
             query = query.or(
-              `name.ilike.%${value}%,phone.ilike.%${value}%,specialties.ilike.%${value}%,coverage_areas.ilike.%${value}%,bank_name.ilike.%${value}%,notes.ilike.%${value}%`
+              `name.ilike.%${value}%,phone.ilike.%${value}%,specialties.ilike.%${value}%,coverage_areas.ilike.%${value}%,bank_name.ilike.%${value}%,domicile_address.ilike.%${value}%,nik.ilike.%${value}%,notes.ilike.%${value}%`
             );
           } else if (resource === "bookings") {
-            query = query.or(
-              `service_address.ilike.%${value}%,status.ilike.%${value}%,special_requests.ilike.%${value}%,city_area.ilike.%${value}%,notes.ilike.%${value}%`
-            );
+            const orParts: string[] = [
+              `service_address.ilike.%${value}%`,
+              `status.ilike.%${value}%`,
+              `special_requests.ilike.%${value}%`,
+              `payment_method.ilike.%${value}%`,
+              `payment_status.ilike.%${value}%`,
+            ];
+
+            // 1. Search matching customers by full_name or phone
+            const { data: matchedCustomers } = await supabase
+              .from("customers")
+              .select("id")
+              .or(`full_name.ilike.%${value}%,phone.ilike.%${value}%`)
+              .limit(50);
+            if (matchedCustomers && matchedCustomers.length > 0) {
+              const ids = matchedCustomers.map((c) => c.id).join(",");
+              orParts.push(`customer_id.in.(${ids})`);
+            }
+
+            // 2. Search matching therapists by name or phone
+            const { data: matchedTherapists } = await supabase
+              .from("therapists")
+              .select("id")
+              .or(`name.ilike.%${value}%,phone.ilike.%${value}%`)
+              .limit(50);
+            if (matchedTherapists && matchedTherapists.length > 0) {
+              const ids = matchedTherapists.map((t) => t.id).join(",");
+              orParts.push(`therapist_id.in.(${ids})`);
+            }
+
+            // 3. Search matching services by name
+            const { data: matchedServices } = await supabase
+              .from("services")
+              .select("id")
+              .ilike("name", `%${value}%`)
+              .limit(50);
+            if (matchedServices && matchedServices.length > 0) {
+              const ids = matchedServices.map((s) => s.id).join(",");
+              orParts.push(`service_id.in.(${ids})`);
+            }
+
+            // 4. Match numeric ID (e.g. "244" or "#244")
+            const cleanDigits = String(value).replace(/[^0-9]/g, "");
+            if (cleanDigits.length > 0) {
+              const numId = parseInt(cleanDigits, 10);
+              if (!isNaN(numId) && numId > 0) {
+                orParts.push(`id.eq.${numId}`);
+              }
+            }
+
+            query = query.or(orParts.join(","));
           } else if (resource === "invoices") {
-            query = query.or(
-              `invoice_number.ilike.%${value}%,customer_name.ilike.%${value}%,customer_phone.ilike.%${value}%,service_name.ilike.%${value}%,payment_status.ilike.%${value}%,payment_method.ilike.%${value}%,notes.ilike.%${value}%`
-            );
+            const orParts: string[] = [
+              `invoice_number.ilike.%${value}%`,
+              `customer_name.ilike.%${value}%`,
+              `customer_phone.ilike.%${value}%`,
+              `service_name.ilike.%${value}%`,
+              `therapist_name.ilike.%${value}%`,
+              `service_address.ilike.%${value}%`,
+              `payment_status.ilike.%${value}%`,
+              `payment_method.ilike.%${value}%`,
+              `notes.ilike.%${value}%`,
+            ];
+
+            const cleanDigits = String(value).replace(/[^0-9]/g, "");
+            if (cleanDigits.length > 0) {
+              const numId = parseInt(cleanDigits, 10);
+              if (!isNaN(numId) && numId > 0) {
+                orParts.push(`id.eq.${numId}`);
+              }
+            }
+
+            query = query.or(orParts.join(","));
           } else if (resource === "payouts") {
             query = query.or(
               `payout_number.ilike.%${value}%,therapist_name.ilike.%${value}%,bank_name.ilike.%${value}%,status.ilike.%${value}%,notes.ilike.%${value}%`
@@ -62,7 +128,7 @@ export const dataProvider: DataProvider = {
             );
           } else if (resource === "reviews") {
             query = query.or(
-              `customer_name.ilike.%${value}%,comment.ilike.%${value}%,therapist_name.ilike.%${value}%`
+              `customer_name.ilike.%${value}%,comment.ilike.%${value}%`
             );
           } else if (resource === "testimonials") {
             query = query.or(

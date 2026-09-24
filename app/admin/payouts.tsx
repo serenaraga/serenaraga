@@ -101,6 +101,23 @@ const formatDateToLocalISO = (d: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+const getParamFromLocation = (paramName: string): string | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const hash = window.location.hash || "";
+    const hashQIdx = hash.indexOf("?");
+    if (hashQIdx !== -1) {
+      const sp = new URLSearchParams(hash.substring(hashQIdx));
+      const val = sp.get(paramName);
+      if (val) return val;
+    }
+    const sp = new URLSearchParams(window.location.search);
+    return sp.get(paramName);
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Redesigned Clean Payout Generator & Create View
  */
@@ -108,15 +125,25 @@ export const PayoutCreate = () => {
   const [locale] = useLocaleState();
   const isEn = locale === "en";
   const dateFnsLocale = isEn ? enLocale : idLocale;
-  const searchParams = useSearchParams();
-  const preSelectedTherapistId = searchParams.get("therapist_id");
 
   const [therapists, setTherapists] = React.useState<any[]>([]);
   const [loadingTherapists, setLoadingTherapists] = React.useState(true);
   const [selectedTherapistId, setSelectedTherapistId] = React.useState<string>(
-    preSelectedTherapistId || ""
+    () => getParamFromLocation("therapist_id") || ""
   );
   const [selectedTherapist, setSelectedTherapist] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const handleUrlChange = () => {
+      const tid = getParamFromLocation("therapist_id");
+      if (tid) {
+        setSelectedTherapistId(tid);
+      }
+    };
+    handleUrlChange();
+    window.addEventListener("hashchange", handleUrlChange);
+    return () => window.removeEventListener("hashchange", handleUrlChange);
+  }, []);
 
   // Period state: default to today
   const today = new Date();
@@ -162,15 +189,18 @@ export const PayoutCreate = () => {
 
         if (data && data.length > 0) {
           setTherapists(data);
-          if (preSelectedTherapistId) {
+          const targetId = getParamFromLocation("therapist_id") || selectedTherapistId;
+          if (targetId) {
             const found = data.find(
-              (t) => String(t.id) === String(preSelectedTherapistId)
+              (t) => String(t.id) === String(targetId)
             );
             if (found) {
               setSelectedTherapist(found);
               setSelectedTherapistId(String(found.id));
+              return;
             }
-          } else if (!selectedTherapistId) {
+          }
+          if (data[0]) {
             setSelectedTherapist(data[0]);
             setSelectedTherapistId(String(data[0].id));
           }
@@ -180,7 +210,7 @@ export const PayoutCreate = () => {
       }
     }
     fetchTherapists();
-  }, [preSelectedTherapistId]);
+  }, []);
 
   // Handle therapist dropdown change
   const handleTherapistSelect = (id: string | null) => {

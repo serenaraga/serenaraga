@@ -32,6 +32,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { useGetList } from "ra-core";
+import {
   Boxes,
   Sparkles,
   Plus,
@@ -48,6 +59,10 @@ import {
   Footprints,
   Flame,
   Award,
+  Folders,
+  Edit3,
+  Check,
+  X,
 } from "lucide-react";
 import {
   Empty,
@@ -58,38 +73,317 @@ import {
   EmptyContent,
 } from "@/components/ui/empty";
 import { supabase } from "@/lib/supabase";
-
 import { formatIDR } from "@/lib/utils";
 
-export const serviceCategories = [
-  { id: "Body Massage", name: "Body Massage" },
-  { id: "Therapeutic", name: "Therapeutic" },
-  { id: "Reflexology", name: "Reflexology" },
-  { id: "Spa & Relax", name: "Spa & Relax" },
-  { id: "Specialized", name: "Specialized" },
-  { id: "Body Treatment", name: "Body Treatment" },
+export const defaultServiceCategories = [
+  { id: "Massage Packages", name: "Massage Packages" },
+  { id: "Massage Services", name: "Massage Services" },
+  { id: "Refleksi Service", name: "Refleksi Service" },
+  { id: "Kids & Mom Services", name: "Kids & Mom Services" },
+  { id: "Couple Package", name: "Couple Package" },
+  { id: "Add-On Service", name: "Add-On Service" },
 ];
+
+export const serviceCategories = defaultServiceCategories;
+
+/**
+ * Interactive Service Category Management Dialog
+ */
+export const ServiceCategoryManagerDialog: React.FC<{
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCategoriesUpdated?: () => void;
+}> = ({ open, onOpenChange, onCategoriesUpdated }) => {
+  const [locale] = useLocaleState();
+  const isEn = locale === "en";
+  const { data: services = [], refetch } = useGetList("services", {
+    pagination: { page: 1, perPage: 200 },
+  });
+
+  const [newCatName, setNewCatName] = React.useState("");
+  const [editingCat, setEditingCat] = React.useState<string | null>(null);
+  const [editCatName, setEditCatName] = React.useState("");
+  const [customCategories, setCustomCategories] = React.useState<string[]>([]);
+  const [loading, setLoading] = React.useState(false);
+
+  // Compute category stats
+  const categoryStats = React.useMemo(() => {
+    const map = new Map<string, number>();
+    
+    // Seed defaults
+    defaultServiceCategories.forEach((dc) => map.set(dc.name, 0));
+    customCategories.forEach((cc) => {
+      if (!map.has(cc)) map.set(cc, 0);
+    });
+
+    // Count from services
+    services.forEach((s) => {
+      const cat = s.category || "Uncategorized";
+      map.set(cat, (map.get(cat) || 0) + 1);
+    });
+
+    return Array.from(map.entries()).map(([name, count]) => ({
+      name,
+      count,
+    }));
+  }, [services, customCategories]);
+
+  const handleAddCategory = () => {
+    const trimmed = newCatName.trim();
+    if (!trimmed) {
+      toast.error(isEn ? "Category name cannot be empty" : "Nama kategori tidak boleh kosong");
+      return;
+    }
+    if (categoryStats.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error(isEn ? "Category already exists" : "Kategori sudah ada");
+      return;
+    }
+
+    setCustomCategories((prev) => [...prev, trimmed]);
+    setNewCatName("");
+    toast.success(isEn ? "Category added successfully" : "Kategori berhasil ditambahkan");
+    onCategoriesUpdated?.();
+  };
+
+  const handleStartEdit = (catName: string) => {
+    setEditingCat(catName);
+    setEditCatName(catName);
+  };
+
+  const handleSaveEdit = async (oldName: string) => {
+    const trimmed = editCatName.trim();
+    if (!trimmed || trimmed === oldName) {
+      setEditingCat(null);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Update all services using this category in Supabase
+      const { error } = await supabase
+        .from("services")
+        .update({ category: trimmed })
+        .eq("category", oldName);
+
+      if (error) throw error;
+
+      setCustomCategories((prev) =>
+        prev.map((c) => (c === oldName ? trimmed : c))
+      );
+      setEditingCat(null);
+      await refetch();
+      onCategoriesUpdated?.();
+      toast.success(
+        isEn
+          ? `Category renamed to "${trimmed}" across all services`
+          : `Kategori berhasil diubah menjadi "${trimmed}" pada seluruh layanan`
+      );
+    } catch (e: any) {
+      toast.error(e.message || "Failed to update category");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCategory = async (catName: string, serviceCount: number) => {
+    if (serviceCount > 0) {
+      toast.error(
+        isEn
+          ? `Cannot delete: ${serviceCount} services belong to this category. Please reassign them first.`
+          : `Tidak dapat menghapus: terdapat ${serviceCount} layanan di kategori ini. Silakan pindahkan kategorinya terlebih dahulu.`
+      );
+      return;
+    }
+
+    setCustomCategories((prev) => prev.filter((c) => c !== catName));
+    toast.success(isEn ? "Category deleted" : "Kategori berhasil dihapus");
+    onCategoriesUpdated?.();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <Folders className="w-4 h-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-sm font-semibold">
+                {isEn ? "Service Categories Management" : "Manajemen Kategori Layanan"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                {isEn
+                  ? "Create, edit, or remove service catalog categories."
+                  : "Tambah, ubah nama, atau hapus kategori katalog layanan SerenaRaga."}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Add Category Form */}
+          <div className="flex gap-2">
+            <Input
+              value={newCatName}
+              onChange={(e) => setNewCatName(e.target.value)}
+              placeholder={isEn ? "New category name..." : "Nama kategori baru..."}
+              className="h-8 text-xs"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddCategory();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleAddCategory}
+              className="h-8 gap-1 text-xs shrink-0 cursor-pointer shadow-none"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{isEn ? "Add" : "Tambah"}</span>
+            </Button>
+          </div>
+
+          {/* Categories List */}
+          <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+            <span className="text-[11px] font-semibold text-muted-foreground block mb-2 uppercase tracking-wider">
+              {isEn ? "Active Categories" : "Daftar Kategori Aktif"} ({categoryStats.length})
+            </span>
+
+            {categoryStats.map((cat) => {
+              const isEditing = editingCat === cat.name;
+
+              return (
+                <div
+                  key={cat.name}
+                  className="flex items-center justify-between gap-2 p-2 rounded-lg border border-border/60 bg-muted/20 text-xs"
+                >
+                  {isEditing ? (
+                    <div className="flex items-center gap-1.5 flex-1 mr-1">
+                      <Input
+                        value={editCatName}
+                        onChange={(e) => setEditCatName(e.target.value)}
+                        className="h-7 text-xs px-2"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveEdit(cat.name);
+                          if (e.key === "Escape") setEditingCat(null);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleSaveEdit(cat.name)}
+                        disabled={loading}
+                        className="h-7 w-7 text-primary hover:bg-primary/10"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setEditingCat(null)}
+                        className="h-7 w-7 text-muted-foreground"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium text-foreground truncate">
+                          {cat.name}
+                        </span>
+                        <Badge variant="secondary" className="text-[10px] font-normal px-1.5 py-0 h-4 shrink-0">
+                          {cat.count} {isEn ? "services" : "layanan"}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleStartEdit(cat.name)}
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          title={isEn ? "Rename Category" : "Ubah Nama Kategori"}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteCategory(cat.name, cat.count)}
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          title={isEn ? "Delete Category" : "Hapus Kategori"}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            className="h-8 text-xs cursor-pointer shadow-none"
+          >
+            {isEn ? "Close" : "Tutup"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 import { CreateButton } from "@/components/create-button";
 import { ExportButton } from "@/components/export-button";
 
 /**
- * Custom Actions for ServiceList: Consumables, Create, Export
+ * Custom Actions for ServiceList: Categories, Consumables, Create, Export
  */
 export const ServiceListActions = () => {
   const [locale] = useLocaleState();
   const isEn = locale === "en";
+  const [catDialogOpen, setCatDialogOpen] = React.useState(false);
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <Button variant="outline" asChild className="cursor-pointer">
+      <Button
+        variant="outline"
+        onClick={() => setCatDialogOpen(true)}
+        className="cursor-pointer gap-1.5 h-8 text-xs shadow-none"
+      >
+        <Folders className="w-3.5 h-3.5 text-primary" />
+        <span>{isEn ? "Categories" : "Kelola Kategori"}</span>
+      </Button>
+      <Button variant="outline" asChild className="cursor-pointer gap-1.5 h-8 text-xs shadow-none">
         <LinkBase to="/consumables">
-          <Boxes />
+          <Boxes className="w-3.5 h-3.5" />
           <span>{isEn ? "Consumables" : "Bahan Habis Pakai"}</span>
         </LinkBase>
       </Button>
       <CreateButton />
       <ExportButton />
+
+      <ServiceCategoryManagerDialog
+        open={catDialogOpen}
+        onOpenChange={setCatDialogOpen}
+      />
     </div>
   );
 };
@@ -106,7 +400,15 @@ export const ServiceList = () => {
       <DataTable>
         <DataTableCol source="id" label="#" headerClassName="w-14" cellClassName="text-xs font-bold text-primary" />
         <DataTableCol source="name" cellClassName="font-medium text-foreground text-xs" />
-        <DataTableCol source="category" cellClassName="text-xs text-muted-foreground" />
+        <DataTableCol
+          source="category"
+          cellClassName="text-xs"
+          render={(record) => (
+            <Badge variant="outline" className="text-[11px] font-normal border-border bg-muted/30">
+              {record.category || "Massage Services"}
+            </Badge>
+          )}
+        />
         <DataTableCol
           source="duration_minutes"
           label={isEn ? "Duration" : "Durasi"}
@@ -431,6 +733,18 @@ const ServiceFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }) =
   const [locale] = useLocaleState();
   const isEn = locale === "en";
   const record = useRecordContext();
+  const { data: allServices = [] } = useGetList("services", {
+    pagination: { page: 1, perPage: 200 },
+  });
+
+  const dynamicCategoryChoices = React.useMemo(() => {
+    const set = new Set<string>();
+    defaultServiceCategories.forEach((dc) => set.add(dc.name));
+    allServices.forEach((s) => {
+      if (s.category) set.add(s.category);
+    });
+    return Array.from(set).map((name) => ({ id: name, name }));
+  }, [allServices]);
 
   return (
     <div className="space-y-5 max-w-4xl">
@@ -465,8 +779,8 @@ const ServiceFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }) =
             <SelectInput
               source="category"
               label={isEn ? "Category" : "Kategori"}
-              defaultValue="Body Massage"
-              choices={serviceCategories}
+              defaultValue="Massage Services"
+              choices={dynamicCategoryChoices}
               required
             />
           </div>

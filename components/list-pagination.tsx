@@ -101,20 +101,24 @@ export const ListPagination = ({
   const siblingPages = range(siblingsStart, siblingsEnd);
 
   const pageChangeHandler = (newPage: number) => {
-    return (event: React.MouseEvent<HTMLAnchorElement>) => {
+    return (event: React.MouseEvent) => {
       event.preventDefault();
+      event.stopPropagation();
       setPage(newPage);
     };
   };
 
   return (
     <div
-      className={`flex items-center justify-end space-x-2 gap-4 ${className}`}
+      className={cn(
+        "flex items-center justify-end space-x-2 gap-3 text-xs",
+        className
+      )}
     >
-      <div className="hidden md:flex items-center space-x-2">
-        <p className="text-sm font-medium">
+      <div className="hidden md:flex items-center space-x-1.5">
+        <p className="text-xs text-muted-foreground font-normal whitespace-nowrap">
           <Translate i18nKey="ra.navigation.page_rows_per_page">
-            Rows per page
+            Rows per page:
           </Translate>
         </p>
         <Select
@@ -129,10 +133,10 @@ export const ListPagination = ({
             }
           }}
         >
-          <SelectTrigger size="sm" className="h-8 w-fit min-w-[4.25rem] gap-1 px-2.5 rounded-lg text-xs">
+          <SelectTrigger size="sm" className="h-7 w-fit min-w-[3.5rem] gap-1 px-2 rounded-md text-xs border-border bg-background shadow-none">
             <SelectValue placeholder={perPage} />
           </SelectTrigger>
-          <SelectContent side="top" className="min-w-[4.25rem] p-1">
+          <SelectContent side="top" className="min-w-[3.5rem] p-0.5">
             <SelectGroup>
               {rowsPerPageOptions.map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`} className="text-xs py-1 px-2">
@@ -143,7 +147,7 @@ export const ListPagination = ({
           </SelectContent>
         </Select>
       </div>
-      <div className="text-sm text-muted-foreground">
+      <div className="text-xs text-muted-foreground font-normal whitespace-nowrap">
         <Translate
           i18nKey="ra.navigation.page_range_info"
           options={{
@@ -153,41 +157,35 @@ export const ListPagination = ({
           }}
         >
           {total != null
-            ? `${pageStart}-${pageEnd} of ${total === -1 ? pageEnd : total}`
+            ? `${pageStart}–${pageEnd} of ${total === -1 ? pageEnd : total}`
             : null}
         </Translate>
       </div>
-      <Pagination className="-w-full -mx-auto">
-        <PaginationContent>
+      <Pagination className="w-auto mx-0">
+        <PaginationContent className="gap-0.5">
           <PaginationItem>
             {hasPreviousPage ? (
               <PaginationLink
-                href="#"
                 onClick={pageChangeHandler(page - 1)}
+                className="h-7 w-7 p-0 flex items-center justify-center rounded-md"
                 aria-label={translate("ra.navigation.previous", {
                   _: "Previous",
                 })}
               >
-                <ChevronLeftIcon />
+                <ChevronLeftIcon className="w-3.5 h-3.5" />
               </PaginationLink>
             ) : (
-              <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium size-9">
-                <ChevronLeftIcon
-                  aria-label={translate("ra.navigation.previous", {
-                    _: "Previous",
-                  })}
-                  size="16"
-                  className="text-muted-foreground"
-                />
+              <span className="inline-flex items-center justify-center size-7 text-muted-foreground/40 select-none">
+                <ChevronLeftIcon className="w-3.5 h-3.5" />
               </span>
             )}
           </PaginationItem>
           {startPages.map((pageNumber) => (
             <PaginationItem key={pageNumber}>
               <PaginationLink
-                href="#"
                 onClick={pageChangeHandler(pageNumber)}
                 isActive={pageNumber === page}
+                className="h-7 min-w-7 px-1.5 text-xs rounded-md"
               >
                 {pageNumber}
               </PaginationLink>
@@ -195,14 +193,14 @@ export const ListPagination = ({
           ))}
           {siblingsStart > boundaryCount + 2 ? (
             <PaginationItem>
-              <PaginationEllipsis />
+              <PaginationEllipsis className="size-7 [&_svg]:size-3" />
             </PaginationItem>
           ) : boundaryCount + 1 < count - boundaryCount ? (
             <PaginationItem>
               <PaginationLink
-                href="#"
                 onClick={pageChangeHandler(boundaryCount + 1)}
                 isActive={boundaryCount + 1 === page}
+                className="h-7 min-w-7 px-1.5 text-xs rounded-md"
               >
                 {boundaryCount + 1}
               </PaginationLink>
@@ -211,9 +209,9 @@ export const ListPagination = ({
           {siblingPages.map((pageNumber) => (
             <PaginationItem key={pageNumber}>
               <PaginationLink
-                href="#"
                 onClick={pageChangeHandler(pageNumber)}
                 isActive={pageNumber === page}
+                className="h-7 min-w-7 px-1.5 text-xs rounded-md"
               >
                 {pageNumber}
               </PaginationLink>
@@ -221,14 +219,14 @@ export const ListPagination = ({
           ))}
           {siblingsEnd < count - boundaryCount - 1 ? (
             <PaginationItem>
-              <PaginationEllipsis />
+              <PaginationEllipsis className="size-7 [&_svg]:size-3" />
             </PaginationItem>
           ) : count - boundaryCount > boundaryCount ? (
             <PaginationItem>
               <PaginationLink
-                href="#"
                 onClick={pageChangeHandler(count - boundaryCount)}
                 isActive={count - boundaryCount === page}
+                className="h-7 min-w-7 px-1.5 text-xs rounded-md"
               >
                 {count - boundaryCount}
               </PaginationLink>
@@ -237,9 +235,9 @@ export const ListPagination = ({
           {endPages.map((pageNumber) => (
             <PaginationItem key={pageNumber}>
               <PaginationLink
-                href="#"
                 onClick={pageChangeHandler(pageNumber)}
                 isActive={pageNumber === page}
+                className="h-7 min-w-7 px-1.5 text-xs rounded-md"
               >
                 {pageNumber}
               </PaginationLink>
@@ -248,24 +246,15 @@ export const ListPagination = ({
           <PaginationItem>
             {hasNextPage ? (
               <PaginationLink
-                href="#"
                 onClick={pageChangeHandler(page + 1)}
-                size="default"
-                className={cn(
-                  "gap-1 px-2.5 sm:pr-2.5",
-                  !hasNextPage ? "opacity-50 cursor-not-allowed" : "",
-                )}
+                className="h-7 w-7 p-0 flex items-center justify-center rounded-md"
                 aria-label={translate("ra.navigation.next", { _: "Next" })}
               >
-                <ChevronRightIcon />
+                <ChevronRightIcon className="w-3.5 h-3.5" />
               </PaginationLink>
             ) : (
-              <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium size-9">
-                <ChevronRightIcon
-                  aria-label={translate("ra.navigation.next", { _: "Next" })}
-                  size="16"
-                  className="text-muted-foreground"
-                />
+              <span className="inline-flex items-center justify-center size-7 text-muted-foreground/40 select-none">
+                <ChevronRightIcon className="w-3.5 h-3.5" />
               </span>
             )}
           </PaginationItem>

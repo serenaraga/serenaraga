@@ -1,0 +1,56 @@
+[
+  {
+    "id": "cd8ea3b5-35aa-44f4-8c69-9a39c6e0b5af",
+    "name": "Terapis Devi",
+    "phone": "",
+    "commission_pct": 70,
+    "is_active": true,
+    "created_at": "2026-04-23T07:56:06.216206+00:00",
+    "updated_at": "2026-04-23T07:56:06.216206+00:00"
+  },
+  {
+    "id": "64041fd3-43e2-44b8-852f-b8e285c83ac0",
+    "name": "Terapis Karin",
+    "phone": "",
+    "commission_pct": 75,
+    "is_active": true,
+    "created_at": "2026-04-10T00:33:37.361287+00:00",
+    "updated_at": "2026-04-10T00:33:37.361287+00:00"
+  },
+  {
+    "id": "51969b1c-74d1-413c-b60a-aadb9e905518",
+    "name": "Terapis Erlin",
+    "phone": "+62 896-5294-7754",
+    "commission_pct": 70,
+    "is_active": true,
+    "created_at": "2026-06-29T16:22:53.087941+00:00",
+    "updated_at": "2026-06-29T16:22:53.087941+00:00"
+  },
+  {
+    "id": "037fb2c1-c835-4db8-b3f1-60cd299174e5",
+    "name": "Terapis Dewi",
+    "phone": "+62 859-5022-5267",
+    "commission_pct": 70,
+    "is_active": true,
+    "created_at": "2026-06-29T16:23:37.963194+00:00",
+    "updated_at": "2026-06-29T16:23:37.963194+00:00"
+  },
+  {
+    "id": "a71b8b10-6fb1-4161-b1ed-84a954956a06",
+    "name": "Terapis X",
+    "phone": "",
+    "commission_pct": 70,
+    "is_active": true,
+    "created_at": "2026-04-23T07:57:10.323894+00:00",
+    "updated_at": "2026-04-23T07:57:10.323894+00:00"
+  },
+  {
+    "id": "8083f349-bf10-4333-9fa0-55d2c9756ab1",
+    "name": "Terapis Sera",
+    "phone": "",
+    "commission_pct": 70,
+    "is_active": true,
+    "created_at": "2026-04-09T23:57:08.763165+00:00",
+    "updated_at": "2026-04-09T23:57:08.763165+00:00"
+  }
+]

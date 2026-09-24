@@ -163,3 +163,49 @@
 [data-slot="accordion-content"][data-ending-style] {
   height: 0 !important;
 }
+
+/* ==============================================================================
+   Global Shadcn UI Custom Scrollbar
+   Replaces all standard/native scrollbars across the entire application
+   ============================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0 0 0 / 16%) transparent;
+}
+
+.dark * {
+  scrollbar-color: oklch(1 0 0 / 20%) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: oklch(0 0 0 / 16%);
+  border-radius: 9999px;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: oklch(0 0 0 / 32%);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: oklch(1 0 0 / 20%);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: oklch(1 0 0 / 38%);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

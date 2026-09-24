@@ -38,13 +38,19 @@ function CommandDialog({
   description = "Search for a command to run...",
   children,
   className,
+  overlayClassName,
   showCloseButton = false,
+  shouldFilter,
+  commandProps,
   ...props
 }: Omit<React.ComponentProps<typeof Dialog>, "children"> & {
   title?: string
   description?: string
   className?: string
+  overlayClassName?: string
   showCloseButton?: boolean
+  shouldFilter?: boolean
+  commandProps?: React.ComponentProps<typeof Command>
   children: React.ReactNode
 }) {
   return (
@@ -55,12 +61,22 @@ function CommandDialog({
       </DialogHeader>
       <DialogContent
         className={cn(
-          "top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0",
+          "top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0 shadow-2xl",
           className
         )}
+        overlayClassName={cn("bg-black/35 backdrop-blur-[2px]", overlayClassName)}
         showCloseButton={showCloseButton}
       >
-        {children}
+        <Command
+          shouldFilter={shouldFilter}
+          {...commandProps}
+          className={cn(
+            "[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-4 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-2",
+            commandProps?.className
+          )}
+        >
+          {children}
+        </Command>
       </DialogContent>
     </Dialog>
   )
