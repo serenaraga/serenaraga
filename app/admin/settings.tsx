@@ -236,8 +236,8 @@ export function BrandSettingsPage() {
           <form onSubmit={handleSave} className="space-y-6">
             {/* TAB 1: WhatsApp & Contacts */}
             {activeTab === "contact" && (
-              <Card className="border border-border/70 shadow-none bg-card">
-                <CardHeader className="pb-4 border-b border-border/50">
+              <Card className="border border-border shadow-none bg-card">
+                <CardHeader className="pb-4 border-b border-border">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-lg bg-muted text-foreground">
                       <MessageCircle className="w-5 h-5 text-foreground" />
@@ -352,8 +352,8 @@ export function BrandSettingsPage() {
 
             {/* TAB 2: Business Profile */}
             {activeTab === "identity" && (
-              <Card className="border border-border/70 shadow-none bg-card">
-                <CardHeader className="pb-4 border-b border-border/50">
+              <Card className="border border-border shadow-none bg-card">
+                <CardHeader className="pb-4 border-b border-border">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-lg bg-muted text-foreground">
                       <Building2 className="w-5 h-5 text-foreground" />
@@ -542,8 +542,8 @@ export function BrandSettingsPage() {
 
             {/* TAB 3: Bank & Payment */}
             {activeTab === "payment" && (
-              <Card className="border border-border/70 shadow-none bg-card">
-                <CardHeader className="pb-4 border-b border-border/50">
+              <Card className="border border-border shadow-none bg-card">
+                <CardHeader className="pb-4 border-b border-border">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-lg bg-muted text-foreground">
                       <CreditCard className="w-5 h-5 text-foreground" />
@@ -620,8 +620,8 @@ export function BrandSettingsPage() {
 
             {/* TAB 4: Invoice & WA Templates */}
             {activeTab === "templates" && (
-              <Card className="border border-border/70 shadow-none bg-card">
-                <CardHeader className="pb-4 border-b border-border/50">
+              <Card className="border border-border shadow-none bg-card">
+                <CardHeader className="pb-4 border-b border-border">
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-lg bg-muted text-foreground">
                       <FileText className="w-5 h-5 text-foreground" />
@@ -726,8 +726,8 @@ export function BrandSettingsPage() {
         {/* Right Preview Column (1 Column on Desktop) */}
         <div className="space-y-6">
           {/* WhatsApp Direct Test Card */}
-          <Card className="border border-border/70 shadow-none bg-card overflow-hidden">
-            <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
+          <Card className="border border-border shadow-none bg-card overflow-hidden">
+            <CardHeader className="pb-3 border-b border-border bg-muted/20">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <MessageCircle className="w-4 h-4 text-foreground" />
@@ -784,8 +784,8 @@ export function BrandSettingsPage() {
           </Card>
 
           {/* Invoice Header Mockup Card */}
-          <Card className="border border-border/70 shadow-none bg-card p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
+          <Card className="border border-border shadow-none bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-border pb-2.5">
               <span className="text-xs font-bold text-foreground">
                 {isEn ? "Invoice Header Preview" : "Pratinjau Kop Nota"}
               </span>
@@ -794,7 +794,7 @@ export function BrandSettingsPage() {
               </Badge>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-border/60 bg-muted/20 space-y-2">
+            <div className="p-3.5 rounded-xl border border-border bg-muted/20 space-y-2">
               <div className="font-bold text-sm text-foreground">
                 {formData.brand_name || "Serena Raga"}
               </div>
@@ -813,7 +813,7 @@ export function BrandSettingsPage() {
               <span className="text-[10px] text-muted-foreground font-semibold uppercase">
                 {isEn ? "Invoice Footer Preview" : "Pratinjau Catatan Bawah Nota"}
               </span>
-              <div className="p-2.5 rounded-lg border border-border/40 bg-muted/10 text-center space-y-1">
+              <div className="p-2.5 rounded-lg border border-border bg-muted/10 text-center space-y-1">
                 <p className="text-[11px] font-medium text-foreground">
                   {formData.invoice_footer_note ||
                     (isEn

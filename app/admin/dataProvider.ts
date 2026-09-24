@@ -1,5 +1,6 @@
 import type { DataProvider } from "ra-core";
 import { supabase } from "@/lib/supabase";
+import { recalculateTherapistRating, syncAllTherapistsRatings } from "@/lib/therapist-rating";
 
 export { supabase };
 
@@ -104,11 +105,24 @@ export const dataProvider: DataProvider = {
       .from(table)
       .select("*")
       .eq("id", params.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error(`Error in getOne on ${resource} (${params.id}):`, error);
       throw error;
+    }
+
+    if (!data) {
+      // Graceful representation for orphaned references without crashing React Admin views
+      return {
+        data: {
+          id: params.id,
+          name: "(Dihapus / Nonaktif)",
+          full_name: "(Dihapus / Nonaktif)",
+          title: "(Dihapus / Nonaktif)",
+          _is_archived: true,
+        } as any,
+      };
     }
 
     return { data };
@@ -130,7 +144,22 @@ export const dataProvider: DataProvider = {
       throw error;
     }
 
-    return { data: data || [] };
+    // Ensure all requested IDs return an entry so ReferenceField renders seamlessly
+    const existingIds = new Set((data || []).map((d: any) => String(d.id)));
+    const filledData = [...(data || [])];
+    for (const requestedId of params.ids) {
+      if (!existingIds.has(String(requestedId))) {
+        filledData.push({
+          id: requestedId,
+          name: "(Dihapus / Nonaktif)",
+          full_name: "(Dihapus / Nonaktif)",
+          title: "(Dihapus / Nonaktif)",
+          _is_archived: true,
+        });
+      }
+    }
+
+    return { data: filledData };
   },
 
   getManyReference: async (resource, params) => {
@@ -343,7 +372,7 @@ export const dataProvider: DataProvider = {
         if (dataToInsert.booking_status) {
           bookingUpdate.status = dataToInsert.booking_status;
         } else if (dataToInsert.payment_status === "paid") {
-          bookingUpdate.status = "confirmed";
+          bookingUpdate.status = "completed";
         }
         if (dataToInsert.payment_status) {
           bookingUpdate.payment_status = dataToInsert.payment_status;
@@ -450,19 +479,10 @@ export const dataProvider: DataProvider = {
     }
 
     // Recalculate therapist rating after new review
-    if (resource === "reviews" && data?.therapist_id) {
-      try {
-        const { data: allRevs } = await supabase
-          .from("reviews")
-          .select("rating")
-          .eq("therapist_id", data.therapist_id);
-        if (allRevs && allRevs.length > 0) {
-          const total = allRevs.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
-          const avg = Number((total / allRevs.length).toFixed(1));
-          await supabase.from("therapists").update({ rating: avg }).eq("id", data.therapist_id);
-        }
-      } catch (e) {
-        console.error("Failed to auto-update therapist rating:", e);
+    if (resource === "reviews") {
+      const targetTherapistId = data?.therapist_id || dataToInsert.therapist_id;
+      if (targetTherapistId) {
+        await recalculateTherapistRating(targetTherapistId);
       }
     }
 
@@ -525,19 +545,10 @@ export const dataProvider: DataProvider = {
     }
 
     // Recalculate therapist rating if review updated
-    if (resource === "reviews" && data?.therapist_id) {
-      try {
-        const { data: allRevs } = await supabase
-          .from("reviews")
-          .select("rating")
-          .eq("therapist_id", data.therapist_id);
-        if (allRevs && allRevs.length > 0) {
-          const total = allRevs.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
-          const avg = Number((total / allRevs.length).toFixed(1));
-          await supabase.from("therapists").update({ rating: avg }).eq("id", data.therapist_id);
-        }
-      } catch (e) {
-        console.error("Failed to auto-update therapist rating:", e);
+    if (resource === "reviews") {
+      const updatedTherapistId = data?.therapist_id || (params.previousData as any)?.therapist_id;
+      if (updatedTherapistId) {
+        await recalculateTherapistRating(updatedTherapistId);
       }
     }
 
@@ -564,6 +575,60 @@ export const dataProvider: DataProvider = {
 
   delete: async (resource, params) => {
     const table = getTableName(resource);
+
+    // Referential Integrity Guard for master data entities
+    if (resource === "therapists") {
+      const { count: bookingCount } = await supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("therapist_id", params.id);
+
+      const { count: payoutCount } = await supabase
+        .from("therapist_payouts")
+        .select("id", { count: "exact", head: true })
+        .eq("therapist_id", params.id);
+
+      const totalLinked = (bookingCount || 0) + (payoutCount || 0);
+      if (totalLinked > 0) {
+        throw new Error(
+          `Terapis ini terikat dengan ${totalLinked} riwayat transaksi (booking/payout). Untuk menjaga keabsahan riwayat keuangan & audit, data tidak dapat dihapus permanen. Silakan ubah status menjadi Nonaktif (Off Duty).`
+        );
+      }
+    } else if (resource === "services") {
+      const { count: bookingCount } = await supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("service_id", params.id);
+
+      if (bookingCount && bookingCount > 0) {
+        throw new Error(
+          `Layanan ini terikat dengan ${bookingCount} riwayat booking resmi. Silakan nonaktifkan layanan daripada menghapusnya permanen.`
+        );
+      }
+    } else if (resource === "customers") {
+      const { count: bookingCount } = await supabase
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", params.id);
+
+      if (bookingCount && bookingCount > 0) {
+        throw new Error(
+          `Pelanggan ini memiliki ${bookingCount} riwayat booking. Data riwayat terlindungi dan tidak dapat dihapus permanen.`
+        );
+      }
+    } else if (resource === "promotions") {
+      const { count: invoiceCount } = await supabase
+        .from("invoices")
+        .select("id", { count: "exact", head: true })
+        .eq("promo_id", params.id);
+
+      if (invoiceCount && invoiceCount > 0) {
+        throw new Error(
+          `Promo ini sudah tercatat dalam ${invoiceCount} invoice. Silakan ubah status promo menjadi Nonaktif (Inactive).`
+        );
+      }
+    }
+
     const { error } = await supabase
       .from(table)
       .delete()
@@ -574,11 +639,42 @@ export const dataProvider: DataProvider = {
       throw error;
     }
 
+    if (resource === "reviews") {
+      const prevTherapistId = (params.previousData as any)?.therapist_id;
+      if (prevTherapistId) {
+        await recalculateTherapistRating(prevTherapistId);
+      }
+    }
+
     return { data: params.previousData as any };
   },
 
   deleteMany: async (resource, params) => {
     const table = getTableName(resource);
+
+    // Guard for bulk deletions
+    if (resource === "therapists" || resource === "services" || resource === "customers" || resource === "promotions") {
+      const foreignKeyMap: Record<string, string> = {
+        therapists: "therapist_id",
+        services: "service_id",
+        customers: "customer_id",
+        promotions: "promo_id",
+      };
+      const fk = foreignKeyMap[resource];
+      const targetTable = resource === "promotions" ? "invoices" : "bookings";
+
+      const { count: linkedCount } = await supabase
+        .from(targetTable)
+        .select("id", { count: "exact", head: true })
+        .in(fk, params.ids);
+
+      if (linkedCount && linkedCount > 0) {
+        throw new Error(
+          `Beberapa data terpilih memiliki ${linkedCount} riwayat transaksi aktif. Penghapusan massal dibatalkan demi integritas data audit.`
+        );
+      }
+    }
+
     const { error } = await supabase
       .from(table)
       .delete()
@@ -587,6 +683,10 @@ export const dataProvider: DataProvider = {
     if (error) {
       console.error(`Error in deleteMany on ${resource}:`, error);
       throw error;
+    }
+
+    if (resource === "reviews") {
+      await syncAllTherapistsRatings();
     }
 
     return { data: params.ids };

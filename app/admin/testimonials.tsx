@@ -220,8 +220,8 @@ export const TestimonialCreate = () => {
           sort_order: nextSortOrder,
         }}
       >
-        <Card className="border border-border/70 shadow-none bg-card mb-4">
-          <CardHeader className="pb-3 border-b border-border/50">
+        <Card className="border border-border shadow-none bg-card mb-4">
+          <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-emerald-500" />
               <span>
@@ -257,8 +257,8 @@ export const TestimonialCreate = () => {
           </CardContent>
         </Card>
 
-        <Card className="border border-border/70 shadow-none bg-card">
-          <CardHeader className="pb-3 border-b border-border/50">
+        <Card className="border border-border shadow-none bg-card">
+          <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
               <Sliders className="w-4 h-4 text-muted-foreground" />
               <span>
@@ -326,8 +326,8 @@ export const TestimonialEdit = () => {
       }
     >
       <SimpleForm>
-        <Card className="border border-border/70 shadow-none bg-card mb-4">
-          <CardHeader className="pb-3 border-b border-border/50">
+        <Card className="border border-border shadow-none bg-card mb-4">
+          <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-emerald-500" />
               <span>
@@ -353,8 +353,8 @@ export const TestimonialEdit = () => {
           </CardContent>
         </Card>
 
-        <Card className="border border-border/70 shadow-none bg-card">
-          <CardHeader className="pb-3 border-b border-border/50">
+        <Card className="border border-border shadow-none bg-card">
+          <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
               <Sliders className="w-4 h-4 text-muted-foreground" />
               <span>

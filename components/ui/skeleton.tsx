@@ -60,12 +60,12 @@ function CardSkeleton({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/80 bg-card p-5 space-y-4 shadow-2xs",
+        "rounded-xl border border-border bg-card p-5 space-y-4 shadow-none",
         className
       )}
     >
       {header && (
-        <div className="flex items-center justify-between pb-3 border-b border-border/60">
+        <div className="flex items-center justify-between pb-3 border-b border-border">
           <div className="flex items-center gap-2">
             <Skeleton className="h-4 w-4 rounded" />
             <Skeleton className="h-4 w-32" />
@@ -123,7 +123,7 @@ function FormSkeleton({
         <Skeleton className="h-20 w-full rounded-md" />
       </div>
 
-      <div className="flex items-center gap-3 pt-3 border-t border-border/60">
+      <div className="flex items-center gap-3 pt-3 border-t border-border">
         <Skeleton className="h-9 w-28 rounded-md" />
         <Skeleton className="h-9 w-20 rounded-md" />
       </div>
@@ -157,9 +157,9 @@ function TableSkeleton({
         </div>
       )}
 
-      <div className="rounded-xl border border-border/80 bg-card overflow-hidden shadow-2xs">
+      <div className="rounded-xl border border-border bg-card overflow-hidden shadow-none">
         {/* Table Header Row */}
-        <div className="flex items-center gap-4 p-3.5 bg-muted/40 border-b border-border/70">
+        <div className="flex items-center gap-4 p-3.5 bg-muted/40 border-b border-border">
           <Skeleton className="h-4 w-6 rounded" />
           {Array.from({ length: columns }).map((_, i) => (
             <Skeleton
@@ -173,7 +173,7 @@ function TableSkeleton({
         </div>
 
         {/* Table Rows */}
-        <div className="divide-y divide-border/60">
+        <div className="divide-y divide-border/40">
           {Array.from({ length: rows }).map((_, r) => (
             <div key={r} className="flex items-center gap-4 p-3.5">
               <Skeleton className="h-4 w-6 rounded" />
@@ -203,7 +203,7 @@ function TableSkeleton({
         </div>
 
         {/* Pagination Skeleton */}
-        <div className="flex items-center justify-between p-3.5 bg-muted/20 border-t border-border/60">
+        <div className="flex items-center justify-between p-3.5 bg-muted/20 border-t border-border">
           <Skeleton className="h-3.5 w-32" />
           <div className="flex items-center gap-1.5">
             <Skeleton className="h-7 w-7 rounded-md" />
@@ -223,7 +223,7 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-6 pb-12">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div className="space-y-2">
           <Skeleton className="h-7 w-56" />
           <Skeleton className="h-3.5 w-80 max-w-full" />
@@ -239,7 +239,7 @@ function DashboardSkeleton() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-xl border border-border/80 bg-card p-5 space-y-3 shadow-2xs"
+            className="rounded-xl border border-border bg-card p-5 space-y-3 shadow-none"
           >
             <div className="flex items-center justify-between">
               <Skeleton className="h-3.5 w-24" />
@@ -253,7 +253,7 @@ function DashboardSkeleton() {
 
       {/* Middle Chart & Stats Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-8 rounded-xl border border-border/80 bg-card p-6 space-y-4 shadow-2xs">
+        <div className="lg:col-span-8 rounded-xl border border-border bg-card p-6 space-y-4 shadow-none">
           <div className="flex items-center justify-between">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-4 w-20" />
@@ -261,7 +261,7 @@ function DashboardSkeleton() {
           <Skeleton className="h-64 w-full rounded-lg" />
         </div>
 
-        <div className="lg:col-span-4 rounded-xl border border-border/80 bg-card p-6 space-y-4 shadow-2xs">
+        <div className="lg:col-span-4 rounded-xl border border-border bg-card p-6 space-y-4 shadow-none">
           <Skeleton className="h-4 w-32" />
           <div className="space-y-3 pt-2">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -287,12 +287,12 @@ function DocumentSlipSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/80 bg-card p-6 sm:p-8 space-y-6 shadow-sm max-w-2xl mx-auto",
+        "rounded-xl border border-border bg-card p-6 sm:p-8 space-y-6 shadow-none max-w-2xl mx-auto",
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 pb-5 border-b border-border/60">
+      <div className="flex items-start justify-between gap-4 pb-5 border-b border-border">
         <div className="space-y-2">
           <Skeleton className="h-7 w-36" />
           <Skeleton className="h-3 w-48" />
@@ -306,12 +306,12 @@ function DocumentSlipSkeleton({ className }: { className?: string }) {
 
       {/* 2 Meta Boxes */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="p-4 rounded-lg bg-muted/30 border border-border/60 space-y-2">
+        <div className="p-4 rounded-lg bg-muted/30 border border-border space-y-2">
           <Skeleton className="h-3 w-20" />
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-24" />
         </div>
-        <div className="p-4 rounded-lg bg-muted/30 border border-border/60 space-y-2">
+        <div className="p-4 rounded-lg bg-muted/30 border border-border space-y-2">
           <Skeleton className="h-3 w-20" />
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-24" />
@@ -319,7 +319,7 @@ function DocumentSlipSkeleton({ className }: { className?: string }) {
       </div>
 
       {/* Table Section */}
-      <div className="rounded-lg border border-border/60 overflow-hidden divide-y divide-border/60">
+      <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex justify-between p-3.5">
             <Skeleton className="h-3.5 w-40" />
@@ -329,7 +329,7 @@ function DocumentSlipSkeleton({ className }: { className?: string }) {
       </div>
 
       {/* Total Box */}
-      <div className="p-4 rounded-lg bg-muted/20 border border-border/60 flex justify-between items-center">
+      <div className="p-4 rounded-lg bg-muted/20 border border-border flex justify-between items-center">
         <Skeleton className="h-4 w-32" />
         <Skeleton className="h-6 w-36" />
       </div>

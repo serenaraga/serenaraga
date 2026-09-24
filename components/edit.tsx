@@ -124,7 +124,7 @@ export const EditView = ({
             <Skeleton className="h-9 w-20 rounded-md" />
           </div>
         </div>
-        <div className="rounded-xl border border-border/80 bg-card p-6 shadow-2xs">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-none">
           <FormSkeleton fields={6} columns={2} />
         </div>
       </div>

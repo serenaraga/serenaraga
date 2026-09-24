@@ -80,9 +80,9 @@ export const englishMessages: TranslationMessages = {
         cancelled: "Cancelled",
       },
       payment_method: {
-        cash: "Cash",
+        cash: "CASH",
         qris: "QRIS",
-        bank_transfer: "Bank Transfer",
+        bank_transfer: "BANK TRANSFER",
       },
       payment_status: {
         unpaid: "Unpaid",
@@ -217,9 +217,9 @@ export const englishMessages: TranslationMessages = {
         created_at: "Issued At",
       },
       payment_method: {
-        cash: "Cash",
+        cash: "CASH",
         qris: "QRIS",
-        bank_transfer: "Bank Transfer",
+        bank_transfer: "BANK TRANSFER",
       },
       payment_status: {
         unpaid: "Unpaid",

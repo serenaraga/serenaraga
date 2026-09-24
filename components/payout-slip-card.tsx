@@ -76,6 +76,8 @@ export interface PayoutSlipCardProps {
   payout: PayoutSlipData;
   showShareActions?: boolean;
   className?: string;
+  cardClassName?: string;
+  borderless?: boolean;
   forcedLocale?: "id" | "en";
 }
 
@@ -83,6 +85,8 @@ export const PayoutSlipCard = ({
   payout,
   showShareActions = true,
   className,
+  cardClassName,
+  borderless = false,
   forcedLocale,
 }: PayoutSlipCardProps) => {
   const [globalLocale] = useLocaleState();
@@ -284,8 +288,9 @@ export const PayoutSlipCard = ({
       `💆 *Terapis:* ${payout.therapist_name}\n` +
       `📅 *Periode:* ${periodDisplay.title} (${periodDisplay.subtitle})\n` +
       `🔢 *Total Booking:* ${payout.total_bookings} Pesanan\n` +
-      (bonus > 0 ? `✨ *Bonus / Tips:* +${formatCurrency(bonus)}\n` : "") +
-      (deduction > 0 ? `🔻 *Potongan / Kasbon:* -${formatCurrency(deduction)}\n` : "") +
+      (bonus > 0 ? `• *Bonus / Tips:* +${formatCurrency(bonus)}\n` : "") +
+      (deduction > 0 ? `• *Potongan / Kasbon:* -${formatCurrency(deduction)}\n` : "") +
+      (payout.notes && payout.notes.trim() !== "" ? `• *Catatan / Keterangan:* ${payout.notes}\n` : "") +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `💰 *TOTAL TRANSFER BERSIH:* *${formatCurrency(netAmount)}*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -315,7 +320,7 @@ export const PayoutSlipCard = ({
     <div className={cn("space-y-4 max-w-xl mx-auto w-full", className)}>
       {/* Action Toolbar (Hidden when exporting or printing) */}
       {showShareActions && (
-        <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-muted/30 border border-border/70 rounded-none print:hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-card border border-border rounded-xl shadow-none print:hidden">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
             <ReceiptText className="w-4 h-4 text-primary" />
             <span>{isEn ? "Payout Slip Actions:" : "Aksi Slip Bagi Hasil:"}</span>
@@ -390,226 +395,224 @@ export const PayoutSlipCard = ({
         >
           <Card
             ref={cardRef}
-            className="border border-border/80 bg-card shadow-sm rounded-none overflow-hidden print:border-none print:shadow-none w-[540px]"
+            className={cn(
+              "bg-card overflow-hidden print:border-none print:shadow-none w-[540px] ring-0",
+              borderless
+                ? "border-0 shadow-none bg-transparent rounded-none ring-0"
+                : "border border-border rounded-xl shadow-none ring-0",
+              cardClassName
+            )}
           >
-            <CardContent className="p-6 md:p-7 space-y-5">
-            {/* Header Branding */}
-            <div className="flex flex-row items-center justify-between gap-4 pb-5 border-b border-border/70">
-              <div className="space-y-1">
-                <BrandLogo className="h-7 w-auto" />
-                <p className="text-[11px] text-muted-foreground">
-                  {settings.tagline || (isEn ? "Comfortable Home Massage & Spa" : "Layanan Pijat & Spa Profesional")}
-                </p>
-              </div>
-              <div className="text-right space-y-0.5 shrink-0">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-                  {isEn ? "Payout Slip" : "Slip Bagi Hasil"}
-                </span>
-                <span className="text-sm font-bold font-mono text-foreground block">
-                  {payout.payout_number}
-                </span>
-                <div className="pt-0.5 text-xs text-muted-foreground font-medium">
-                  <span>
-                    {payout.payment_status === "paid"
-                      ? isEn ? "Disbursed" : "Sudah Ditransfer"
-                      : isEn ? "Pending" : "Menunggu Transfer"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Therapist & Period Information */}
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="space-y-2">
-                <div className="px-2.5 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[10px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 w-full">
-                  <User className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
-                  <span>{isEn ? "Therapist Profile" : "Data Terapis"}</span>
-                </div>
-                <div className="px-1 space-y-0.5">
-                  <p className="font-bold text-sm text-foreground">{payout.therapist_name}</p>
-                  {payout.therapist_phone && (
-                    <p className="text-muted-foreground text-xs">
-                      {payout.therapist_phone}
-                    </p>
-                  )}
-                  <p className="text-[11px] text-muted-foreground pt-0.5 flex items-center flex-wrap gap-1">
-                    <span className="font-medium text-foreground">{payout.bank_name || "BCA"}</span>
-                    <span className="font-mono text-foreground">{payout.bank_account_number || "-"}</span>
-                    {payout.bank_account_name && payout.bank_account_name !== payout.therapist_name ? (
-                      <span className="opacity-80 text-muted-foreground">(a.n {payout.bank_account_name})</span>
-                    ) : null}
+            <CardContent className="p-6 md:p-7 space-y-6">
+              {/* Header Section (Seamless without divider border) */}
+              <div className="flex flex-row items-start justify-between gap-4 pb-1">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <BrandLogo variant="full" className="h-8 w-auto text-foreground" />
+                  </div>
+                  <p className="text-[10px] tracking-[0.18em] font-semibold text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
+                    {settings.tagline === "Comfortable Home Massage & Spa" || !settings.tagline
+                      ? isEn
+                        ? "COMFORTABLE HOME MASSAGE"
+                        : "COMFORTABLE HOME MASSAGE"
+                      : settings.tagline.toUpperCase()}
                   </p>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <div className="px-2.5 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[10px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 w-full">
-                  <Calendar className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
-                  <span>{isEn ? "Disbursement Period" : "Periode Rekap"}</span>
-                </div>
-                <div className="px-1 space-y-0.5">
-                  <p className="font-bold text-sm text-foreground">
+                <div className="text-right space-y-0.5 shrink-0">
+                  <span className="inline-block px-2.5 py-0.5 bg-[#8b5e3c] text-white text-[10px] font-bold italic tracking-wider rounded-md shadow-xs">
+                    {isEn ? "PAYOUT SLIP" : "PAYOUT SLIP"}
+                  </span>
+                  <p className="text-[11px] text-muted-foreground pt-1 font-medium">
                     {periodDisplay.title}
                   </p>
-                  <p className="text-muted-foreground text-xs">
-                    {periodDisplay.subtitle}
-                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Financial Calculation Breakdown Table */}
-            <div className="space-y-2.5">
-              <div className="px-3 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[11px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
-                <ReceiptText className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
-                <span>{isEn ? "Financial Calculation Breakdown" : "Rincian Perhitungan Bagi Hasil"}</span>
+              {/* Recipient Section (DIBERIKAN KEPADA:) */}
+              <div className="border-l-[3px] border-[#8b5e3c] dark:border-[#d49b6a] pl-3 py-0.5 space-y-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8b5e3c] dark:text-[#d49b6a]">
+                  {isEn ? "GIVEN TO:" : "DIBERIKAN KEPADA:"}
+                </p>
+                <h3 className="text-lg sm:text-xl font-bold uppercase text-foreground leading-snug tracking-tight">
+                  {payout.therapist_name.toLowerCase().startsWith("terapis") || payout.therapist_name.toLowerCase().startsWith("therapist")
+                    ? payout.therapist_name
+                    : `TERAPIS ${payout.therapist_name}`}
+                </h3>
+                <p className="text-xs text-muted-foreground pt-0.5">
+                  <span className="font-medium text-foreground">{payout.bank_name || "BCA"}</span> • {payout.bank_account_number || "-"}
+                  {payout.bank_account_name && payout.bank_account_name !== payout.therapist_name ? (
+                    <span className="opacity-80"> (a.n {payout.bank_account_name})</span>
+                  ) : null}
+                </p>
               </div>
 
-              <div className="px-1 text-xs divide-y divide-border/40">
-                <div className="flex items-center justify-between py-3">
-                  <span className="text-muted-foreground font-medium">
-                    {isEn ? "Total Completed Bookings:" : "Total Pesanan Booking Selesai:"}
-                  </span>
-                  <span className="font-bold text-foreground">
-                    {payout.total_bookings} {isEn ? "Bookings" : "Pesanan"}
-                  </span>
+              {/* Itemized Job List & Commission Calculation */}
+              <div className="space-y-2 w-full pt-1">
+                {/* Table Header Strip */}
+                <div className="border-b border-border/70 pb-1.5 flex justify-between items-center text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <span>{isEn ? "VISIT DETAILS / JOB" : "RINCIAN KUNJUNGAN / JOB"}</span>
+                  <span>{isEn ? "COMMISSION" : "KOMISI"}</span>
                 </div>
 
-                {bonus > 0 && (
-                  <div className="flex items-center justify-between py-3 text-emerald-700 dark:text-emerald-400">
-                    <span className="font-medium">
-                      {isEn ? "Bonus / Client Tips:" : "Bonus / Tambahan Tips:"}
-                    </span>
-                    <span className="font-bold">+{formatCurrency(bonus)}</span>
+                {/* Job Items */}
+                <div className="divide-y divide-dashed divide-border/60">
+                  {payout.bookings_breakdown && payout.bookings_breakdown.length > 0 ? (
+                    payout.bookings_breakdown.map((item, idx) => {
+                      const commBase =
+                        typeof item.commission_base === "number"
+                          ? item.commission_base
+                          : item.discount_amount && item.discount_amount > 0
+                          ? Math.max(0, item.total_price - item.discount_amount)
+                          : item.total_price;
+
+                      // Extract clean percentage or formatted amount for formula
+                      let discountFormulaPart = "";
+                      if (item.discount_amount && item.discount_amount > 0) {
+                        const percentMatch = item.applied_promo_name?.match(/(\d+(?:\.\d+)?)\s*%/);
+                        if (percentMatch) {
+                          discountFormulaPart = `${percentMatch[1]}%`;
+                        } else if (item.total_price > 0) {
+                          const calculatedPercent = Math.round((item.discount_amount / item.total_price) * 100);
+                          if (calculatedPercent > 0 && Math.abs(calculatedPercent - (item.discount_amount / item.total_price) * 100) < 0.1) {
+                            discountFormulaPart = `${calculatedPercent}%`;
+                          } else {
+                            discountFormulaPart = formatCurrency(item.discount_amount);
+                          }
+                        } else {
+                          discountFormulaPart = formatCurrency(item.discount_amount);
+                        }
+                      }
+
+                      const formulaText =
+                        item.discount_amount && item.discount_amount > 0
+                          ? `( ${formatCurrency(item.total_price)} - ${discountFormulaPart} ) × ${payout.commission_rate}%`
+                          : `${formatCurrency(commBase)} × ${payout.commission_rate}%`;
+
+                      // Direct clean date/time formatting without redundant label prefix
+                      let formattedItemDate = item.booking_date || "";
+                      try {
+                        if (item.booking_date && item.booking_date.includes("-")) {
+                          const parsed = new Date(item.booking_date);
+                          if (!isNaN(parsed.getTime())) {
+                            formattedItemDate = format(parsed, "dd/MM/yyyy", { locale: isEn ? localeEn : localeId });
+                          }
+                        }
+                      } catch {
+                        formattedItemDate = item.booking_date || "";
+                      }
+
+                      const dateTimeText = item.booking_time
+                        ? `${formattedItemDate} • ${item.booking_time}`
+                        : formattedItemDate;
+
+                      return (
+                        <div key={item.id ?? idx} className="py-2.5 space-y-1">
+                          {/* Row 1: Client Name & Commission Amount */}
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-sm text-foreground">
+                                {item.customer_name || (isEn ? "Client" : "Pelanggan")}
+                              </span>
+                              {item.applied_promo_name && (
+                                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                  ( {item.applied_promo_name} )
+                                </span>
+                              )}
+                            </div>
+                            <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
+                              {formatCurrency(item.therapist_fee)}
+                            </span>
+                          </div>
+
+                          {/* Row 2: Service Name */}
+                          <p className="text-[11px] text-muted-foreground leading-tight">
+                            {item.service_name || (isEn ? "Home Massage" : "Layanan Pijat")}
+                          </p>
+
+                          {/* Row 3: Date, Time & Multiplier Breakdown (Clean & Concise) */}
+                          <p className="text-[10px] text-muted-foreground/80 leading-tight">
+                            {dateTimeText} • {formulaText}
+                          </p>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    /* Fallback when breakdown snapshot is empty */
+                    <div className="py-2.5 space-y-1">
+                      <div className="flex justify-between items-start gap-4">
+                        <span className="font-bold text-sm text-foreground">
+                          {payout.total_bookings} {isEn ? "Completed Bookings" : "Pesanan Terlayani"}
+                        </span>
+                        <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
+                          {formatCurrency(therapistFee)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-tight">
+                        {isEn ? "Home Massage Services" : "Layanan Pijat di Rumah"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/80 leading-tight">
+                        {periodDisplay.title} • {formatCurrency(gross)} × {payout.commission_rate}%
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Additional Adjustments (Bonus & Deductions) if any */}
+                {(bonus > 0 || deduction > 0) && (
+                  <div className="pt-2 space-y-1 border-t border-dashed border-border/60">
+                    {bonus > 0 && (
+                      <div className="flex justify-between items-center text-[11px] font-semibold text-foreground">
+                        <span>{isEn ? "Bonus / Client Tips" : "Bonus / Tambahan Tips"}</span>
+                        <span>+{formatCurrency(bonus)}</span>
+                      </div>
+                    )}
+                    {deduction > 0 && (
+                      <div className="flex justify-between items-center text-[11px] font-semibold text-foreground">
+                        <span>{isEn ? "Deductions / Cash Advance" : "Potongan / Kasbon"}</span>
+                        <span>-{formatCurrency(deduction)}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {deduction > 0 && (
-                  <div className="flex items-center justify-between py-3 text-destructive">
-                    <span className="font-medium">
-                      {isEn ? "Deductions / Cash Advance:" : "Potongan / Kasbon / Biaya Lain:"}
+                {/* Optional Payout Notes (e.g. notes for bonus, kasbon, or adjustment) */}
+                {payout.notes && payout.notes.trim() !== "" && (
+                  <div className="pt-1.5 space-y-0.5">
+                    <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground block">
+                      {isEn ? "NOTES / ADJUSTMENT DETAILS:" : "CATATAN / KETERANGAN PENYESUAIAN:"}
                     </span>
-                    <span className="font-bold">-{formatCurrency(deduction)}</span>
+                    <p className="text-[10px] text-foreground font-normal leading-relaxed whitespace-pre-wrap">
+                      {payout.notes}
+                    </p>
                   </div>
                 )}
 
-                {/* Net Payout Highlight Row */}
-                <div className="flex flex-row items-center justify-between gap-1.5 py-3.5 border-t border-primary/20">
-                  <div>
-                    <span className="text-xs font-bold text-foreground block">
-                      {isEn ? "TOTAL NET TRANSFER AMOUNT:" : "TOTAL TRANSFER BERSIH DITERIMA:"}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {isEn ? "Amount successfully disbursed to therapist" : "Total hak bagi hasil bersih yang ditransfer"}
+                {/* Prominent TAKE HOME PAY Banner (Matching user screenshot) */}
+                <div className="w-full bg-[#241c17] text-white px-4 py-3.5 rounded-xl rounded-bl-none flex items-center justify-between shadow-xs mt-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-0.5 h-4 bg-white/40 rounded-full" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-white">
+                      TAKE HOME PAY
                     </span>
                   </div>
-                  <span className="text-xl font-black text-primary">
+                  <span className="text-xl font-bold italic tracking-tight text-white">
                     {formatCurrency(netAmount)}
                   </span>
                 </div>
               </div>
-            </div>
 
-            {/* Optional Itemized Bookings Breakdown (Compact & Slim Layout with Explicit Calculation Formula) */}
-            {payout.bookings_breakdown && payout.bookings_breakdown.length > 0 && (
-              <div className="space-y-1.5 w-full">
-                <div className="px-3 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[11px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 w-full">
-                  <ReceiptText className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
-                  <span>{isEn ? "Itemized Bookings in Period" : "Daftar Booking Terlayani dalam Periode"}</span>
-                </div>
-
-                <div className="w-full px-0.5">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-[#f6f3ee]/70 dark:bg-[#26211c]/70 text-[10px] text-neutral-800 dark:text-neutral-200 font-bold uppercase tracking-wider">
-                      <tr>
-                        <th className="py-1.5 px-2 font-bold">{isEn ? "Booking & Service" : "Booking & Layanan"}</th>
-                        <th className="py-1.5 px-2 text-right font-bold">{isEn ? "Price & Promo" : "Harga & Promo"}</th>
-                        <th className="py-1.5 px-2 text-right font-bold">{isEn ? "Therapist Fee" : "Hak Komisi"}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/30">
-                      {payout.bookings_breakdown.map((item, idx) => {
-                        const commBase =
-                          typeof item.commission_base === "number"
-                            ? item.commission_base
-                            : item.discount_amount && item.discount_amount > 0
-                            ? Math.max(0, item.total_price - item.discount_amount)
-                            : item.total_price;
-
-                        return (
-                          <tr key={item.id ?? idx} className="hover:bg-muted/20 transition-colors">
-                            {/* Column 1: Booking & Service Info (Stacked Vertically Downwards) */}
-                            <td className="py-2 px-2 align-top pr-2 space-y-1">
-                              <div>
-                                <span className="font-bold text-foreground text-xs mr-1.5">#{item.id}</span>
-                                <span className="font-semibold text-foreground text-xs">
-                                  {item.service_name || "Home Massage"}
-                                </span>
-                              </div>
-                              <div className="space-y-0.5 text-[10.5px] text-muted-foreground leading-tight">
-                                <p>
-                                  {item.booking_date} {item.booking_time ? `• ${item.booking_time}` : ""}
-                                </p>
-                                <p className="flex items-center gap-1">
-                                  <User className="w-2.5 h-2.5 opacity-70 shrink-0" />
-                                  <span>{item.customer_name || (isEn ? "Client" : "Pelanggan")}</span>
-                                </p>
-                                {item.invoice_number && (
-                                  <p className="font-mono text-[9px] text-muted-foreground/80">
-                                    {item.invoice_number}
-                                  </p>
-                                )}
-                              </div>
-                            </td>
-
-                            {/* Column 2: Price & Promo */}
-                            <td className="py-2 px-2 text-right align-top shrink-0 whitespace-nowrap space-y-0.5">
-                              <span className="font-medium text-foreground text-xs block leading-tight">
-                                {formatCurrency(item.total_price)}
-                              </span>
-                              {item.discount_amount && item.discount_amount > 0 ? (
-                                <div className="leading-tight space-y-0.5">
-                                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 block">
-                                    -{formatCurrency(item.discount_amount)}
-                                  </span>
-                                  {item.applied_promo_name && (
-                                    <span className="text-[8.5px] text-muted-foreground block truncate max-w-[95px] ml-auto opacity-80">
-                                      {item.applied_promo_name}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : null}
-                            </td>
-
-                            {/* Column 3: Therapist Fee & Multiplier Breakdown */}
-                            <td className="py-2 px-2 text-right align-top shrink-0 whitespace-nowrap pl-2 space-y-0.5">
-                              <span className="font-bold text-[#8b5e3c] dark:text-[#d49b6a] text-xs block leading-tight">
-                                {formatCurrency(item.therapist_fee)}
-                              </span>
-                              <span className="text-[9.5px] text-muted-foreground font-mono block leading-tight pt-0.5">
-                                {payout.commission_rate}% × {formatCurrency(commBase)}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+              {/* Minimalist Footer (Permanent Appreciation Note) */}
+              <div className="pt-3 border-t border-border/60 text-center space-y-1">
+                <p className="text-[11px] font-medium text-foreground">
+                  {isEn ? "Remuneration statement generated by Serena Raga Management." : "Slip rekap bagi hasil resmi diterbitkan oleh Manajemen Serena Raga."}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {isEn ? "Thank you for your exceptional wellness service & dedication." : "Terima kasih atas dedikasi dan pelayanan relaksasi terbaik Anda bersama Serena Raga."}
+                </p>
               </div>
-            )}
-
-          {/* Footer Note */}
-          <div className="pt-4 border-t border-border/60 text-center space-y-1">
-            <p className="text-[11px] text-muted-foreground font-medium">
-              {payout.notes || (isEn ? "Remuneration statement generated by Serena Raga Management." : "Slip rekap bagi hasil diterbitkan oleh Manajemen Serena Raga.")}
-            </p>
-            <p className="text-[10px] text-muted-foreground/70">
-              {brandName} • WhatsApp Support {settings.phone_number || settings.whatsapp_number || "+62 812-3456-7890"}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
       </div>
       </div>
     </div>

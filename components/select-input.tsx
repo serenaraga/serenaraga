@@ -335,7 +335,11 @@ export const SelectInput = (props: SelectInputProps) => {
 
   const renderMenuItemOption = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (choice: any) => getChoiceText(choice),
+    (choice: any) => {
+      const text = getChoiceText(choice);
+      if (text !== undefined && text !== "undefined" && text !== "") return text;
+      return choice?.name || choice?.label || choice?.id || "";
+    },
     [getChoiceText],
   );
 
@@ -384,9 +388,13 @@ export const SelectInput = (props: SelectInputProps) => {
       // Resolve icon from choice.icon (string), choice.id, or val
       const iconKey = typeof choice?.icon === "string" ? choice.icon : choice?.id || val;
       const icon = resolveChoiceIcon(iconKey);
+      const labelText =
+        typeof text === "string" && text !== "undefined" && text !== ""
+          ? text
+          : choice?.label || choice?.name || choice?.id || val;
       return {
         value: val,
-        label: typeof text === "string" ? text : String(text || val),
+        label: labelText,
         icon,
         disabled: isDisabled,
         raw: choice,
@@ -490,7 +498,7 @@ export const SelectInput = (props: SelectInputProps) => {
                   <span className="truncate">{selectedItem ? selectedItem.label : placeholderText}</span>
                 </span>
               </ComboboxTrigger>
-              <ComboboxContent className="z-50 min-w-[var(--anchor-width)] max-w-md p-1 shadow-lg border border-border/80 rounded-lg bg-popover dark:bg-zinc-950 text-popover-foreground">
+              <ComboboxContent className="z-50 min-w-[var(--anchor-width)] max-w-md p-1 shadow-lg border border-border rounded-lg bg-popover dark:bg-zinc-950 text-popover-foreground">
                 <ComboboxInput
                   showTrigger={false}
                   showClear={true}

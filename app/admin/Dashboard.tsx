@@ -522,7 +522,7 @@ export const Dashboard = () => {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5"
       >
         {/* Card 1: Incoming Bookings */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+        <Card className="border border-border shadow-none bg-card hover:border-border transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
             <span className="text-xs font-medium text-muted-foreground">
               {isEn ? "Incoming Bookings" : "Booking Masuk"}
@@ -540,7 +540,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Card 2: Gross Revenue */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+        <Card className="border border-border shadow-none bg-card hover:border-border transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
             <span className="text-xs font-medium text-muted-foreground">
               {isEn ? "Gross Revenue" : "Omset Pendapatan"}
@@ -558,7 +558,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Card 3: Therapist Fees */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+        <Card className="border border-border shadow-none bg-card hover:border-border transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
             <span className="text-xs font-medium text-muted-foreground">
               {isEn ? "Therapist Fees" : "Komisi Terapis"}
@@ -576,7 +576,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Card 4: Consumables (BHP) */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+        <Card className="border border-border shadow-none bg-card hover:border-border transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
             <span className="text-xs font-medium text-muted-foreground">
               {isEn ? "Consumables (BHP)" : "Biaya Bahan (BHP)"}
@@ -594,7 +594,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Card 5: Net Profit (Refined Accent) */}
-        <Card className="border border-border/70 hover:border-[#8b5e3c]/40 dark:hover:border-[#d49b6a]/40 shadow-none bg-card transition-colors">
+        <Card className="border border-border hover:border-[#8b5e3c]/40 dark:hover:border-[#d49b6a]/40 shadow-none bg-card transition-colors">
           <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4">
             <span className="text-xs font-medium text-foreground">
               {isEn ? "Net Profit" : "Laba Bersih"}
@@ -622,7 +622,7 @@ export const Dashboard = () => {
         className="grid grid-cols-1 lg:grid-cols-12 gap-6"
       >
         {/* Left: Clean Daily Net Profit Bar Chart */}
-        <Card className="lg:col-span-8 border border-border/70 shadow-none bg-card flex flex-col justify-between">
+        <Card className="lg:col-span-8 border border-border shadow-none bg-card flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div className="space-y-1">
               <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -683,7 +683,7 @@ export const Dashboard = () => {
             </ChartContainer>
 
             {/* Bottom Chart Stats Summary (Seamless) */}
-            <div className="grid grid-cols-3 gap-2 pt-4 mt-2 border-t border-border/50 text-center">
+            <div className="grid grid-cols-3 gap-2 pt-4 mt-2 border-t border-border text-center">
               <div className="py-1.5 px-2">
                 <span className="text-[11px] text-muted-foreground block">{isEn ? "Total Net Profit" : "Total Laba Bersih"}</span>
                 <span className="text-sm font-bold text-[#8b5e3c] dark:text-[#d49b6a] block mt-0.5">
@@ -707,7 +707,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Right: Popular Services (4 cols) */}
-        <Card className="lg:col-span-4 border border-border/70 shadow-none bg-card flex flex-col justify-between">
+        <Card className="lg:col-span-4 border border-border shadow-none bg-card flex flex-col justify-between">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#8b5e3c] dark:text-[#d49b6a]" />
@@ -747,7 +747,7 @@ export const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <Empty className="min-h-[160px] py-6 border-dashed border-border/60 bg-muted/10">
+              <Empty className="min-h-[160px] py-6 border-dashed border-border bg-muted/10">
                 <EmptyHeader>
                   <EmptyMedia variant="icon" className="h-9 w-9 [&_svg]:h-4 [&_svg]:w-4 mb-1">
                     <Clock className="text-muted-foreground" />
@@ -764,7 +764,7 @@ export const Dashboard = () => {
               </Empty>
             )}
 
-            <div className="pt-2 border-t border-border/50">
+            <div className="pt-2 border-t border-border">
               <Button
                 variant="ghost"
                 size="sm"
@@ -787,7 +787,7 @@ export const Dashboard = () => {
         className="grid grid-cols-1 lg:grid-cols-12 gap-6"
       >
         {/* Recent Real Bookings (7 cols) */}
-        <Card className="lg:col-span-7 border border-border/70 shadow-none bg-card flex flex-col justify-between">
+        <Card className="lg:col-span-7 border border-border shadow-none bg-card flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div className="space-y-0.5">
               <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -821,7 +821,7 @@ export const Dashboard = () => {
                   return (
                     <div key={b.id} className="py-3 flex items-center justify-between gap-3 hover:bg-muted/30 px-1.5 rounded-lg transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
-                        <Avatar className="h-8 w-8 rounded-lg border border-border/60 bg-[#8b5e3c]/5 dark:bg-[#d49b6a]/10 text-xs font-semibold text-[#8b5e3c] dark:text-[#d49b6a] shrink-0">
+                        <Avatar className="h-8 w-8 rounded-lg border border-border bg-[#8b5e3c]/5 dark:bg-[#d49b6a]/10 text-xs font-semibold text-[#8b5e3c] dark:text-[#d49b6a] shrink-0">
                           <AvatarFallback className="rounded-lg bg-transparent text-[#8b5e3c] dark:text-[#d49b6a]">
                             {initial}
                           </AvatarFallback>
@@ -859,7 +859,7 @@ export const Dashboard = () => {
                 })}
               </div>
             ) : (
-              <Empty className="min-h-[160px] py-6 border-dashed border-border/60 bg-muted/10">
+              <Empty className="min-h-[160px] py-6 border-dashed border-border bg-muted/10">
                 <EmptyHeader>
                   <EmptyMedia variant="icon" className="h-9 w-9 [&_svg]:h-4 [&_svg]:w-4 mb-1">
                     <CalendarCheck className="text-muted-foreground" />
@@ -879,7 +879,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Real Therapist Roster (5 cols) */}
-        <Card className="lg:col-span-5 border border-border/70 shadow-none bg-card flex flex-col justify-between">
+        <Card className="lg:col-span-5 border border-border shadow-none bg-card flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div className="space-y-0.5">
               <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -910,7 +910,7 @@ export const Dashboard = () => {
                   return (
                     <div key={t.id} className="py-2.5 flex items-center justify-between gap-2 hover:bg-muted/30 px-1.5 rounded-lg transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <Avatar className="h-7 w-7 rounded-full border border-border/50 text-xs font-semibold shrink-0">
+                        <Avatar className="h-7 w-7 rounded-full border border-border text-xs font-semibold shrink-0">
                           <AvatarFallback className="bg-muted text-foreground">
                             {initial}
                           </AvatarFallback>
@@ -941,7 +941,7 @@ export const Dashboard = () => {
                 })}
               </div>
             ) : (
-              <Empty className="min-h-[160px] py-6 border-dashed border-border/60 bg-muted/10">
+              <Empty className="min-h-[160px] py-6 border-dashed border-border bg-muted/10">
                 <EmptyHeader>
                   <EmptyMedia variant="icon" className="h-9 w-9 [&_svg]:h-4 [&_svg]:w-4 mb-1">
                     <UserCheck className="text-muted-foreground" />
@@ -964,7 +964,7 @@ export const Dashboard = () => {
       {/* 4. Recent Client Reviews & Feedback Highlight */}
       {reviews.length > 0 && (
         <motion.div variants={itemVariants}>
-          <Card className="border border-border/70 shadow-none bg-card">
+          <Card className="border border-border shadow-none bg-card">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div className="space-y-0.5">
                 <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -994,7 +994,7 @@ export const Dashboard = () => {
                   return (
                     <div
                       key={rev.id}
-                      className="p-3.5 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors space-y-2 flex flex-col justify-between text-xs"
+                      className="p-3.5 rounded-xl border border-border bg-muted/20 hover:bg-muted/40 transition-colors space-y-2 flex flex-col justify-between text-xs"
                     >
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
@@ -1012,7 +1012,7 @@ export const Dashboard = () => {
                         </p>
                       </div>
 
-                      <div className="text-[10px] text-muted-foreground/70 flex items-center justify-between pt-1 border-t border-border/30">
+                      <div className="text-[10px] text-muted-foreground/70 flex items-center justify-between pt-1 border-t border-border">
                         <span>Ref #{rev.booking_id || rev.id}</span>
                         <span>
                           {rev.created_at
@@ -1038,7 +1038,7 @@ export const Dashboard = () => {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5"
       >
         {/* Compact Card 1: Therapist Readiness */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+        <Card className="border border-border shadow-none bg-card hover:border-border transition-colors">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -1049,7 +1049,7 @@ export const Dashboard = () => {
                 {therapists.length} {isEn ? "registered" : "terdaftar"}
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40">
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-border">
               <span className="font-semibold text-[#8b5e3c] dark:text-[#d49b6a]">{availableTherapists} {isEn ? "Ready" : "Siap"}</span>
               <span className="text-muted-foreground/40">•</span>
               <span className="text-muted-foreground">{onDutyTherapists} {isEn ? "On Duty" : "Bertugas"}</span>
@@ -1060,7 +1060,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Compact Card 2: Client Rating & Feedback */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+        <Card className="border border-border shadow-none bg-card hover:border-border transition-colors">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -1071,7 +1071,7 @@ export const Dashboard = () => {
                 {averageRating} <span className="text-[10px] text-muted-foreground font-normal">/ 5.0</span>
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40 text-muted-foreground">
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-border text-muted-foreground">
               <span>{customers.length} {isEn ? "clients" : "pelanggan"}</span>
               <span className="text-foreground">
                 {filteredReviews.length > 0 ? `${filteredReviews.length} ${isEn ? "new reviews" : "ulasan baru"}` : `${reviews.length} ${isEn ? "total reviews" : "total ulasan"}`}
@@ -1081,7 +1081,7 @@ export const Dashboard = () => {
         </Card>
 
         {/* Compact Card 3: Payment Method Share */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+        <Card className="border border-border shadow-none bg-card hover:border-border transition-colors">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -1092,18 +1092,18 @@ export const Dashboard = () => {
                 {paymentStats.totalTransactions} {isEn ? "invoices" : "nota"}
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs pt-1 border-t border-border/40 text-muted-foreground">
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-border text-muted-foreground">
               <span className="text-foreground font-medium">QRIS {paymentStats.qris}%</span>
               <span className="text-muted-foreground/40">•</span>
-              <span>Transfer {paymentStats.transfer}%</span>
+              <span>TRANSFER {paymentStats.transfer}%</span>
               <span className="text-muted-foreground/40">•</span>
-              <span>Tunai {paymentStats.cash}%</span>
+              <span>CASH {paymentStats.cash}%</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Compact Card 4: Action Required Alert */}
-        <Card className="border border-border/70 shadow-none bg-card hover:border-border transition-colors">
+        <Card className="border border-border shadow-none bg-card hover:border-border transition-colors">
           <CardContent className="p-4 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">

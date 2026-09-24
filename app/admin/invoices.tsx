@@ -64,6 +64,8 @@ import {
 
 import { RowActions } from "@/components/row-actions";
 import { cn, formatIDR, localizePromoName } from "@/lib/utils";
+import { PAYMENT_METHODS, PaymentMethodField } from "@/components/payment-method";
+import { getPaymentStatusSelectItems } from "@/components/status-badge";
 
 /**
  * List view of all generated Invoices & Receipts
@@ -85,7 +87,9 @@ export const InvoiceList = () => {
             options={{ style: "currency", currency: "IDR", maximumFractionDigits: 0 }}
           />
         </DataTableCol>
-        <DataTableCol source="payment_method" />
+        <DataTableCol source="payment_method">
+          <PaymentMethodField source="payment_method" />
+        </DataTableCol>
         <DataTableCol source="payment_status">
           <BadgeField source="payment_status" />
         </DataTableCol>
@@ -416,7 +420,7 @@ export const InvoiceCreate = () => {
     total_amount: 185000,
     payment_method: "qris",
     payment_status: "paid",
-    booking_status: "confirmed",
+    booking_status: "completed",
     notes: "",
     applied_promo_name: "",
   });
@@ -578,7 +582,7 @@ export const InvoiceCreate = () => {
       total_amount: total,
       payment_method: booking.payment_method || "qris",
       payment_status: booking.payment_status || "paid",
-      booking_status: booking.status || "confirmed",
+      booking_status: "completed",
       notes: booking.special_requests || "",
     }));
 
@@ -1028,15 +1032,15 @@ export const InvoiceCreate = () => {
                     </label>
                     {(() => {
                       const orderStatusItems = [
-                        { value: "confirmed", label: isEn ? "Confirmed" : "Dikonfirmasi" },
                         { value: "completed", label: isEn ? "Completed" : "Selesai" },
+                        { value: "confirmed", label: isEn ? "Confirmed" : "Dikonfirmasi" },
                         { value: "pending", label: isEn ? "Pending" : "Menunggu Konfirmasi" },
                         { value: "canceled", label: isEn ? "Canceled" : "Dibatalkan" },
                       ];
                       return (
                         <Select
                           items={orderStatusItems}
-                          value={formData.booking_status || "confirmed"}
+                          value={formData.booking_status || "completed"}
                           onValueChange={(val) => {
                             if (val) setFormData((prev) => ({ ...prev, booking_status: val }));
                           }}
@@ -1074,94 +1078,77 @@ export const InvoiceCreate = () => {
                     <label className="text-xs font-medium text-foreground">
                       {isEn ? "Payment Method" : "Metode Pembayaran"}
                     </label>
-                    {(() => {
-                      const methodItems = [
-                        { value: "cash", label: isEn ? "Cash" : "Tunai (Cash)" },
-                        { value: "qris", label: "QRIS" },
-                        { value: "bank_transfer", label: isEn ? "Bank Transfer" : "Transfer Bank" },
-                      ];
-                      return (
-                        <Select
-                          items={methodItems}
-                          value={formData.payment_method}
-                          onValueChange={(val) => {
-                            if (val) setFormData((prev) => ({ ...prev, payment_method: val }));
+                    <Select
+                      items={PAYMENT_METHODS}
+                      value={formData.payment_method}
+                      onValueChange={(val) => {
+                        if (val) setFormData((prev) => ({ ...prev, payment_method: val }));
+                      }}
+                    >
+                      <SelectTrigger className="w-full h-8 text-xs bg-background">
+                        <SelectValue placeholder={isEn ? "Select method" : "Pilih metode"}>
+                          {(val) => {
+                            const item = PAYMENT_METHODS.find((m) => m.value === val);
+                            if (!item) return isEn ? "Select method" : "Pilih metode";
+                            return (
+                              <span className="flex items-center gap-1.5 truncate">
+                                <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
+                                <span className="truncate">{item.label}</span>
+                              </span>
+                            );
                           }}
-                        >
-                          <SelectTrigger className="w-full h-8 text-xs bg-background">
-                            <SelectValue placeholder={isEn ? "Select method" : "Pilih metode"}>
-                              {(val) => {
-                                const item = methodItems.find((m) => m.value === val);
-                                if (!item) return isEn ? "Select method" : "Pilih metode";
-                                return (
-                                  <span className="flex items-center gap-1.5 truncate">
-                                    <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
-                                    <span className="truncate">{item.label}</span>
-                                  </span>
-                                );
-                              }}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent className="z-50 max-h-60 rounded-lg">
-                            <SelectGroup>
-                              {methodItems.map((item) => (
-                                <SelectItem key={item.value} value={item.value} className="text-xs py-1 px-2 flex items-center gap-1.5">
-                                  <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
-                                  <span>{item.label}</span>
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      );
-                    })()}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="z-50 max-h-60 rounded-lg">
+                        <SelectGroup>
+                          {PAYMENT_METHODS.map((item) => (
+                            <SelectItem key={item.value} value={item.value} className="text-xs py-1 px-2 flex items-center gap-1.5">
+                              <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
+                              <span>{item.label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground">
                       {isEn ? "Payment Status" : "Status Pembayaran"}
                     </label>
-                    {(() => {
-                      const statusItems = [
-                        { value: "paid", label: isEn ? "Paid (Lunas)" : "Lunas (Paid)" },
-                        { value: "unpaid", label: isEn ? "Unpaid (Pending)" : "Belum Bayar (Pending)" },
-                        { value: "refunded", label: isEn ? "Refunded" : "Refund" },
-                      ];
-                      return (
-                        <Select
-                          items={statusItems}
-                          value={formData.payment_status}
-                          onValueChange={(val) => {
-                            if (val) setFormData((prev) => ({ ...prev, payment_status: val }));
+                    <Select
+                      items={getPaymentStatusSelectItems(isEn)}
+                      value={formData.payment_status}
+                      onValueChange={(val) => {
+                        if (val) setFormData((prev) => ({ ...prev, payment_status: val }));
+                      }}
+                    >
+                      <SelectTrigger className="w-full h-8 text-xs bg-background">
+                        <SelectValue placeholder={isEn ? "Select status" : "Pilih status"}>
+                          {(val) => {
+                            const items = getPaymentStatusSelectItems(isEn);
+                            const item = items.find((s) => s.value === val);
+                            if (!item) return isEn ? "Select status" : "Pilih status";
+                            return (
+                              <span className="flex items-center gap-1.5 truncate">
+                                <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
+                                <span className="truncate">{item.label}</span>
+                              </span>
+                            );
                           }}
-                        >
-                          <SelectTrigger className="w-full h-8 text-xs bg-background">
-                            <SelectValue placeholder={isEn ? "Select status" : "Pilih status"}>
-                              {(val) => {
-                                const item = statusItems.find((s) => s.value === val);
-                                if (!item) return isEn ? "Select status" : "Pilih status";
-                                return (
-                                  <span className="flex items-center gap-1.5 truncate">
-                                    <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
-                                    <span className="truncate">{item.label}</span>
-                                  </span>
-                                );
-                              }}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent className="z-50 max-h-60 rounded-lg">
-                            <SelectGroup>
-                              {statusItems.map((item) => (
-                                <SelectItem key={item.value} value={item.value} className="text-xs py-1 px-2 flex items-center gap-1.5">
-                                  <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
-                                  <span>{item.label}</span>
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      );
-                    })()}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="z-50 max-h-60 rounded-lg">
+                        <SelectGroup>
+                          {getPaymentStatusSelectItems(isEn).map((item) => (
+                            <SelectItem key={item.value} value={item.value} className="text-xs py-1 px-2 flex items-center gap-1.5">
+                              <span className="shrink-0 flex items-center">{resolveChoiceIcon(item.value)}</span>
+                              <span>{item.label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -1208,8 +1195,13 @@ export const InvoiceCreate = () => {
             </span>
           </div>
 
-          {/* Live Rendered Card */}
-          <InvoiceCard invoice={formData} showShareActions={false} forcedLocale={locale} />
+          {/* Live Rendered Card (Minimal 1px border matching action buttons) */}
+          <InvoiceCard
+            invoice={formData}
+            showShareActions={false}
+            forcedLocale={locale}
+            borderless={false}
+          />
         </div>
       </div>
     </div>

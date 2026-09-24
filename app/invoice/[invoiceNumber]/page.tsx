@@ -213,11 +213,15 @@ export default function PublicInvoicePage() {
       if (!fullErr && fullData) {
         insertedRecord = fullData;
       } else {
-        // 2. Fallback to core standard schema (booking_id, rating, comment)
+        // 2. Fallback to core standard schema (booking_id, rating, comment, customer_name, therapist_id)
         const corePayload: any = {
           booking_id: validBookingId,
+          customer_name: invoice.customer_name || "Pelanggan",
+          therapist_id: invoice.therapist_id && !isNaN(Number(invoice.therapist_id)) ? Number(invoice.therapist_id) : null,
           rating: Number(rating) || 5,
           comment: comment.trim() || null,
+          is_read: false,
+          created_at: new Date().toISOString(),
         };
 
         const { data: coreData, error: coreErr } = await supabase
@@ -380,7 +384,7 @@ export default function PublicInvoicePage() {
       {/* Main Invoice Card Container */}
       <div className="max-w-3xl mx-auto space-y-6">
         {loading ? (
-          <Card className="p-16 text-center border border-border/70 shadow-none bg-card space-y-3 rounded-none">
+          <Card className="p-16 text-center border border-border shadow-none bg-card space-y-3 rounded-xl ring-0">
             <Loader2 className="w-6 h-6 animate-spin text-foreground mx-auto" />
             <p className="text-xs text-muted-foreground">
               {isEn ? "Loading official Serena Raga receipt..." : "Memuat nota resmi Serena Raga..."}
@@ -396,8 +400,8 @@ export default function PublicInvoicePage() {
               className="shadow-none"
             />
 
-            {/* Leave Review Section (Shadcn Card with shadow-none and rounded-none) */}
-            <Card className="border border-border/70 shadow-none bg-card rounded-none">
+            {/* Leave Review Section (Shadcn Card with minimal 1px border matching action buttons) */}
+            <Card className="border border-border shadow-none bg-card rounded-xl ring-0">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-500" />
@@ -412,7 +416,7 @@ export default function PublicInvoicePage() {
 
               <CardContent className="space-y-4 pt-0">
                 {reviewSubmitted ? (
-                  <div className="p-5 rounded-none bg-muted/40 border border-border/70 text-center space-y-2 shadow-none">
+                  <div className="p-5 rounded-xl bg-muted/40 border border-border text-center space-y-2 shadow-none">
                     <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 mx-auto">
                       <Heart className="w-4 h-4 fill-amber-600 text-amber-600 dark:fill-amber-500 dark:text-amber-500" />
                     </div>
@@ -477,7 +481,7 @@ export default function PublicInvoicePage() {
                             : "Contoh: Terapis sangat ramah, pijatannya pas dan membuat badan segar kembali..."
                         }
                         rows={3}
-                        className="text-xs bg-background border-border text-foreground resize-none shadow-none focus-visible:ring-1 rounded-none"
+                        className="text-xs bg-background border-border text-foreground resize-none shadow-none focus-visible:ring-1 rounded-lg"
                       />
                     </div>
 
@@ -485,7 +489,7 @@ export default function PublicInvoicePage() {
                     <Button
                       type="submit"
                       disabled={submittingReview}
-                      className="w-full h-9 text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 gap-2 shadow-none cursor-pointer rounded-none"
+                      className="w-full h-9 text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 gap-2 shadow-none cursor-pointer rounded-lg"
                     >
                       {submittingReview ? (
                         <>
@@ -505,7 +509,7 @@ export default function PublicInvoicePage() {
             </Card>
           </>
         ) : (
-          <Card className="p-12 text-center border border-border/70 shadow-none bg-card space-y-3 rounded-none">
+          <Card className="p-12 text-center border border-border shadow-none bg-card space-y-3 rounded-xl ring-0">
             <ShieldCheck className="w-8 h-8 text-muted-foreground mx-auto" />
             <h2 className="text-base font-semibold text-foreground">
               {isEn ? "Receipt Not Found" : "Nota Tidak Ditemukan"}

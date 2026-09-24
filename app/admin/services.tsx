@@ -435,8 +435,8 @@ const ServiceFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }) =
   return (
     <div className="space-y-5 max-w-4xl">
       {/* 1. Card: Service Details & Pricing */}
-      <Card className="border border-border/70 shadow-none bg-card">
-        <CardHeader className="pb-3 border-b border-border/40">
+      <Card className="border border-border shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
               <Sparkles className="w-4 h-4" />
@@ -520,8 +520,8 @@ const ServiceFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }) =
       </Card>
 
       {/* 2. Card: Consumables & Material Composition (COGS) */}
-      <Card className="border border-border/70 shadow-none bg-card">
-        <CardHeader className="pb-3 border-b border-border/40">
+      <Card className="border border-border shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
               <Boxes className="w-4 h-4" />

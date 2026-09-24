@@ -89,7 +89,7 @@ export function SearchableCombobox({
         </ComboboxTrigger>
         <ComboboxContent
           className={cn(
-            "z-50 min-w-[var(--anchor-width)] max-w-md p-1 shadow-lg border border-border/80 rounded-lg bg-popover dark:bg-zinc-950 text-popover-foreground",
+            "z-50 min-w-[var(--anchor-width)] max-w-md p-1 shadow-lg border border-border rounded-lg bg-popover dark:bg-zinc-950 text-popover-foreground",
             contentClassName
           )}
         >

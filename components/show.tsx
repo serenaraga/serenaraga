@@ -152,7 +152,7 @@ export const ShowView = ({
         </div>
 
         {/* Profile / Main Dossier Header Skeleton */}
-        <div className="rounded-xl border border-border/80 bg-card p-5 space-y-4 shadow-2xs">
+        <div className="rounded-xl border border-border bg-card p-5 space-y-4 shadow-none">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <AvatarSkeleton size="lg" />
             <div className="flex items-center gap-2">

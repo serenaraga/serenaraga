@@ -18,16 +18,9 @@ import { DatePickerInput } from "@/components/date-picker-input";
 import { TimePickerInput } from "@/components/time-picker-input";
 import { PhoneInput } from "@/components/phone-input";
 import { RowActions } from "@/components/row-actions";
-import {
-  Clock,
-  CalendarCheck,
-  CheckCircle2,
-  XCircle,
-  Banknote,
-  QrCode,
-  Building2,
-  RotateCcw,
-} from "lucide-react";
+import { CheckCircle2, CalendarCheck } from "lucide-react";
+import { BOOKING_STATUS_CHOICES, PAYMENT_STATUS_CHOICES } from "@/components/status-badge";
+import { PAYMENT_METHODS } from "@/components/payment-method";
 
 export const BookingList = () => (
   <List>
@@ -706,32 +699,19 @@ const BookingFormContent = ({ mode = "create" }: { mode?: "create" | "edit" }) =
               source="status"
               label={isEn ? "Order Status" : "Status Pesanan"}
               defaultValue="pending"
-              choices={[
-                { id: "pending", name: "resources.bookings.status.pending" },
-                { id: "confirmed", name: "resources.bookings.status.confirmed" },
-                { id: "completed", name: "resources.bookings.status.completed" },
-                { id: "canceled", name: "resources.bookings.status.canceled" },
-              ]}
+              choices={BOOKING_STATUS_CHOICES}
             />
             <SelectInput
               source="payment_method"
               label={isEn ? "Payment Method" : "Metode Pembayaran"}
               defaultValue="qris"
-              choices={[
-                { id: "qris", name: "resources.bookings.payment_method.qris" },
-                { id: "cash", name: "resources.bookings.payment_method.cash" },
-                { id: "bank_transfer", name: "resources.bookings.payment_method.bank_transfer" },
-              ]}
+              choices={PAYMENT_METHODS}
             />
             <SelectInput
               source="payment_status"
               label={isEn ? "Payment Status" : "Status Pembayaran"}
               defaultValue="unpaid"
-              choices={[
-                { id: "unpaid", name: "resources.bookings.payment_status.unpaid" },
-                { id: "paid", name: "resources.bookings.payment_status.paid" },
-                { id: "refunded", name: "resources.bookings.payment_status.refunded" },
-              ]}
+              choices={PAYMENT_STATUS_CHOICES}
             />
           </div>
 

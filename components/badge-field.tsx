@@ -56,7 +56,7 @@ export const BadgeField = <RecordType extends RaRecord = RaRecord>({
   return (
     <span
       className={cn(
-        "text-xs font-medium text-foreground tracking-tight whitespace-nowrap inline-flex items-center gap-1.5",
+        "text-xs font-medium text-foreground whitespace-nowrap inline-flex items-center gap-1.5",
         className
       )}
     >

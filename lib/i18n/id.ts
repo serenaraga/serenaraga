@@ -243,9 +243,9 @@ export const indonesianMessages: TranslationMessages = {
         cancelled: "Dibatalkan",
       },
       payment_method: {
-        cash: "Tunai (Cash)",
+        cash: "CASH",
         qris: "QRIS",
-        bank_transfer: "Transfer Bank",
+        bank_transfer: "BANK TRANSFER",
       },
       payment_status: {
         unpaid: "Belum Bayar",
@@ -380,9 +380,9 @@ export const indonesianMessages: TranslationMessages = {
         created_at: "Dibuat Pada",
       },
       payment_method: {
-        cash: "Tunai (Cash)",
+        cash: "CASH",
         qris: "QRIS",
-        bank_transfer: "Transfer Bank",
+        bank_transfer: "BANK TRANSFER",
       },
       payment_status: {
         unpaid: "Belum Bayar",

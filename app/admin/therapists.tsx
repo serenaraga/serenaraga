@@ -6,11 +6,13 @@ import {
   useTranslate,
   useLocaleState,
   useNavigate,
+  useGetList,
   required,
 } from "ra-core";
 import { useFormContext } from "react-hook-form";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
+import { syncAllTherapistsRatings } from "@/lib/therapist-rating";
 import { List } from "@/components/list";
 import { DataTable, DataTableCol } from "@/components/data-table";
 import { TextField } from "@/components/text-field";
@@ -33,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatIDR } from "@/lib/utils";
+import { StatusBadge } from "@/components/status-badge";
 import {
   Card,
   CardContent,
@@ -132,9 +135,61 @@ const TherapistNameCol = () => {
 };
 
 /**
+ * Dynamic Rating Column resolving reviews & computing accurate average
+ */
+const TherapistRatingCol = () => {
+  const record = useRecordContext();
+  const { data: reviews = [] } = useGetList("reviews", {
+    pagination: { page: 1, perPage: 100 },
+  });
+  const { data: bookings = [] } = useGetList("bookings", {
+    pagination: { page: 1, perPage: 100 },
+  });
+
+  const ratingInfo = React.useMemo(() => {
+    if (!record) return null;
+
+    const therapistBookings = bookings.filter((b) => b.therapist_id === record.id).map((b) => b.id);
+    const matchedReviews = reviews.filter(
+      (r) => r.therapist_id === record.id || (r.booking_id && therapistBookings.includes(r.booking_id))
+    );
+
+    if (matchedReviews.length > 0) {
+      const sum = matchedReviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+      const avg = Number((sum / matchedReviews.length).toFixed(1));
+      return { avg, count: matchedReviews.length };
+    }
+
+    if (record.rating != null && !isNaN(Number(record.rating)) && Number(record.rating) > 0) {
+      return { avg: Number(record.rating).toFixed(1), count: 0 };
+    }
+
+    return null;
+  }, [record, reviews, bookings]);
+
+  if (!ratingInfo) {
+    return <span className="text-xs text-muted-foreground">-</span>;
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
+      <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
+      <span>{ratingInfo.avg}</span>
+      {ratingInfo.count > 0 && (
+        <span className="text-[10px] text-muted-foreground font-normal">({ratingInfo.count})</span>
+      )}
+    </span>
+  );
+};
+
+/**
  * List View for Therapists
  */
 export const TherapistList = () => {
+  React.useEffect(() => {
+    syncAllTherapistsRatings();
+  }, []);
+
   return (
     <List>
       <DataTable>
@@ -156,16 +211,7 @@ export const TherapistList = () => {
         />
         <DataTableCol
           source="rating"
-          render={(record) =>
-            record.rating != null ? (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground">
-                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
-                <span>{Number(record.rating).toFixed(1)}</span>
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">-</span>
-            )
-          }
+          render={() => <TherapistRatingCol />}
         />
         <DataTableCol
           source="commission_rate"
@@ -968,8 +1014,8 @@ const TherapistShowView = () => {
       {/* 4 Grid Dossier Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Card 1: Identitas Pribadi & Domisili */}
-        <Card className="border border-border/70 bg-card shadow-none">
-          <CardHeader className="pb-3 border-b border-border/50">
+        <Card className="border border-border bg-card shadow-none">
+          <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <User className="w-4 h-4 text-primary" />
               <span>{isEn ? "Personal Identity & Domicile" : "Data Pribadi & Domisili"}</span>
@@ -997,7 +1043,7 @@ const TherapistShowView = () => {
               <p className="font-medium text-foreground mt-0.5 leading-relaxed">{record.domicile_address || "-"}</p>
             </div>
 
-            <div className="pt-2 border-t border-border/50">
+            <div className="pt-2 border-t border-border">
               <span className="text-muted-foreground block text-[11px] flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400">
                 <HeartPulse className="w-3 h-3" />
                 {isEn ? "Emergency Contact:" : "Kontak Darurat (Keluarga):"}
@@ -1010,8 +1056,8 @@ const TherapistShowView = () => {
         </Card>
 
         {/* Card 2: Foto KTP & Dokumen Kualifikasi */}
-        <Card className="border border-border/70 bg-card shadow-none">
-          <CardHeader className="pb-3 border-b border-border/50">
+        <Card className="border border-border bg-card shadow-none">
+          <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-primary" />
               <span>{isEn ? "Verified Documents & Credentials" : "Verifikasi KTP & Dokumen HD"}</span>
@@ -1105,8 +1151,8 @@ const TherapistShowView = () => {
         </Card>
 
         {/* Card 3: Rekening Bank & Komisi Bagi Hasil */}
-        <Card className="border border-border/70 bg-card shadow-none">
-          <CardHeader className="pb-3 border-b border-border/50">
+        <Card className="border border-border bg-card shadow-none">
+          <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-primary" />
               <span>{isEn ? "Payroll & Bank Disbursement" : "Rekening Bank & Bagi Hasil"}</span>
@@ -1176,8 +1222,8 @@ const TherapistShowView = () => {
         </Card>
 
         {/* Card 4: Operasional & Catatan Internal HR */}
-        <Card className="border border-border/70 bg-card shadow-none">
-          <CardHeader className="pb-3 border-b border-border/50">
+        <Card className="border border-border bg-card shadow-none">
+          <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <MapPin className="w-4 h-4 text-primary" />
               <span>{isEn ? "Operations & HR Records" : "Operasional & Catatan Internal HR"}</span>
@@ -1189,7 +1235,7 @@ const TherapistShowView = () => {
               <p className="font-medium text-foreground mt-0.5">{record.coverage_areas || "Jakarta Selatan, Tangerang Selatan"}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
               <div>
                 <span className="text-muted-foreground block text-[11px]">{translate("resources.therapists.fields.joined_date")}</span>
                 <span className="font-medium text-foreground">{record.joined_date || "-"}</span>
@@ -1200,9 +1246,9 @@ const TherapistShowView = () => {
               </div>
             </div>
 
-            <div className="pt-2 border-t border-border/50">
+            <div className="pt-2 border-t border-border">
               <span className="text-muted-foreground block text-[11px]">{translate("resources.therapists.fields.notes")}</span>
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed bg-muted/20 p-2.5 rounded-lg border border-border/50">
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed bg-muted/20 p-2.5 rounded-lg border border-border">
                 {record.notes || (isEn ? "No specific HR remarks recorded." : "Tidak ada catatan khusus dari HR.")}
               </p>
             </div>
@@ -1211,8 +1257,8 @@ const TherapistShowView = () => {
       </div>
 
       {/* Riwayat Slip Bagi Hasil & Payout Terapis */}
-      <Card className="border border-border/70 bg-card shadow-none">
-        <CardHeader className="pb-3 border-b border-border/50 flex flex-row items-center justify-between">
+      <Card className="border border-border bg-card shadow-none">
+        <CardHeader className="pb-3 border-b border-border flex flex-row items-center justify-between">
           <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <Wallet className="w-4 h-4 text-primary" />
             <span>{isEn ? "Payout & Commission History" : "Riwayat Slip Bagi Hasil Terapis"}</span>
@@ -1279,19 +1325,9 @@ const TherapistShowView = () => {
                         {formatIDR(p.net_amount)}
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-xs font-medium text-foreground tracking-tight whitespace-nowrap inline-flex items-center gap-1.5 justify-center">
-                          {p.payment_status === "paid" ? (
-                            <>
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                              <span>{isEn ? "Paid" : "Ditransfer"}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                              <span>{isEn ? "Pending" : "Menunggu"}</span>
-                            </>
-                          )}
-                        </span>
+                        <div className="flex justify-center">
+                          <StatusBadge status={p.payment_status} type="payout" isEn={isEn} />
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <PayoutRowActions

@@ -17,6 +17,7 @@ import {
   User,
   CreditCard,
   ReceiptText,
+  Tag,
 } from "lucide-react";
 import { useLocaleState } from "ra-core";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,8 @@ export interface InvoiceCardProps {
   invoice: InvoiceData;
   showShareActions?: boolean;
   className?: string;
+  cardClassName?: string;
+  borderless?: boolean;
   publicMode?: boolean;
   forcedLocale?: string;
 }
@@ -148,6 +151,8 @@ export const InvoiceCard = ({
   invoice,
   showShareActions = true,
   className,
+  cardClassName,
+  borderless = false,
   publicMode = false,
   forcedLocale,
 }: InvoiceCardProps) => {
@@ -364,7 +369,7 @@ export const InvoiceCard = ({
     <div className={cn("space-y-3 sm:space-y-4 max-w-xl mx-auto w-full", className)}>
       {/* Top Action Bar (Flat shadcn styling matching Dashboard with subtle Serena accents) */}
       {showShareActions && (
-        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-muted/40 border border-border/70 rounded-none shadow-none print:hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-card border border-border rounded-xl shadow-none print:hidden">
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-semibold text-foreground">
               {invoice.invoice_number}
@@ -441,192 +446,151 @@ export const InvoiceCard = ({
           <Card
             ref={docRef}
             id="invoice-document"
-            className="relative bg-card text-card-foreground border border-border/80 shadow-sm rounded-none overflow-hidden print:border-none print:shadow-none w-[540px]"
+            className={cn(
+              "relative bg-card text-card-foreground overflow-hidden print:border-none print:shadow-none w-[540px] ring-0",
+              borderless
+                ? "border-0 shadow-none bg-transparent rounded-none ring-0"
+                : "border border-border rounded-xl shadow-none ring-0",
+              cardClassName
+            )}
           >
             {/* Subtle Watermark Background */}
             <InvoiceWatermark />
 
-          {/* Content Container (z-10 over watermark) */}
-          <CardContent className="relative z-10 p-6 md:p-7 space-y-5">
-            {/* Header Section */}
-            <div className="flex flex-row items-center justify-between gap-4 pb-4 border-b border-border/70">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <BrandLogo variant="full" className="h-7 w-auto text-foreground" />
+            {/* Content Container (z-10 over watermark) */}
+            <CardContent className="relative z-10 p-6 md:p-7 space-y-6">
+              {/* Header Section (Seamless without divider border) */}
+              <div className="flex flex-row items-start justify-between gap-4 pb-1">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <BrandLogo variant="full" className="h-8 w-auto text-foreground" />
+                  </div>
+                  <p className="text-[10px] tracking-[0.18em] font-semibold text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
+                    {settings.tagline === "Comfortable Home Massage & Spa" || !settings.tagline
+                      ? isEn
+                        ? "COMFORTABLE HOME MASSAGE"
+                        : "COMFORTABLE HOME MASSAGE"
+                      : settings.tagline.toUpperCase()}
+                  </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {settings.tagline === "Comfortable Home Massage & Spa" || !settings.tagline
-                    ? isEn
-                      ? "Comfortable Home Massage & Spa"
-                      : "Layanan Pijat & Spa ke Rumah"
-                    : settings.tagline}
-                </p>
-                <p className="text-[10px] text-muted-foreground/80">
-                  WhatsApp: {formattedPhone} • {settings.website_url ? settings.website_url.replace(/^https?:\/\//, "") : "serenaraga.com"}
-                </p>
+
+                <div className="text-right space-y-0.5 shrink-0">
+                  <span className="inline-block px-2.5 py-0.5 bg-[#8b5e3c] text-white text-[10px] font-bold italic tracking-wider rounded-md shadow-xs">
+                    {isEn ? "INVOICE" : "INVOICE"}
+                  </span>
+                  <p className="text-xs font-semibold text-foreground tracking-tight pt-0.5">
+                    {invoice.invoice_number}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {formattedDate}
+                  </p>
+                </div>
               </div>
 
-              <div className="text-right space-y-0.5 shrink-0">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                  {isEn ? "INVOICE NUMBER" : "NOMOR INVOICE"}
-                </span>
-                <span className="text-sm font-bold font-mono text-foreground block">
-                  {invoice.invoice_number}
-                </span>
-                <div className="pt-0.5 text-xs text-muted-foreground font-medium">
-                  <span>
-                    {isEn ? "Issued:" : "Diterbitkan:"}{" "}
-                    <span className="text-foreground font-medium">{formattedDate}</span>
+              {/* Billed To (Destination) */}
+              <div className="border-l-[3px] border-[#8b5e3c] dark:border-[#d49b6a] pl-3 py-0.5 space-y-0.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8b5e3c] dark:text-[#d49b6a]">
+                  {isEn ? "BILLED TO:" : "DITUJUKAN UNTUK:"}
+                </p>
+                <h3 className="text-lg sm:text-xl font-bold text-foreground leading-snug tracking-tight">
+                  {invoice.customer_name || (isEn ? "General Client" : "Pelanggan")}
+                </h3>
+              </div>
+
+              {/* Itemized Table & Line */}
+              <div className="space-y-2 w-full pt-1">
+                {/* Table Header Strip */}
+                <div className="border-b border-border/70 pb-1.5 flex justify-between items-center text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <span>{isEn ? "ITEM & SERVICE" : "ITEM & LAYANAN"}</span>
+                  <span>{isEn ? "PRICE" : "HARGA"}</span>
+                </div>
+
+                {/* Item Row */}
+                <div className="py-2 flex justify-between items-start gap-4">
+                  <div className="space-y-1 pr-2">
+                    <p className="font-bold text-sm text-foreground leading-tight">
+                      {invoice.service_name || (isEn ? "Home Massage Service" : "Layanan Pijat di Rumah")}
+                    </p>
+                    {cleanNotes ? (
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        {cleanNotes}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
+                    {formattedSubtotal}
                   </span>
                 </div>
               </div>
-            </div>
 
-            {/* Client & Appointment Info (2 Columns Side-by-Side) */}
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              {/* Left: Client */}
-              <div className="space-y-2">
-                <div className="px-2.5 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[10px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 w-full">
-                  <User className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
-                  <span>{isEn ? "CLIENT" : "PELANGGAN"}</span>
-                </div>
-                <div className="px-1 space-y-0.5">
-                  <p className="text-sm font-bold text-foreground">
-                    {invoice.customer_name || (isEn ? "General Client" : "Pelanggan")}
-                  </p>
-                  {invoice.customer_phone && (
-                    <p className="text-xs text-muted-foreground">
-                      {invoice.customer_phone}
-                    </p>
-                  )}
-                  {invoice.service_address && (
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {invoice.service_address}
-                    </p>
-                  )}
-                </div>
-              </div>
+              {/* Pricing Breakdown (Subtotal, Discounts, Total) */}
+              <div className="space-y-2.5 pt-1">
+                <div className="border-b border-dashed border-border/60 my-1" />
 
-              {/* Right: Appointment Schedule */}
-              <div className="space-y-2">
-                <div className="px-2.5 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[10px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 w-full">
-                  <Calendar className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
-                  <span>{isEn ? "APPOINTMENT DETAILS" : "DETAIL JADWAL"}</span>
-                </div>
-                <div className="px-1 space-y-0.5">
-                  <p className="text-sm font-bold text-foreground capitalize">
-                    {formattedDate}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {invoice.booking_time ? `${invoice.booking_time} WIB` : "-"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Clean Itemized Table */}
-            <div className="space-y-2 w-full">
-              <div className="px-3 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[11px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <ReceiptText className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
-                  <span>{isEn ? "ITEM DESCRIPTION" : "RINCIAN LAYANAN"}</span>
-                </span>
-                <span>{isEn ? "AMOUNT" : "JUMLAH"}</span>
-              </div>
-              <div className="w-full px-1">
-                <table className="w-full text-left text-xs">
-                  <tbody className="divide-y divide-border/40">
-                    <tr className="hover:bg-muted/20">
-                      <td className="py-2.5 px-2 align-top pr-2">
-                        <p className="font-semibold text-foreground text-sm break-words">
-                          {invoice.service_name || (isEn ? "Home Massage Service" : "Layanan Pijat di Rumah")}
-                        </p>
-                        {cleanNotes ? (
-                          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed break-words">
-                            {cleanNotes}
-                          </p>
-                        ) : null}
-                      </td>
-                      <td className="py-2.5 px-2 text-right font-bold text-sm text-foreground align-top shrink-0 whitespace-nowrap pl-4">
-                        {formattedSubtotal}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Pricing Summary & Payment Details (Side-by-Side) */}
-            <div className="pt-2 border-t border-border/60 flex flex-row justify-between items-start gap-6 text-xs">
-              {/* Payment Method & Compact Status */}
-              <div className="space-y-2 w-auto">
-                <div className="px-2.5 py-1.5 bg-[#f6f3ee] dark:bg-[#26211c] text-[10px] font-bold uppercase tracking-wider text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 w-fit">
-                  <CreditCard className="w-3.5 h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
-                  <span>{isEn ? "PAYMENT METHOD" : "METODE PEMBAYARAN"}</span>
-                </div>
-                <div className="px-1 space-y-0.5">
-                  <p className="text-xs font-semibold text-foreground capitalize">
-                    {invoice.payment_method === "qris"
-                      ? "QRIS"
-                      : invoice.payment_method === "bank_transfer"
-                        ? isEn ? "Bank Transfer" : "Transfer Bank"
-                        : isEn ? "Cash on Service" : "Tunai (Cash)"}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    <span>{isEn ? "Status:" : "Status:"}</span>{" "}
-                    <span className="font-bold tracking-wide uppercase text-[#8b5e3c] dark:text-[#d49b6a]">
-                      {isPaid ? (isEn ? "Paid" : "Lunas") : isEn ? "Unpaid" : "Belum Lunas"}
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Totals Breakdown */}
-              <div className="w-64 space-y-2 text-xs">
-                <div className="flex justify-between text-muted-foreground px-1">
-                  <span className="text-[11px] font-medium">{isEn ? "Subtotal" : "Subtotal"}</span>
-                  <span className="font-semibold text-foreground">{formattedSubtotal}</span>
+                {/* Subtotal */}
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <span className="font-semibold tracking-wider uppercase text-[11px]">
+                    {isEn ? "SUBTOTAL" : "SUBTOTAL"}
+                  </span>
+                  <span className="font-semibold text-foreground text-xs">
+                    {formattedSubtotal}
+                  </span>
                 </div>
 
+                {/* Transport Fee if any */}
                 {Number(invoice.transport_fee || 0) > 0 && (
-                  <div className="flex justify-between text-muted-foreground px-1">
-                    <span className="text-[11px] font-medium">{isEn ? "Transport Fee" : "Biaya Transport"}</span>
-                    <span className="font-semibold text-foreground">+{formattedTransport}</span>
+                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                    <span className="font-medium tracking-wider uppercase text-[10.5px]">
+                      {isEn ? "TRANSPORT FEE" : "BIAYA TRANSPORT"}
+                    </span>
+                    <span className="font-semibold text-foreground text-xs">
+                      +{formattedTransport}
+                    </span>
                   </div>
                 )}
 
+                {/* Discount Applied */}
                 {Number(invoice.discount || 0) > 0 && (
-                  <div className="flex justify-between items-start text-emerald-700 dark:text-emerald-400 px-1">
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-medium">{isEn ? "Discount" : "Diskon"}</span>
-                      {displayDiscountName && (
-                        <span className="text-[9.5px] opacity-90 font-normal">
-                          ({displayDiscountName})
-                        </span>
-                      )}
+                  <div className="space-y-0.5 text-xs">
+                    <div className="flex justify-between items-center text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
+                      <span className="inline-flex items-center gap-1 uppercase tracking-wider text-[10.5px]">
+                        <Tag className="w-3 h-3" /> {isEn ? "DISCOUNT APPLIED" : "DISCOUNT APPLIED"}
+                      </span>
+                      <span className="font-bold">-{formattedDiscount}</span>
                     </div>
-                    <span className="font-bold">-{formattedDiscount}</span>
+                    {displayDiscountName && (
+                      <div className="pl-4 text-[10.5px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        └ {displayDiscountName}
+                      </div>
+                    )}
                   </div>
                 )}
 
-                <div className="flex justify-between items-baseline pt-2 border-t border-border/60 px-1">
-                  <span className="text-xs uppercase tracking-wider font-bold text-foreground">{isEn ? "Total" : "Total Biaya"}</span>
-                  <span className="text-lg font-black text-[#8b5e3c] dark:text-[#d49b6a]">{formattedTotal}</span>
+                {/* Prominent TOTAL BAYAR Banner (Signature Brand Terracotta Brown) */}
+                <div className="w-full bg-[#8b5e3c] text-white px-4 py-3 rounded-xl rounded-bl-none flex items-center justify-between shadow-xs mt-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-0.5 h-4 bg-white/40 rounded-full" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-white">
+                      {isEn ? "TOTAL AMOUNT" : "TOTAL BAYAR"}
+                    </span>
+                  </div>
+                  <span className="text-xl font-bold italic tracking-tight text-white">
+                    {formattedTotal}
+                  </span>
                 </div>
               </div>
-            </div>
 
-            {/* Minimalist Footer */}
-            <div className="pt-4 border-t border-border/60 text-center space-y-1">
-              <p className="text-[11px] font-medium text-foreground">
-                {displayFooterNote}
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                {displaySupportText}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+              {/* Minimalist Footer */}
+              <div className="pt-3 border-t border-border/60 text-center space-y-1">
+                <p className="text-[11px] font-medium text-foreground">
+                  {displayFooterNote}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {displaySupportText}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

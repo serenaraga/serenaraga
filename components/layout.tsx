@@ -11,7 +11,7 @@ import { Notification } from "@/components/notification";
 import { AppSidebar } from "@/components/app-sidebar";
 import { RefreshButton } from "@/components/refresh-button";
 import { LocalesMenuButton } from "@/components/locales-menu-button";
-import { ReviewNotificationBell } from "@/components/review-notification-bell";
+import { NotificationCenter } from "@/components/notification-center";
 import { GlobalSearchBar } from "@/components/global-search-bar";
 import { Error } from "@/components/error";
 import { Loading } from "@/components/loading";
@@ -50,7 +50,7 @@ export const Layout = (props: CoreLayoutProps) => {
             <GlobalSearchBar />
           </div>
           <div className="flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
-            <ReviewNotificationBell />
+            <NotificationCenter />
             <LocalesMenuButton />
             <ThemeModeToggle />
             <RefreshButton />

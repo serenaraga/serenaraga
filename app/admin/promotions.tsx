@@ -260,8 +260,8 @@ const PromotionFormContent = () => {
   return (
     <div className="space-y-6 max-w-4xl w-full">
       {/* 1. Card: Basic Information */}
-      <Card className="border border-border/70 shadow-none bg-card">
-        <CardHeader className="pb-3 border-b border-border/40">
+      <Card className="border border-border shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
               <TicketPercent className="w-4 h-4" />
@@ -315,8 +315,8 @@ const PromotionFormContent = () => {
       </Card>
 
       {/* 2. Card: Eligibility & Customer Targets */}
-      <Card className="border border-border/70 shadow-none bg-card">
-        <CardHeader className="pb-3 border-b border-border/40">
+      <Card className="border border-border shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
               <Sparkles className="w-4 h-4" />
@@ -370,8 +370,8 @@ const PromotionFormContent = () => {
       </Card>
 
       {/* 3. Card: Business Rules & Cost Allocation */}
-      <Card className="border border-border/70 shadow-none bg-card">
-        <CardHeader className="pb-3 border-b border-border/40">
+      <Card className="border border-border shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
               <HeartHandshake className="w-4 h-4" />
@@ -438,8 +438,8 @@ const PromotionFormContent = () => {
       </Card>
 
       {/* 4. Card: Terms & Conditions Description */}
-      <Card className="border border-border/70 shadow-none bg-card">
-        <CardHeader className="pb-3 border-b border-border/40">
+      <Card className="border border-border shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
               <FileText className="w-4 h-4" />
@@ -522,8 +522,8 @@ export const PromotionShow = () => {
   return (
     <Show title={isEn ? "Discount Details" : "Detail Diskon"}>
       <div className="space-y-4 max-w-4xl">
-        <Card className="rounded-xl border border-border/70 shadow-none bg-card">
-          <CardHeader className="pb-3 border-b border-border/40">
+        <Card className="rounded-xl border border-border shadow-none bg-card">
+          <CardHeader className="pb-3 border-b border-border">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <TicketPercent className="w-5 h-5 text-primary" />

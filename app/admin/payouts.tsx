@@ -405,8 +405,9 @@ export const PayoutCreate = () => {
             notify(isEn ? "Payout slip generated successfully" : "Slip bagi hasil berhasil disimpan!", {
               type: "success",
             });
-            if (res?.data?.id) {
-              redirect(`/payouts/${res.data.id}/show`);
+            const createdId = res?.id || res?.data?.id;
+            if (createdId) {
+              redirect("show", "payouts", createdId);
             } else {
               redirect("/therapists");
             }
@@ -819,8 +820,8 @@ export const PayoutCreate = () => {
             </Button>
           </div>
 
-          {/* Payout Slip Card */}
-          <PayoutSlipCard payout={previewPayout} showShareActions={false} />
+          {/* Payout Slip Card (Minimal 1px border matching action buttons) */}
+          <PayoutSlipCard payout={previewPayout} showShareActions={false} borderless={false} />
         </div>
       </div>
     </div>

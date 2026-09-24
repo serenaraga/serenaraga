@@ -23,6 +23,8 @@ import {
 } from "ra-core";
 import { useBrandSettings, cleanWhatsAppNumber } from "@/lib/brand-settings";
 import { formatIDR } from "@/lib/utils";
+import { PaymentMethodBadge } from "@/components/payment-method";
+import { StatusBadge } from "@/components/status-badge";
 import {
   Card,
   CardContent,
@@ -49,6 +51,51 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Dynamic Resolvers for Client and Therapist in ReviewList
+const ReviewClientColumn = ({ isEn }: { isEn: boolean }) => {
+  const record = useRecordContext();
+  const { data: booking } = useGetOne(
+    "bookings",
+    { id: record?.booking_id },
+    { enabled: !record?.customer_name && !!record?.booking_id }
+  );
+  const { data: customer } = useGetOne(
+    "customers",
+    { id: booking?.customer_id },
+    { enabled: !record?.customer_name && !!booking?.customer_id }
+  );
+
+  const displayName =
+    record?.customer_name ||
+    customer?.full_name ||
+    (booking ? `${isEn ? "Client" : "Pelanggan"} #${booking.id}` : "-");
+
+  return <span className="font-medium text-foreground text-xs">{displayName}</span>;
+};
+
+const ReviewTherapistColumn = () => {
+  const record = useRecordContext();
+  const { data: booking } = useGetOne(
+    "bookings",
+    { id: record?.booking_id },
+    { enabled: !record?.therapist_id && !!record?.booking_id }
+  );
+
+  const resolvedTherapistId = record?.therapist_id || booking?.therapist_id;
+
+  const { data: therapist } = useGetOne(
+    "therapists",
+    { id: resolvedTherapistId },
+    { enabled: !!resolvedTherapistId }
+  );
+
+  return (
+    <span className="text-xs text-foreground font-medium">
+      {therapist?.name || "-"}
+    </span>
+  );
+};
+
 // Enhanced Review List Component
 export const ReviewList = () => {
   const [locale] = useLocaleState();
@@ -66,15 +113,14 @@ export const ReviewList = () => {
         <DataTableCol
           source="customer_name"
           label={isEn ? "Client" : "Pelanggan"}
-          cellClassName="font-medium text-foreground text-xs"
-        />
+        >
+          <ReviewClientColumn isEn={isEn} />
+        </DataTableCol>
         <DataTableCol
           source="therapist_id"
           label={isEn ? "Therapist" : "Terapis"}
         >
-          <ReferenceField source="therapist_id" reference="therapists">
-            <TextField source="name" />
-          </ReferenceField>
+          <ReviewTherapistColumn />
         </DataTableCol>
         <DataTableCol
           source="booking_id"
@@ -219,8 +265,8 @@ const ReviewShowContent = () => {
   return (
     <div className="space-y-6 pb-8">
       {/* 1. Review Summary Card with Emoji Rating and Comment */}
-      <Card className="border border-border/70 bg-card shadow-none">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border/60">
+      <Card className="border border-border bg-card shadow-none">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20">
@@ -281,7 +327,7 @@ const ReviewShowContent = () => {
       {/* 2. Detailed 4-Grid Information Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Box 1: Customer Details */}
-        <Card className="border border-border/70 bg-card shadow-none">
+        <Card className="border border-border bg-card shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-amber-600 dark:text-amber-500" />
@@ -313,7 +359,7 @@ const ReviewShowContent = () => {
         </Card>
 
         {/* Box 2: Ordered Service Details */}
-        <Card className="border border-border/70 bg-card shadow-none">
+        <Card className="border border-border bg-card shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-500" />
@@ -345,7 +391,7 @@ const ReviewShowContent = () => {
         </Card>
 
         {/* Box 3: Assigned Therapist */}
-        <Card className="border border-border/70 bg-card shadow-none">
+        <Card className="border border-border bg-card shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <UserCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-500" />
@@ -384,7 +430,7 @@ const ReviewShowContent = () => {
         </Card>
 
         {/* Box 4: Booking & Schedule */}
-        <Card className="border border-border/70 bg-card shadow-none">
+        <Card className="border border-border bg-card shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-500" />
@@ -397,11 +443,7 @@ const ReviewShowContent = () => {
                 <span className="font-bold text-amber-700 dark:text-amber-500">
                   #{record.booking_id || booking?.id || "-"}
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md border border-border bg-muted font-medium uppercase">
-                  {booking?.payment_status === "paid"
-                    ? isEn ? "Paid" : "Lunas"
-                    : isEn ? "Unpaid" : "Belum Lunas"}
-                </span>
+                <StatusBadge status={booking?.payment_status} type="payment" isEn={isEn} />
               </div>
               <p className="text-xs font-semibold text-foreground mt-1">
                 {bookingDate}
@@ -414,13 +456,9 @@ const ReviewShowContent = () => {
               <span className="text-[10px] text-muted-foreground uppercase font-medium block">
                 {isEn ? "Payment Method" : "Metode Pembayaran"}
               </span>
-              <p className="text-xs font-medium text-foreground mt-0.5 capitalize">
-                {booking?.payment_method === "qris"
-                  ? "QRIS"
-                  : booking?.payment_method === "bank_transfer"
-                    ? isEn ? "Bank Transfer" : "Transfer Bank"
-                    : isEn ? "Cash" : "Tunai (Cash)"}
-              </p>
+              <div className="mt-1">
+                <PaymentMethodBadge method={booking?.payment_method} />
+              </div>
             </div>
           </CardContent>
         </Card>

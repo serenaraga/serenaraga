@@ -59,7 +59,7 @@ export const List = <RecordType extends RaRecord = RaRecord>(
   const {
     debounce,
     disableAuthentication,
-    disableSyncWithLocation,
+    disableSyncWithLocation = true,
     exporter,
     filter,
     filterDefaultValues,
@@ -67,7 +67,7 @@ export const List = <RecordType extends RaRecord = RaRecord>(
     perPage,
     queryOptions,
     resource,
-    sort,
+    sort = defaultSort,
     storeKey,
     ...rest
   } = props;
@@ -91,6 +91,8 @@ export const List = <RecordType extends RaRecord = RaRecord>(
     </ListBase>
   );
 };
+
+const defaultSort = { field: "id", order: "DESC" as const };
 
 export interface ListProps<RecordType extends RaRecord = RaRecord>
   extends ListBaseProps<RecordType>, ListViewProps<RecordType> {}
