@@ -1,6 +1,7 @@
 import type { DataProvider } from "ra-core";
 import { supabase } from "@/lib/supabase";
 import { recalculateTherapistRating, syncAllTherapistsRatings } from "@/lib/therapist-rating";
+import { standardizePhoneNumber } from "@/lib/brand-settings";
 
 export { supabase };
 
@@ -128,33 +129,60 @@ export const dataProvider: DataProvider = {
     for (const [key, value] of Object.entries(filter)) {
       if (value !== undefined && value !== null && value !== "") {
         if (key === "q") {
+          const rawQ = String(value).trim();
+          const cleanQDigits = rawQ.replace(/\D/g, "").replace(/^(62|0)/, "");
+
           // General multi-column search
           if (resource === "customers") {
-            query = query.or(
-              `full_name.ilike.%${value}%,phone.ilike.%${value}%,email.ilike.%${value}%,address.ilike.%${value}%,city_area.ilike.%${value}%,notes.ilike.%${value}%`
-            );
+            const orFilters = [
+              `full_name.ilike.%${rawQ}%`,
+              `phone.ilike.%${rawQ}%`,
+              `email.ilike.%${rawQ}%`,
+              `address.ilike.%${rawQ}%`,
+              `city_area.ilike.%${rawQ}%`,
+              `notes.ilike.%${rawQ}%`,
+            ];
+            if (cleanQDigits.length >= 3) {
+              orFilters.push(`phone.ilike.%${cleanQDigits}%`);
+            }
+            query = query.or(orFilters.join(","));
           } else if (resource === "services") {
             query = query.or(
-              `name.ilike.%${value}%,category.ilike.%${value}%,description.ilike.%${value}%`
+              `name.ilike.%${rawQ}%,category.ilike.%${rawQ}%,description.ilike.%${rawQ}%`
             );
           } else if (resource === "therapists") {
-            query = query.or(
-              `name.ilike.%${value}%,phone.ilike.%${value}%,specialties.ilike.%${value}%,coverage_areas.ilike.%${value}%,bank_name.ilike.%${value}%,domicile_address.ilike.%${value}%,nik.ilike.%${value}%,notes.ilike.%${value}%`
-            );
+            const orFilters = [
+              `name.ilike.%${rawQ}%`,
+              `phone.ilike.%${rawQ}%`,
+              `specialties.ilike.%${rawQ}%`,
+              `coverage_areas.ilike.%${rawQ}%`,
+              `bank_name.ilike.%${rawQ}%`,
+              `domicile_address.ilike.%${rawQ}%`,
+              `nik.ilike.%${rawQ}%`,
+              `notes.ilike.%${rawQ}%`,
+            ];
+            if (cleanQDigits.length >= 3) {
+              orFilters.push(`phone.ilike.%${cleanQDigits}%`);
+            }
+            query = query.or(orFilters.join(","));
           } else if (resource === "bookings") {
             const orParts: string[] = [
-              `service_address.ilike.%${value}%`,
-              `status.ilike.%${value}%`,
-              `special_requests.ilike.%${value}%`,
-              `payment_method.ilike.%${value}%`,
-              `payment_status.ilike.%${value}%`,
+              `service_address.ilike.%${rawQ}%`,
+              `status.ilike.%${rawQ}%`,
+              `special_requests.ilike.%${rawQ}%`,
+              `payment_method.ilike.%${rawQ}%`,
+              `payment_status.ilike.%${rawQ}%`,
             ];
 
             // 1. Search matching customers by full_name or phone
+            const custFilters = [`full_name.ilike.%${rawQ}%`, `phone.ilike.%${rawQ}%`];
+            if (cleanQDigits.length >= 3) {
+              custFilters.push(`phone.ilike.%${cleanQDigits}%`);
+            }
             const { data: matchedCustomers } = await supabase
               .from("customers")
               .select("id")
-              .or(`full_name.ilike.%${value}%,phone.ilike.%${value}%`)
+              .or(custFilters.join(","))
               .limit(50);
             if (matchedCustomers && matchedCustomers.length > 0) {
               const ids = matchedCustomers.map((c) => c.id).join(",");
@@ -162,10 +190,14 @@ export const dataProvider: DataProvider = {
             }
 
             // 2. Search matching therapists by name or phone
+            const therFilters = [`name.ilike.%${rawQ}%`, `phone.ilike.%${rawQ}%`];
+            if (cleanQDigits.length >= 3) {
+              therFilters.push(`phone.ilike.%${cleanQDigits}%`);
+            }
             const { data: matchedTherapists } = await supabase
               .from("therapists")
               .select("id")
-              .or(`name.ilike.%${value}%,phone.ilike.%${value}%`)
+              .or(therFilters.join(","))
               .limit(50);
             if (matchedTherapists && matchedTherapists.length > 0) {
               const ids = matchedTherapists.map((t) => t.id).join(",");
@@ -416,8 +448,16 @@ export const dataProvider: DataProvider = {
   create: async (resource, params) => {
     const table = getTableName(resource);
     const { id, ...dataToInsert } = params.data as any;
+    let createdInvoiceItems: any = null;
 
-    if (resource === "users") {
+    if (resource === "customers") {
+      if (dataToInsert.phone) {
+        dataToInsert.phone = standardizePhoneNumber(dataToInsert.phone);
+      }
+    } else if (resource === "users") {
+      if (dataToInsert.phone) {
+        dataToInsert.phone = standardizePhoneNumber(dataToInsert.phone);
+      }
       if (dataToInsert.password) {
         dataToInsert.password_hash = dataToInsert.password;
         delete dataToInsert.password;
@@ -440,46 +480,73 @@ export const dataProvider: DataProvider = {
         if (address) {
           const { data: existingCustomer } = await supabase
             .from("customers")
-            .select("id, address")
+            .select("id, address, phone")
             .eq("id", resolvedCustomerId)
             .maybeSingle();
 
-          if (existingCustomer && !existingCustomer.address) {
-            await supabase
-              .from("customers")
-              .update({ address })
-              .eq("id", resolvedCustomerId);
+          if (existingCustomer) {
+            const updates: any = {};
+            if (!existingCustomer.address) updates.address = address;
+            if (existingCustomer.phone && !existingCustomer.phone.startsWith("+62")) {
+              updates.phone = standardizePhoneNumber(existingCustomer.phone);
+            }
+            if (Object.keys(updates).length > 0) {
+              await supabase
+                .from("customers")
+                .update(updates)
+                .eq("id", resolvedCustomerId);
+            }
           }
         }
       } else if (dataToInsert.customer_phone) {
         // If customer_phone and customer_name are provided, lookup or create customer
-        const phone = String(dataToInsert.customer_phone).trim();
+        const rawPhone = String(dataToInsert.customer_phone).trim();
+        const stdPhone = standardizePhoneNumber(rawPhone);
         const fullName = String(dataToInsert.customer_name || "Pelanggan").trim();
         const address = String(dataToInsert.service_address || "").trim();
+        const cleanDigits = rawPhone.replace(/\D/g, "");
+        const last8Digits = cleanDigits.length >= 8 ? cleanDigits.slice(-8) : cleanDigits;
 
         // Check if customer already exists with this phone
-        const { data: existingCustomer } = await supabase
-          .from("customers")
-          .select("id, full_name, address")
-          .eq("phone", phone)
-          .maybeSingle();
+        let existingCustomer: any = null;
+        if (stdPhone) {
+          const { data: byStd } = await supabase
+            .from("customers")
+            .select("id, full_name, address, phone")
+            .eq("phone", stdPhone)
+            .maybeSingle();
+          existingCustomer = byStd;
+        }
+
+        if (!existingCustomer && last8Digits.length >= 6) {
+          const { data: byLike } = await supabase
+            .from("customers")
+            .select("id, full_name, address, phone")
+            .ilike("phone", `%${last8Digits}%`)
+            .maybeSingle();
+          existingCustomer = byLike;
+        }
 
         if (existingCustomer) {
           resolvedCustomerId = existingCustomer.id;
-          // If address was missing on customer, update it
-          if (!existingCustomer.address && address) {
+          const updates: any = {};
+          if (!existingCustomer.address && address) updates.address = address;
+          if (existingCustomer.phone && !existingCustomer.phone.startsWith("+62") && stdPhone) {
+            updates.phone = stdPhone;
+          }
+          if (Object.keys(updates).length > 0) {
             await supabase
               .from("customers")
-              .update({ address })
+              .update(updates)
               .eq("id", existingCustomer.id);
           }
         } else {
-          // Create new customer record
+          // Create new customer record with standardized +62 phone
           const { data: newCustomer, error: custError } = await supabase
             .from("customers")
             .insert({
               full_name: fullName,
-              phone: phone,
+              phone: stdPhone || rawPhone,
               address: address || "Alamat belum diatur",
             })
             .select()
@@ -565,11 +632,15 @@ export const dataProvider: DataProvider = {
       delete dataToInsert.services;
       delete dataToInsert.therapists;
     } else if (resource === "invoices") {
+      if (dataToInsert.customer_phone) {
+        dataToInsert.customer_phone = standardizePhoneNumber(dataToInsert.customer_phone);
+      }
       const bId = dataToInsert.booking_id ? Number(dataToInsert.booking_id) : null;
       const requestedBookingStatus = dataToInsert.booking_status;
       const payStatus = dataToInsert.payment_status || "paid";
       const payMethod = dataToInsert.payment_method || "qris";
       const addCharge = Number(dataToInsert.additional_charge || 0);
+      createdInvoiceItems = dataToInsert.items || dataToInsert.raw_items;
 
       delete dataToInsert.relational_items;
       delete dataToInsert.applied_promo_name;
@@ -627,6 +698,12 @@ export const dataProvider: DataProvider = {
         }
       }
     } else if (resource === "therapists") {
+      if (dataToInsert.phone) {
+        dataToInsert.phone = standardizePhoneNumber(dataToInsert.phone);
+      }
+      if (dataToInsert.emergency_contact_phone) {
+        dataToInsert.emergency_contact_phone = standardizePhoneNumber(dataToInsert.emergency_contact_phone);
+      }
       // Default new therapists to null rating until real customer reviews arrive
       if (!dataToInsert.rating) {
         dataToInsert.rating = null;
@@ -729,7 +806,7 @@ export const dataProvider: DataProvider = {
 
     // Auto-sync relational items for invoices
     if (resource === "invoices" && data?.id) {
-      syncInvoiceItems(data.id, invoiceRawItems || dataToInsert.notes).catch((e) =>
+      syncInvoiceItems(data.id, createdInvoiceItems || invoiceRawItems || dataToInsert.notes).catch((e) =>
         console.warn("Relational invoice_items sync error:", e)
       );
     }
@@ -750,12 +827,29 @@ export const dataProvider: DataProvider = {
     const table = getTableName(resource);
     const { id, created_at, ...dataToUpdate } = params.data as any;
 
-    if (resource === "users") {
+    if (resource === "customers") {
+      if (dataToUpdate.phone) {
+        dataToUpdate.phone = standardizePhoneNumber(dataToUpdate.phone);
+      }
+    } else if (resource === "therapists") {
+      if (dataToUpdate.phone) {
+        dataToUpdate.phone = standardizePhoneNumber(dataToUpdate.phone);
+      }
+      if (dataToUpdate.emergency_contact_phone) {
+        dataToUpdate.emergency_contact_phone = standardizePhoneNumber(dataToUpdate.emergency_contact_phone);
+      }
+    } else if (resource === "users") {
+      if (dataToUpdate.phone) {
+        dataToUpdate.phone = standardizePhoneNumber(dataToUpdate.phone);
+      }
       if (dataToUpdate.password) {
         dataToUpdate.password_hash = dataToUpdate.password;
         delete dataToUpdate.password;
       }
     } else if (resource === "bookings") {
+      if (dataToUpdate.customer_phone) {
+        dataToUpdate.customer_phone = standardizePhoneNumber(dataToUpdate.customer_phone);
+      }
       delete dataToUpdate.relational_items;
       delete dataToUpdate.items;
       delete dataToUpdate.raw_items;
@@ -771,6 +865,9 @@ export const dataProvider: DataProvider = {
 
     const invoiceRawItems = dataToUpdate.items || dataToUpdate.raw_items;
     if (resource === "invoices") {
+      if (dataToUpdate.customer_phone) {
+        dataToUpdate.customer_phone = standardizePhoneNumber(dataToUpdate.customer_phone);
+      }
       const bId = dataToUpdate.booking_id ? Number(dataToUpdate.booking_id) : null;
       const requestedBookingStatus = dataToUpdate.booking_status;
       const requestedPaymentStatus = dataToUpdate.payment_status;

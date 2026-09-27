@@ -285,38 +285,15 @@ export const InvoiceCard = ({
 
   const isPaid = invoice.payment_status === "paid";
 
-  // Localized Footer Notes & Support Texts
+  // Footer Notes & Support Texts directly from Settings
   const defaultIdFooterNote = "Terima kasih telah mempercayakan relaksasi Anda pada Serena Raga.";
   const defaultEnFooterNote = "Thank you for choosing Serena Raga for your wellness and relaxation.";
-
-  const isDefaultFooterNote =
-    !settings.invoice_footer_note ||
-    settings.invoice_footer_note === defaultIdFooterNote ||
-    settings.invoice_footer_note === defaultEnFooterNote ||
-    settings.invoice_footer_note.includes("Terima kasih telah mempercayakan");
-
-  const displayFooterNote = isDefaultFooterNote
-    ? isEn
-      ? defaultEnFooterNote
-      : defaultIdFooterNote
-    : settings.invoice_footer_note;
+  const displayFooterNote = settings.invoice_footer_note || (isEn ? defaultEnFooterNote : defaultIdFooterNote);
 
   const defaultIdSupportText = "Dokumen ini merupakan bukti transaksi resmi. Layanan pelanggan WhatsApp {whatsapp}.";
   const defaultEnSupportText = "This document is an official transaction record. For customer support, WhatsApp {whatsapp}.";
-
-  const isDefaultSupportText =
-    !settings.invoice_support_text ||
-    settings.invoice_support_text === defaultIdSupportText ||
-    settings.invoice_support_text === defaultEnSupportText ||
-    settings.invoice_support_text.includes("Dokumen ini merupakan bukti transaksi resmi");
-
-    const displaySupportText = (
-    isDefaultSupportText
-      ? isEn
-        ? defaultEnSupportText
-        : defaultIdSupportText
-      : settings.invoice_support_text
-  ).replace(/\{whatsapp\}/g, formattedPhone);
+  const rawSupportText = settings.invoice_support_text || (isEn ? defaultEnSupportText : defaultIdSupportText);
+  const displaySupportText = rawSupportText.replace(/\{whatsapp\}/g, formattedPhone);
 
   // Extract promo name and parse JSON metadata from notes if present
   let meta: any = null;

@@ -5,6 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export { standardizePhoneNumber, cleanWhatsAppNumber } from "./brand-settings";
+
 /**
  * Standard Indonesian Rupiah Currency Formatter (e.g. "Rp 150.000")
  * Consistently formats with "id-ID" locale to guarantee "Rp " prefix.

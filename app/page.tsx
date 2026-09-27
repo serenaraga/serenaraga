@@ -9,6 +9,8 @@ import {
   useBrandSettings,
   cleanWhatsAppNumber,
   formatDisplayPhone,
+  getWhatsAppUrl,
+  buildWhatsAppInboundMessage,
   getInstagramUrl,
   getTikTokUrl,
   getFacebookUrl,
@@ -390,6 +392,17 @@ export default function LandingPage() {
       year: "numeric",
     });
   }, [selectedDate, isEn]);
+
+  // Handler for direct service inquiries from Our Services cards
+  const handleServiceClick = () => {
+    const message = buildWhatsAppInboundMessage({
+      template: settings.wa_support_default_message,
+      brandName: settings.brand_name,
+      isEn,
+    });
+    const url = getWhatsAppUrl(settings.whatsapp_number, message);
+    window.open(url, "_blank");
+  };
 
   // Direct WhatsApp booking action
   const handleQuickBook = (customServiceName?: string) => {
@@ -1100,7 +1113,7 @@ export default function LandingPage() {
             ].map((service) => (
               <div
                 key={service.id}
-                onClick={() => handleQuickBook(service.title)}
+                onClick={() => handleServiceClick()}
                 className="group relative aspect-[4/3] sm:aspect-[3/4] overflow-hidden cursor-pointer shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)] transition-all duration-500"
               >
                 {/* Background Image */}
@@ -1132,7 +1145,15 @@ export default function LandingPage() {
           <div className="text-center mt-7 sm:mt-12">
             <button
               type="button"
-              onClick={() => handleQuickBook()}
+              onClick={() => {
+                const message = buildWhatsAppInboundMessage({
+                  template: settings.wa_support_default_message,
+                  brandName: settings.brand_name,
+                  isEn,
+                });
+                const url = getWhatsAppUrl(settings.whatsapp_number, message);
+                window.open(url, "_blank");
+              }}
               className="inline-flex items-center gap-1.5 text-[#9a6a43] hover:text-[#785033] font-serif text-[14.5px] sm:text-base font-normal tracking-wide transition-colors cursor-pointer group"
             >
               <span>{isEn ? "Explore Other Treatments" : "Jelajahi Layanan Lainnya"}</span>
@@ -1551,7 +1572,7 @@ export default function LandingPage() {
                     href={`https://wa.me/${cleanWhatsAppNumber(settings.whatsapp_number)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs sm:text-[14px] text-white hover:text-[#eed8a1] font-mono transition-colors block tracking-wide font-medium"
+                    className="text-xs sm:text-[14px] text-white hover:text-[#eed8a1] font-sans font-medium transition-colors block tracking-wide"
                     suppressHydrationWarning
                   >
                     {formatDisplayPhone(settings.whatsapp_number)}
@@ -1612,8 +1633,16 @@ export default function LandingPage() {
               <span>{settings.service_areas || "Yogyakarta, Sleman, Bantul, & Sekitarnya"}</span>
             </div>
 
+            {/* Operational Hours */}
+            {settings.operational_hours && (
+              <div className="flex items-center justify-center gap-2 text-stone-600 font-light text-xs sm:text-[13px]" suppressHydrationWarning>
+                <Clock className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                <span>{settings.operational_hours}</span>
+              </div>
+            )}
+
             {/* Phone / WhatsApp */}
-            <div className="flex items-center justify-center gap-2 text-stone-600 font-mono text-xs sm:text-[13px]" suppressHydrationWarning>
+            <div className="flex items-center justify-center gap-2 text-stone-600 font-light text-xs sm:text-[13px]" suppressHydrationWarning>
               <Phone className="w-3.5 h-3.5 text-stone-500 shrink-0" />
               <a
                 href={`https://wa.me/${cleanWhatsAppNumber(settings.whatsapp_number)}`}
@@ -1627,77 +1656,98 @@ export default function LandingPage() {
             </div>
 
             {/* Email */}
-            <div className="flex items-center justify-center gap-2 text-stone-600 font-mono text-xs sm:text-[13px]" suppressHydrationWarning>
-              <Mail className="w-3.5 h-3.5 text-stone-500 shrink-0" />
-              <a
-                href={`mailto:${settings.email || "info@serenaraga.com"}`}
-                className="hover:text-stone-900 transition-colors"
-                suppressHydrationWarning
-              >
-                {settings.email || "info@serenaraga.com"}
-              </a>
-            </div>
+            {settings.email && (
+              <div className="flex items-center justify-center gap-2 text-stone-600 font-light text-xs sm:text-[13px]" suppressHydrationWarning>
+                <Mail className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                <a
+                  href={`mailto:${settings.email}`}
+                  className="hover:text-stone-900 transition-colors"
+                  suppressHydrationWarning
+                >
+                  {settings.email}
+                </a>
+              </div>
+            )}
 
-            {/* Circular Social Media Icons Grid (Matching User Reference) */}
-            <div className="flex items-center justify-center gap-3 pt-4 pb-1">
-              {/* Instagram */}
-              <a
-                href={getInstagramUrl(settings.instagram_handle)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
-                suppressHydrationWarning
-              >
-                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-                </svg>
-              </a>
+            {/* Circular Social Media Icons Grid (Driven 100% by Database Settings) */}
+            {(() => {
+              const igUrl = getInstagramUrl(settings.instagram_handle);
+              const ttUrl = getTikTokUrl(settings.tiktok_handle);
+              const fbUrl = getFacebookUrl(settings.facebook_url);
+              const thUrl = getThreadsUrl(settings.threads_handle);
 
-              {/* TikTok */}
-              <a
-                href={getTikTokUrl(settings.tiktok_handle)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="TikTok"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
-                suppressHydrationWarning
-              >
-                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.85.12V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.49 6.27 6.27 0 0 0 1.86-4.49V8.62a8.3 8.3 0 0 0 4.91 1.6V6.77a4.87 4.87 0 0 1-1-.08z" />
-                </svg>
-              </a>
+              if (!igUrl && !ttUrl && !fbUrl && !thUrl) return null;
 
-              {/* Facebook */}
-              <a
-                href={getFacebookUrl(settings.facebook_url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
-                suppressHydrationWarning
-              >
-                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                </svg>
-              </a>
+              return (
+                <div className="flex items-center justify-center gap-3 pt-4 pb-1">
+                  {/* Instagram */}
+                  {igUrl && (
+                    <a
+                      href={igUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
+                      suppressHydrationWarning
+                    >
+                      <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-none stroke-current stroke-2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                      </svg>
+                    </a>
+                  )}
 
-              {/* Threads */}
-              <a
-                href={getThreadsUrl(settings.threads_handle)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Threads"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
-                suppressHydrationWarning
-              >
-                <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="0 0 512 512">
-                  <path d="M363.2 239.6c-1.9-.9-3.9-1.8-5.9-2.7c-3.5-63.7-38.3-100.2-96.7-100.6h-.8c-35 0-64 14.9-81.9 42.1l32.2 22.1c13.4-20.3 34.4-24.6 49.8-24.6h.5c19.2.1 33.8 5.7 43.2 16.6c6.8 7.9 11.4 18.9 13.7 32.8c-17.1-2.9-35.5-3.8-55.3-2.7c-55.6 3.2-91.3 35.6-88.9 80.7c1.2 22.8 12.6 42.5 32 55.3c16.4 10.9 37.6 16.2 59.6 15c29.1-1.6 51.9-12.7 67.8-33c12.1-15.4 19.7-35.4 23.1-60.5c13.9 8.4 24.1 19.4 29.8 32.6c9.6 22.5 10.2 59.4-19.9 89.5c-26.4 26.4-58.2 37.8-106.1 38.2c-53.2-.4-93.5-17.5-119.6-50.7c-24.5-31.2-37.2-76.1-37.6-133.7c.5-57.6 13.1-102.6 37.6-133.7C166 89 206.2 72 259.4 71.6c53.6.4 94.6 17.5 121.7 51c13.3 16.4 23.4 37 30 61l37.7-10.1c-8-29.6-20.7-55.1-37.8-76.2c-34.8-42.9-85.8-64.8-151.4-65.3h-.3c-65.5.5-115.9 22.5-149.7 65.5c-30.1 38.3-45.6 91.6-46.2 158.3v.4c.5 66.8 16.1 120 46.2 158.3c33.8 43 84.2 65.1 149.7 65.5h.3c58.2-.4 99.3-15.7 133.1-49.4C436.9 386.4 435.6 331 421 297c-10.5-24.4-30.4-44.2-57.7-57.3Zm-100.6 94.6c-24.4 1.4-49.7-9.6-50.9-33c-.9-17.4 12.4-36.7 52.4-39c4.6-.3 9.1-.4 13.5-.4c14.5 0 28.2 1.4 40.5 4.1c-4.6 57.6-31.7 67-55.5 68.3" />
-                </svg>
-              </a>
-            </div>
+                  {/* TikTok */}
+                  {ttUrl && (
+                    <a
+                      href={ttUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="TikTok"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
+                      suppressHydrationWarning
+                    >
+                      <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.85.12V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.49 6.27 6.27 0 0 0 1.86-4.49V8.62a8.3 8.3 0 0 0 4.91 1.6V6.77a4.87 4.87 0 0 1-1-.08z" />
+                      </svg>
+                    </a>
+                  )}
+
+                  {/* Facebook */}
+                  {fbUrl && (
+                    <a
+                      href={fbUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Facebook"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
+                      suppressHydrationWarning
+                    >
+                      <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                      </svg>
+                    </a>
+                  )}
+
+                  {/* Threads */}
+                  {thUrl && (
+                    <a
+                      href={thUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Threads"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#6f665e] hover:bg-[#5a524b] text-[#f6f3ee] flex items-center justify-center transition-all duration-300 shadow-sm hover:scale-105 cursor-pointer"
+                      suppressHydrationWarning
+                    >
+                      <svg className="w-4 h-4 sm:w-4.5 sm:h-4.5 fill-current" viewBox="0 0 512 512">
+                        <path d="M363.2 239.6c-1.9-.9-3.9-1.8-5.9-2.7c-3.5-63.7-38.3-100.2-96.7-100.6h-.8c-35 0-64 14.9-81.9 42.1l32.2 22.1c13.4-20.3 34.4-24.6 49.8-24.6h.5c19.2.1 33.8 5.7 43.2 16.6c6.8 7.9 11.4 18.9 13.7 32.8c-17.1-2.9-35.5-3.8-55.3-2.7c-55.6 3.2-91.3 35.6-88.9 80.7c1.2 22.8 12.6 42.5 32 55.3c16.4 10.9 37.6 16.2 59.6 15c29.1-1.6 51.9-12.7 67.8-33c12.1-15.4 19.7-35.4 23.1-60.5c13.9 8.4 24.1 19.4 29.8 32.6c9.6 22.5 10.2 59.4-19.9 89.5c-26.4 26.4-58.2 37.8-106.1 38.2c-53.2-.4-93.5-17.5-119.6-50.7c-24.5-31.2-37.2-76.1-37.6-133.7c.5-57.6 13.1-102.6 37.6-133.7C166 89 206.2 72 259.4 71.6c53.6.4 94.6 17.5 121.7 51c13.3 16.4 23.4 37 30 61l37.7-10.1c-8-29.6-20.7-55.1-37.8-76.2c-34.8-42.9-85.8-64.8-151.4-65.3h-.3c-65.5.5-115.9 22.5-149.7 65.5c-30.1 38.3-45.6 91.6-46.2 158.3v.4c.5 66.8 16.1 120 46.2 158.3c33.8 43 84.2 65.1 149.7 65.5h.3c58.2-.4 99.3-15.7 133.1-49.4C436.9 386.4 435.6 331 421 297c-10.5-24.4-30.4-44.2-57.7-57.3Zm-100.6 94.6c-24.4 1.4-49.7-9.6-50.9-33c-.9-17.4 12.4-36.7 52.4-39c4.6-.3 9.1-.4 13.5-.4c14.5 0 28.2 1.4 40.5 4.1c-4.6 57.6-31.7 67-55.5 68.3" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Bottom Copyright */}

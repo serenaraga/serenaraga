@@ -1,6 +1,7 @@
 "use client";
 
-import { Resource } from "ra-core";
+import { Resource, CustomRoutes } from "ra-core";
+import { Route } from "react-router-dom";
 import { Admin } from "@/components/admin";
 import { dataProvider } from "./dataProvider";
 import { authProvider } from "@/lib/authProvider";
@@ -10,6 +11,7 @@ import { BookingList, BookingEdit, BookingCreate, BookingShow } from "./bookings
 import { ServiceList, ServiceEdit, ServiceCreate, ServiceShow } from "./services";
 import { ConsumableList, ConsumableEdit, ConsumableCreate, ConsumableShow } from "./consumables";
 import { TherapistList, TherapistEdit, TherapistCreate, TherapistShow } from "./therapists";
+import { TherapistMilestonesPage } from "./therapists/therapist-milestones";
 import { CustomerList, CustomerEdit, CustomerCreate, CustomerShow } from "./customers";
 import { ReviewList, ReviewEdit, ReviewCreate, ReviewShow } from "./reviews";
 import {
@@ -196,6 +198,9 @@ const App = () => (
             icon={SlidersHorizontal}
           />
         ) : null,
+        <CustomRoutes key="custom-therapist-routes">
+          <Route path="/therapists/milestones" element={<TherapistMilestonesPage />} />
+        </CustomRoutes>,
       ];
     }}
   </Admin>

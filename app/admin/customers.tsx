@@ -40,7 +40,7 @@ import {
   CheckCircle2,
   History,
 } from "lucide-react";
-import { formatIDR } from "@/lib/utils";
+import { formatIDR, standardizePhoneNumber } from "@/lib/utils";
 
 /**
  * Hook to get customer CRM metrics from paid/completed invoices & legacy offline count
@@ -192,6 +192,13 @@ const CustomerSpendCell = () => {
   );
 };
 
+const CustomerPhoneCell = () => {
+  const record = useRecordContext();
+  if (!record?.phone) return <span className="text-muted-foreground">-</span>;
+  const std = standardizePhoneNumber(record.phone) || record.phone;
+  return <span className="text-xs font-mono">{std}</span>;
+};
+
 export const CustomerList = () => {
   const [locale] = useLocaleState();
   const isEn = locale === "en";
@@ -212,7 +219,9 @@ export const CustomerList = () => {
         <DataTableCol
           source="phone"
           label="WhatsApp"
-        />
+        >
+          <CustomerPhoneCell />
+        </DataTableCol>
         <DataTableCol label={isEn ? "Customer Tier" : "Level Pelanggan"}>
           <CustomerTierBadge />
         </DataTableCol>

@@ -28,13 +28,15 @@ import { SelectInput } from "@/components/select-input";
 import { DatePickerInput } from "@/components/date-picker-input";
 import { PhoneInput } from "@/components/phone-input";
 import { RowActions } from "@/components/row-actions";
+import { CreateButton } from "@/components/create-button";
+import { ExportButton } from "@/components/export-button";
 import { HDFileUpload } from "@/components/hd-file-upload";
 import { SaveButton } from "@/components/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatIDR } from "@/lib/utils";
+import { formatIDR, standardizePhoneNumber } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import {
   Card,
@@ -183,15 +185,51 @@ const TherapistRatingCol = () => {
 };
 
 /**
+ * Action Toolbar for Therapist List with Milestones button
+ */
+const TherapistListActions: React.FC<{ onOpenMilestones: () => void; isEn: boolean }> = ({
+  onOpenMilestones,
+  isEn,
+}) => {
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={onOpenMilestones}
+        className="h-8 gap-1.5 text-xs font-semibold shadow-none border-0 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer transition-all"
+      >
+        <Award className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+        <span>{isEn ? "Career & Milestones" : "Milestone & Karir"}</span>
+      </Button>
+      <CreateButton />
+      <ExportButton />
+    </div>
+  );
+};
+
+/**
  * List View for Therapists
  */
 export const TherapistList = () => {
+  const [locale] = useLocaleState();
+  const isEn = locale === "en";
+  const navigate = useNavigate();
+
   React.useEffect(() => {
     syncAllTherapistsRatings();
   }, []);
 
   return (
-    <List>
+    <List
+      actions={
+        <TherapistListActions
+          onOpenMilestones={() => navigate("/therapists/milestones")}
+          isEn={isEn}
+        />
+      }
+    >
       <DataTable>
         <DataTableCol
           source="id"
@@ -204,7 +242,15 @@ export const TherapistList = () => {
           headerClassName="min-w-[180px]"
           render={() => <TherapistNameCol />}
         />
-        <DataTableCol source="phone" cellClassName="text-xs" />
+        <DataTableCol
+          source="phone"
+          cellClassName="text-xs"
+          render={(record) => (
+            <span className="text-xs">
+              {standardizePhoneNumber(record.phone) || record.phone || "-"}
+            </span>
+          )}
+        />
         <DataTableCol
           source="specialties"
           cellClassName="text-xs text-muted-foreground truncate max-w-[180px]"
@@ -1258,20 +1304,33 @@ const TherapistShowView = () => {
 
       {/* Riwayat Slip Bagi Hasil & Payout Terapis */}
       <Card className="border border-border bg-card shadow-none">
-        <CardHeader className="pb-3 border-b border-border flex flex-row items-center justify-between">
+        <CardHeader className="pb-3 border-b border-border flex flex-row items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
             <Wallet className="w-4 h-4 text-primary" />
             <span>{isEn ? "Payout & Commission History" : "Riwayat Slip Bagi Hasil Terapis"}</span>
           </CardTitle>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => navigate(`/payouts/create?therapist_id=${record.id}`)}
-            className="h-8 gap-1.5 text-xs shadow-none cursor-pointer"
-          >
-            <ReceiptText className="w-3.5 h-3.5 text-primary" />
-            <span>{isEn ? "+ Make New Payout" : "+ Buat Slip Bagi Hasil"}</span>
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => navigate(`/therapists/milestones?therapist_id=${record.id}`)}
+              className="h-8 gap-1.5 text-xs shadow-none border-0 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer font-semibold"
+            >
+              <Award className="w-3.5 h-3.5 text-amber-500" />
+              <span>{isEn ? "Career Milestones" : "Milestone & Karir"}</span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => navigate(`/payouts/create?therapist_id=${record.id}`)}
+              className="h-8 gap-1.5 text-xs shadow-none cursor-pointer"
+            >
+              <ReceiptText className="w-3.5 h-3.5 text-primary" />
+              <span>{isEn ? "+ Make New Payout" : "+ Buat Slip Bagi Hasil"}</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-3 p-0">
           {loadingPayouts ? (
@@ -1309,7 +1368,7 @@ const TherapistShowView = () => {
                       onClick={() => navigate(`/payouts/${p.id}/show`)}
                       className="hover:bg-muted/50 cursor-pointer transition-colors"
                     >
-                      <TableCell className="font-mono text-xs font-semibold text-foreground">
+                      <TableCell className="text-xs font-semibold text-foreground">
                         {p.payout_number}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">

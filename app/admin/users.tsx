@@ -11,11 +11,13 @@ import { SimpleForm } from "@/components/simple-form";
 import { TextInput } from "@/components/text-input";
 import { SelectInput } from "@/components/select-input";
 import { BooleanInput } from "@/components/boolean-input";
+import { PhoneInput } from "@/components/phone-input";
 import { RowActions } from "@/components/row-actions";
 import { useRecordContext, useLocaleState, required } from "ra-core";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ShieldCheck, UserCheck, ShieldAlert, User, Key, Mail, Phone, Check } from "lucide-react";
+import { standardizePhoneNumber } from "@/lib/utils";
 
 /**
  * Custom field for rendering User with avatar and role
@@ -114,8 +116,8 @@ export const UserList = () => {
           source="phone"
           label={isEn ? "Phone" : "No. Telepon"}
           render={(record) => (
-            <span className="text-xs text-muted-foreground">
-              {record.phone || "-"}
+            <span className="text-xs font-mono text-muted-foreground">
+              {standardizePhoneNumber(record.phone) || record.phone || "-"}
             </span>
           )}
         />
@@ -196,10 +198,9 @@ export const UserCreate = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          <TextInput
+          <PhoneInput
             source="phone"
             label={isEn ? "Phone Number" : "No. Telepon / WhatsApp"}
-            placeholder="0812..."
           />
           <BooleanInput
             source="is_active"
@@ -253,7 +254,7 @@ export const UserEdit = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          <TextInput
+          <PhoneInput
             source="phone"
             label={isEn ? "Phone Number" : "No. Telepon / WhatsApp"}
           />

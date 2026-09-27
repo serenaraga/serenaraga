@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { standardizePhoneNumber } from "@/lib/brand-settings";
 
 /**
  * Smart Customer Auto-Suggest & Auto-Fill Component
@@ -84,12 +85,12 @@ export const CustomerAutoSuggestField = () => {
 
   // Filter customers by phone query
   const phoneMatches = React.useMemo(() => {
-    const cleanQuery = customerPhone.replace(/\D/g, "");
+    const cleanQuery = customerPhone.replace(/\D/g, "").replace(/^(62|0)/, "");
     if (!cleanQuery || cleanQuery.length < 2) return [];
     return customers
       .filter((c: any) => {
         const cPhone = c.phone?.replace(/\D/g, "") || "";
-        return cPhone.includes(cleanQuery) || c.full_name?.toLowerCase().includes(cleanQuery);
+        return cPhone.includes(cleanQuery) || c.full_name?.toLowerCase().includes(customerPhone.trim().toLowerCase());
       })
       .slice(0, 6);
   }, [customers, customerPhone]);
@@ -114,7 +115,7 @@ export const CustomerAutoSuggestField = () => {
   const handleSelectCustomer = (cust: any) => {
     setValue("customer_id", cust.id, { shouldValidate: true, shouldDirty: true });
     setValue("customer_name", cust.full_name, { shouldValidate: true, shouldDirty: true });
-    setValue("customer_phone", cust.phone, { shouldValidate: true, shouldDirty: true });
+    setValue("customer_phone", standardizePhoneNumber(cust.phone) || cust.phone, { shouldValidate: true, shouldDirty: true });
 
     if (cust.address) {
       setValue("service_address", cust.address, { shouldValidate: true, shouldDirty: true });
@@ -285,8 +286,16 @@ export const CustomerAutoSuggestField = () => {
                 if (customerId) setValue("customer_id", null);
               }}
               onFocus={() => setIsPhoneFocused(true)}
-              onBlur={() => setTimeout(() => setIsPhoneFocused(false), 200)}
-              placeholder="0812-3456-7890"
+              onBlur={() => {
+                if (customerPhone) {
+                  const std = standardizePhoneNumber(customerPhone);
+                  if (std && std !== customerPhone) {
+                    setValue("customer_phone", std, { shouldValidate: true, shouldDirty: true });
+                  }
+                }
+                setTimeout(() => setIsPhoneFocused(false), 200);
+              }}
+              placeholder="0812-3456-7890 / +628..."
               className="h-9 text-xs bg-background"
             />
           </div>
@@ -314,7 +323,7 @@ export const CustomerAutoSuggestField = () => {
                     >
                       <div className="space-y-0.5 min-w-0">
                         <div className="font-semibold text-xs text-foreground">
-                          {cust.phone}
+                          {standardizePhoneNumber(cust.phone) || cust.phone}
                         </div>
                         <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                           <span className="font-medium text-foreground">{cust.full_name}</span>

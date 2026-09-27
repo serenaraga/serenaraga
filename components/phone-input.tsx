@@ -81,21 +81,37 @@ export const PhoneInput = (props: PhoneInputProps) => {
       if (matched) {
         setCountryCode(matched.dialCode);
         setNationalNumber(val.slice(matched.dialCode.length));
+      } else if (val.startsWith("62")) {
+        setCountryCode("+62");
+        setNationalNumber(val.slice(2));
       } else if (val.startsWith("0")) {
         setCountryCode("+62");
         setNationalNumber(val.replace(/^0+/, ""));
       } else {
-        setNationalNumber(val);
+        setCountryCode("+62");
+        setNationalNumber(val.replace(/[^\d]/g, ""));
       }
+    } else if (!field.value) {
+      setNationalNumber("");
     }
-  }, []);
+  }, [field.value]);
 
   const updateValue = (dialCode: string, num: string) => {
-    const cleaned = num.replace(/[^\d]/g, "").replace(/^0+/, "");
-    if (!cleaned) {
+    let digits = num.replace(/[^\d]/g, "");
+    if (dialCode === "+62") {
+      if (digits.startsWith("62")) {
+        digits = digits.slice(2);
+      } else if (digits.startsWith("0")) {
+        digits = digits.replace(/^0+/, "");
+      }
+    } else {
+      digits = digits.replace(/^0+/, "");
+    }
+
+    if (!digits) {
       field.onChange("");
     } else {
-      field.onChange(`${dialCode}${cleaned}`);
+      field.onChange(`${dialCode}${digits}`);
     }
   };
 
@@ -106,9 +122,18 @@ export const PhoneInput = (props: PhoneInputProps) => {
   };
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setNationalNumber(val);
-    updateValue(countryCode, val);
+    const rawVal = e.target.value;
+    let displayVal = rawVal;
+    if (countryCode === "+62") {
+      const digits = rawVal.replace(/[^\d]/g, "");
+      if (digits.startsWith("62")) {
+        displayVal = digits.slice(2);
+      } else if (digits.startsWith("0")) {
+        displayVal = digits.replace(/^0+/, "");
+      }
+    }
+    setNationalNumber(displayVal);
+    updateValue(countryCode, displayVal);
   };
 
   return (

@@ -216,8 +216,16 @@ create table if not exists brand_settings (
     wa_invoice_message_template text default 'Halo {customer_name},\n\nTerima kasih telah menggunakan layanan *{brand_name}* ({service_name}).\nBerikut adalah rincian nota & invoice resmi Anda:\n\n📄 *No. Invoice:* {invoice_number}\n💰 *Total Tagihan:* {total_amount}\n📅 *Jadwal:* {booking_date} jam {booking_time}\n💳 *Status:* {payment_status}\n\n🔗 *Lihat Nota Digital:* {invoice_url}\n\nJika ada pertanyaan, silakan hubungi kami via WhatsApp ini.',
     wa_booking_message_template text default 'Halo {customer_name},\n\nPesanan *{service_name}* di *{brand_name}* Anda telah dikonfirmasi!\n\n📅 *Tanggal:* {booking_date}\n⏰ *Jam:* {booking_time}\n📍 *Alamat:* {address}\n💆 *Terapis:* {therapist_name}\n\nMohon bersiap 10 menit sebelum waktu pelayanan.',
     wa_support_default_message text default 'Halo Customer Service {brand_name}, saya butuh bantuan mengenai layanan / nota saya.',
+    facebook_url text default 'https://facebook.com/serenaraga',
+    threads_handle text default '@serenaraga',
+    tiktok_handle text default '@serenaraga',
     updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Migration helper if brand_settings table already exists
+alter table brand_settings add column if not exists facebook_url text default 'https://facebook.com/serenaraga';
+alter table brand_settings add column if not exists threads_handle text default '@serenaraga';
+alter table brand_settings add column if not exists tiktok_handle text default '@serenaraga';
 
 -- Seed default brand settings if empty
 insert into brand_settings (id, brand_name, whatsapp_number)

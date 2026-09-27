@@ -34,7 +34,7 @@ import {
   Medal,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatIDR, localizePromoName, formatDeduplicatedDescription, isCoupleService } from "@/lib/utils";
+import { formatIDR, localizePromoName, formatDeduplicatedDescription, isCoupleService, standardizePhoneNumber } from "@/lib/utils";
 import { PAYMENT_METHODS } from "@/components/payment-method";
 import { getPaymentStatusSelectItems } from "@/components/status-badge";
 import { POSDatePicker, POSTimePicker } from "./pos-pickers";
@@ -803,7 +803,7 @@ export const InvoiceCreate = () => {
     syncItems(loadedItems, {
       booking_id: booking.id,
       customer_name: cust?.full_name || formData.customer_name || `Pelanggan #${booking.customer_id}`,
-      customer_phone: cust?.phone || formData.customer_phone,
+      customer_phone: standardizePhoneNumber(cust?.phone) || cust?.phone || formData.customer_phone,
       service_address: booking.service_address || cust?.address || "",
       booking_date: booking.booking_date || formData.booking_date,
       booking_time: booking.booking_time || formData.booking_time,
@@ -856,9 +856,14 @@ export const InvoiceCreate = () => {
       return;
     }
 
+    const finalData = {
+      ...formData,
+      customer_phone: standardizePhoneNumber(formData.customer_phone) || formData.customer_phone,
+    };
+
     create(
       "invoices",
-      { data: formData },
+      { data: finalData },
       {
         onSuccess: (data) => {
           // Immediately invalidate react-query caches so Booking list & Invoices reflect real-time DB state
@@ -950,7 +955,15 @@ export const InvoiceCreate = () => {
                         const val = e.target.value;
                         setFormData((prev) => ({ ...prev, customer_phone: val }));
                       }}
-                      placeholder="+628123456789"
+                      onBlur={() => {
+                        if (formData.customer_phone) {
+                          const std = standardizePhoneNumber(formData.customer_phone);
+                          if (std && std !== formData.customer_phone) {
+                            setFormData((prev) => ({ ...prev, customer_phone: std }));
+                          }
+                        }
+                      }}
+                      placeholder="+628123456789 / 0812..."
                       className="h-9 text-xs bg-background"
                     />
                   </div>

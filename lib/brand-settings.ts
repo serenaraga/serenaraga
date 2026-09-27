@@ -30,17 +30,17 @@ export interface BrandSettings {
 
 export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   brand_name: "Serena Raga",
-  tagline: "Comfortable Home Massage & Spa",
+  tagline: "Comfortable Home Massage",
   description:
-    "Layanan terapis pijat dan spa profesional langsung ke rumah, hotel, dan apartemen Anda.",
+    "Layanan pijat panggilan yang nyaman langsung ke rumah, hotel, dan apartemen Anda.",
   whatsapp_number: "6289518359037",
   phone_number: "+62 895-1835-9037",
-  email: "support@serenaraga.com",
+  email: "ragaserena@gmail.com",
   website_url: "https://serenaraga.com",
-  instagram_handle: "@serenaraga",
+  instagram_handle: "@serena.raga",
   tiktok_handle: "@serenaraga",
   facebook_url: "https://facebook.com/serenaraga",
-  threads_handle: "@serenaraga",
+  threads_handle: "@serena.raga",
   operational_hours: "08:00 - 22:00 WIB (Setiap Hari)",
   service_areas: "Yogyakarta, Sleman, Bantul, & Sekitarnya",
   bank_name: "BCA (Bank Central Asia)",
@@ -56,23 +56,62 @@ export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   wa_booking_message_template:
     "Halo {customer_name},\n\nPesanan *{service_name}* di *{brand_name}* Anda telah dikonfirmasi!\n\n📅 *Tanggal:* {booking_date}\n⏰ *Jam:* {booking_time}\n📍 *Alamat:* {address}\n💆 *Terapis:* {therapist_name}\n\nMohon bersiap 10 menit sebelum waktu pelayanan.",
   wa_support_default_message:
-    "Halo Customer Service {brand_name}, saya butuh bantuan mengenai layanan / nota saya.",
+    "Halo Admin SerenaRaga! Saya ingin tanya layanan massage di rumah. Bisa bantu informasinya?",
 };
 
 const STORAGE_KEY = "serenaraga_brand_settings";
 
 /**
+ * Standardize any phone number input to clean E.164-style '+628...' format (e.g. +6281234567890).
+ * Handles inputs like:
+ * - '08123456789' -> '+628123456789'
+ * - '628123456789' -> '+628123456789'
+ * - '+628123456789' -> '+628123456789'
+ * - '8123456789' -> '+628123456789'
+ * - '+62 812-3456-789' -> '+628123456789'
+ * - '+65 9123 4567' -> '+6591234567'
+ */
+export function standardizePhoneNumber(phone?: string | null): string {
+  if (!phone) return "";
+  const raw = String(phone).trim();
+  if (!raw) return "";
+
+  // If phone explicitly starts with '+' (e.g. international code like +65 or already +62)
+  if (raw.startsWith("+")) {
+    const digitsOnly = raw.replace(/[^\d]/g, "");
+    if (digitsOnly.startsWith("0")) {
+      return "+62" + digitsOnly.replace(/^0+/, "");
+    }
+    return `+${digitsOnly}`;
+  }
+
+  // Remove any non-digit characters (spaces, dashes, parentheses)
+  let digits = raw.replace(/[^\d]/g, "");
+  if (!digits) return "";
+
+  if (digits.startsWith("0")) {
+    digits = digits.replace(/^0+/, "");
+    return `+62${digits}`;
+  }
+  if (digits.startsWith("62")) {
+    return `+${digits}`;
+  }
+  if (digits.startsWith("8")) {
+    return `+62${digits}`;
+  }
+
+  // Default prefix +62
+  return `+62${digits}`;
+}
+
+/**
  * Format raw phone number into clean WhatsApp format (digits only, e.g. 6289518359037)
  */
-export function cleanWhatsAppNumber(phone?: string): string {
+export function cleanWhatsAppNumber(phone?: string | null): string {
   if (!phone) return "6289518359037";
-  let cleaned = phone.replace(/[^\d]/g, "");
-  if (cleaned.startsWith("0")) {
-    cleaned = "62" + cleaned.slice(1);
-  } else if (cleaned.startsWith("8")) {
-    cleaned = "62" + cleaned;
-  }
-  return cleaned || "6289518359037";
+  const standardized = standardizePhoneNumber(phone);
+  const digitsOnly = standardized.replace(/[^\d]/g, "");
+  return digitsOnly || "6289518359037";
 }
 
 /**
@@ -111,48 +150,78 @@ export function getWhatsAppUrl(phone: string, text?: string): string {
  * Generate a valid Instagram URL
  */
 export function getInstagramUrl(handleOrUrl?: string): string {
-  if (!handleOrUrl) return "https://instagram.com/serenaraga";
-  if (handleOrUrl.startsWith("http://") || handleOrUrl.startsWith("https://")) {
-    return handleOrUrl;
+  if (!handleOrUrl || !handleOrUrl.trim()) return "";
+  const trimmed = handleOrUrl.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
   }
-  const clean = handleOrUrl.replace(/^@/, "").trim();
-  return `https://instagram.com/${clean || "serenaraga"}`;
+  const clean = trimmed.replace(/^@/, "").trim();
+  return clean ? `https://instagram.com/${clean}` : "";
 }
 
 /**
  * Generate a valid TikTok URL
  */
 export function getTikTokUrl(handleOrUrl?: string): string {
-  if (!handleOrUrl) return "https://tiktok.com/@serenaraga";
-  if (handleOrUrl.startsWith("http://") || handleOrUrl.startsWith("https://")) {
-    return handleOrUrl;
+  if (!handleOrUrl || !handleOrUrl.trim()) return "";
+  const trimmed = handleOrUrl.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
   }
-  const clean = handleOrUrl.replace(/^@/, "").trim();
-  return `https://tiktok.com/@${clean || "serenaraga"}`;
+  const clean = trimmed.replace(/^@/, "").trim();
+  return clean ? `https://tiktok.com/@${clean}` : "";
 }
 
 /**
  * Generate a valid Facebook URL
  */
 export function getFacebookUrl(urlOrName?: string): string {
-  if (!urlOrName) return "https://facebook.com/serenaraga";
-  if (urlOrName.startsWith("http://") || urlOrName.startsWith("https://")) {
-    return urlOrName;
+  if (!urlOrName || !urlOrName.trim()) return "";
+  const trimmed = urlOrName.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
   }
-  const clean = urlOrName.replace(/^\//, "").trim();
-  return `https://facebook.com/${clean || "serenaraga"}`;
+  const clean = trimmed.replace(/^\//, "").trim();
+  return clean ? `https://facebook.com/${clean}` : "";
 }
 
 /**
  * Generate a valid Threads URL
  */
 export function getThreadsUrl(handleOrUrl?: string): string {
-  if (!handleOrUrl) return "https://threads.net/@serenaraga";
-  if (handleOrUrl.startsWith("http://") || handleOrUrl.startsWith("https://")) {
-    return handleOrUrl;
+  if (!handleOrUrl || !handleOrUrl.trim()) return "";
+  const trimmed = handleOrUrl.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
   }
-  const clean = handleOrUrl.replace(/^@/, "").trim();
-  return `https://threads.net/@${clean || "serenaraga"}`;
+  const clean = trimmed.replace(/^@/, "").trim();
+  return clean ? `https://threads.net/@${clean}` : "";
+}
+
+/**
+ * Generate inbound customer message based on default setting template from dashboard
+ */
+export function buildWhatsAppInboundMessage({
+  template,
+  brandName,
+  isEn,
+}: {
+  template?: string;
+  brandName?: string;
+  serviceName?: string;
+  isEn?: boolean;
+}): string {
+  const brand = brandName || "Serena Raga";
+
+  if (template && template.trim()) {
+    return template
+      .replace(/\{brand_name\}/gi, brand)
+      .replace(/\{brand\}/gi, brand);
+  }
+
+  return isEn
+    ? `Hello ${brand}, I would like to inquire about your home massage & spa services. Could you please help?`
+    : `Halo ${brand}, saya ingin tanya mengenai layanan home massage & spa. Bisa bantu informasinya?`;
 }
 
 /**
@@ -175,7 +244,7 @@ export function getCachedBrandSettings(): BrandSettings {
 }
 
 /**
- * Save brand settings to localStorage and optionally sync with Supabase
+ * Save brand settings to localStorage and sync with Supabase
  */
 export async function saveBrandSettings(
   newSettings: BrandSettings
@@ -186,9 +255,16 @@ export async function saveBrandSettings(
       window.dispatchEvent(
         new CustomEvent("brand_settings_updated", { detail: newSettings })
       );
+      try {
+        const bc = new BroadcastChannel("brand_settings_channel");
+        bc.postMessage(newSettings);
+        bc.close();
+      } catch (e) {
+        // BroadcastChannel optional fallback
+      }
     }
 
-    // Try persisting to Supabase if brand_settings table exists
+    // Persist all fields to Supabase brand_settings table
     try {
       const { error } = await supabase
         .from("brand_settings")
@@ -248,7 +324,28 @@ export function useBrandSettings() {
 
     loadRemoteSettings();
 
-    // Listen to local changes in the same window
+    // Supabase Realtime Subscription for instant database updates
+    const channel = supabase
+      .channel("brand_settings_realtime_sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "brand_settings" },
+        (payload: any) => {
+          if (payload.new && mounted) {
+            const merged: BrandSettings = {
+              ...DEFAULT_BRAND_SETTINGS,
+              ...payload.new,
+            };
+            setSettings(merged);
+            if (typeof window !== "undefined") {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Listen to local custom event in the same window
     const handleLocalUpdate = (e: any) => {
       if (e.detail && mounted) {
         setSettings(e.detail);
@@ -265,13 +362,30 @@ export function useBrandSettings() {
       }
     };
 
+    // Listen to BroadcastChannel for instant cross-tab sync
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel("brand_settings_channel");
+      bc.onmessage = (e) => {
+        if (e.data && mounted) {
+          setSettings(e.data);
+        }
+      };
+    } catch (e) {}
+
     window.addEventListener("brand_settings_updated", handleLocalUpdate);
     window.addEventListener("storage", handleStorageUpdate);
 
     return () => {
       mounted = false;
+      supabase.removeChannel(channel);
       window.removeEventListener("brand_settings_updated", handleLocalUpdate);
       window.removeEventListener("storage", handleStorageUpdate);
+      if (bc) {
+        try {
+          bc.close();
+        } catch (e) {}
+      }
     };
   }, []);
 
