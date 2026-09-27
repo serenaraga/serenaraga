@@ -264,9 +264,9 @@ export const PayoutCreate = () => {
       const { data: bData, error } = await supabase
         .from("bookings")
         .select(
-          "id, booking_date, booking_time, total_price, status, payment_status, service_id, services(name, price, consumables_cost), customers(full_name)"
+          "id, booking_date, booking_time, total_price, status, payment_status, service_id, therapist_id, special_requests, services(name, price, consumables_cost), customers(full_name)"
         )
-        .eq("therapist_id", selectedTherapistId)
+        .or(`therapist_id.eq.${selectedTherapistId},special_requests.ilike.%"therapist_id":${selectedTherapistId}%,special_requests.ilike.%"therapist_id": "${selectedTherapistId}"%`)
         .gte("booking_date", startDate)
         .lte("booking_date", endDate)
         .in("status", ["confirmed", "completed"])
@@ -314,6 +314,8 @@ export const PayoutCreate = () => {
           commissionRate: commRate,
           invoice: matchedInv,
           promotions: promosData,
+          bookingNotes: b.special_requests,
+          targetTherapistId: Number(selectedTherapistId),
         });
 
         return {
@@ -383,9 +385,15 @@ export const PayoutCreate = () => {
       booking_date: b.booking_date,
       booking_time: b.booking_time,
       customer_name: b.customers?.full_name || "Pelanggan",
-      service_name: b.services?.name || "Treatment",
+      service_name:
+        b.financial?.itemsList && b.financial.itemsList.length > 0
+          ? b.financial.itemsList.map((i: any) => i.name).join(" + ")
+          : b.services?.name || "Treatment",
       total_price: b.financial?.treatmentGrossPrice ?? Number(b.total_price || 0),
       discount_amount: b.financial?.discountAmount ?? 0,
+      transport_fee: b.financial?.transportFee ?? 0,
+      additional_charge: b.financial?.additionalCharge ?? 0,
+      additional_charge_description: b.financial?.additionalChargeDescription ?? "",
       applied_promo_name: b.financial?.appliedPromoName,
       is_post_discount: b.financial?.isPostDiscountPolicy,
       commission_base: b.financial?.commissionBase ?? Number(b.total_price || 0),
@@ -806,8 +814,28 @@ export const PayoutCreate = () => {
                 <span>{isEn ? "Gross Treatment Revenue" : "Total Nilai Omzet Kotor"}</span>
                 <span className="font-medium text-foreground">{formatIDR(grossRevenue)}</span>
               </div>
+              {(() => {
+                const totalTransport = bookings.reduce((sum, b) => sum + Number(b.financial?.transportFee || 0), 0);
+                const totalCharge = bookings.reduce((sum, b) => sum + Number(b.financial?.additionalCharge || 0), 0);
+                return (
+                  <>
+                    {totalTransport > 0 && (
+                      <div className="flex items-center justify-between text-muted-foreground">
+                        <span>{isEn ? "Total Transport Reimbursement" : "Tambahan Transport Terapis"}</span>
+                        <span className="font-semibold text-amber-700 dark:text-amber-400">+{formatIDR(totalTransport)}</span>
+                      </div>
+                    )}
+                    {totalCharge > 0 && (
+                      <div className="flex items-center justify-between text-muted-foreground">
+                        <span>{isEn ? "Total Extra Charges" : "Total Biaya Charge Tambahan"}</span>
+                        <span className="font-semibold text-blue-700 dark:text-blue-400">+{formatIDR(totalCharge)}</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
               <div className="flex items-center justify-between text-muted-foreground">
-                <span>{isEn ? "Therapist Fee" : `Bagi Hasil Terapis (${commissionRate}%)`}</span>
+                <span>{isEn ? "Therapist Share (Commission + Transport)" : `Hak Terapis (Komisi + Transport)`}</span>
                 <span className="font-semibold text-foreground">{formatIDR(therapistCommissionFee)}</span>
               </div>
               {(bonusAmount > 0 || deductionAmount > 0) && (
@@ -929,6 +957,8 @@ const PayoutShowContent = () => {
               commissionRate: commRate,
               invoice: matchedInv,
               promotions: promosData,
+              bookingNotes: b.special_requests,
+              targetTherapistId: Number(therapistId),
             });
 
             return {
@@ -939,6 +969,9 @@ const PayoutShowContent = () => {
               service_name: b.services?.name || "Treatment",
               total_price: fin.treatmentGrossPrice ?? Number(b.total_price || 0),
               discount_amount: fin.discountAmount ?? 0,
+              transport_fee: fin.transportFee ?? 0,
+              additional_charge: fin.additionalCharge ?? 0,
+              additional_charge_description: fin.additionalChargeDescription ?? "",
               applied_promo_name: fin.appliedPromoName,
               is_post_discount: fin.isPostDiscountPolicy,
               commission_base: fin.commissionBase ?? Number(b.total_price || 0),

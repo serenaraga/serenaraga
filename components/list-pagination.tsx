@@ -133,13 +133,13 @@ export const ListPagination = ({
             }
           }}
         >
-          <SelectTrigger size="sm" className="h-7 w-fit min-w-[3.5rem] gap-1 px-2 rounded-md text-xs border-border bg-background shadow-none">
+          <SelectTrigger size="sm" className="h-7 w-[4.5rem] gap-1 px-2.5 rounded-md text-xs border-border bg-background shadow-none">
             <SelectValue placeholder={perPage} />
           </SelectTrigger>
-          <SelectContent side="top" className="min-w-[3.5rem] p-0.5">
+          <SelectContent side="top" className="min-w-[4.5rem] p-1">
             <SelectGroup>
               {rowsPerPageOptions.map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`} className="text-xs py-1 px-2">
+                <SelectItem key={pageSize} value={`${pageSize}`} className="text-xs py-1 pl-2.5 pr-7">
                   {pageSize}
                 </SelectItem>
               ))}

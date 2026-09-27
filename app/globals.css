@@ -209,3 +209,7 @@
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+@utility font-gallient {
+  font-family: var(--font-gallient), Georgia, "Times New Roman", serif;
+}

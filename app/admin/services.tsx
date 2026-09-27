@@ -679,7 +679,7 @@ const ServiceConsumablesEditor: React.FC<{
                     step="any"
                     value={item.quantity}
                     onChange={(e) => handleQuantityChange(idx, parseFloat(e.target.value) || 0)}
-                    className="h-8 px-2.5 text-xs font-mono"
+                    className="h-8 px-2.5 text-xs"
                   />
                 </div>
 
@@ -688,7 +688,7 @@ const ServiceConsumablesEditor: React.FC<{
                   <label className="text-[10px] text-muted-foreground block mb-1 font-medium">
                     {isEn ? "Subtotal Cost" : "Subtotal Biaya"}
                   </label>
-                  <div className="h-8 flex items-center font-bold text-foreground font-mono">
+                  <div className="h-8 flex items-center font-bold text-foreground">
                     {formatIDR(item.total_cost)}
                   </div>
                 </div>
@@ -716,7 +716,7 @@ const ServiceConsumablesEditor: React.FC<{
               <Scale className="w-3.5 h-3.5 text-primary" />
               <span>{isEn ? "Total Consumables Cost (COGS):" : "Total Biaya Bahan (HPP):"}</span>
             </span>
-            <span className="text-sm font-bold text-foreground font-mono">
+            <span className="text-sm font-bold text-foreground">
               {formatIDR(totalConsumablesCost)}
             </span>
           </div>
@@ -990,6 +990,37 @@ const ServiceShowView = () => {
   const isEn = locale === "en";
   const [consumablesList, setConsumablesList] = React.useState<any[]>([]);
   const [loadingConsumables, setLoadingConsumables] = React.useState(false);
+  const [therapistRate, setTherapistRate] = React.useState<number>(60);
+  const [rateRange, setRateRange] = React.useState<{ min: number; max: number } | null>(null);
+
+  React.useEffect(() => {
+    async function loadTherapistRates() {
+      try {
+        const { data } = await supabase
+          .from("therapists")
+          .select("commission_rate, status")
+          .not("status", "eq", "inactive");
+        if (data && data.length > 0) {
+          const validRates = data
+            .map((t: any) => Number(t.commission_rate))
+            .filter((r: number) => !isNaN(r) && r > 0);
+          if (validRates.length > 0) {
+            const minRate = Math.min(...validRates);
+            const maxRate = Math.max(...validRates);
+            setTherapistRate(minRate);
+            if (minRate !== maxRate) {
+              setRateRange({ min: minRate, max: maxRate });
+            } else {
+              setRateRange(null);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching therapist commission rates:", err);
+      }
+    }
+    loadTherapistRates();
+  }, []);
 
   React.useEffect(() => {
     const recordId = record?.id;
@@ -1013,7 +1044,7 @@ const ServiceShowView = () => {
 
   const price = Number(record.price) || 0;
   const cogs = Number(record.consumables_cost) || 0;
-  const estimatedTherapist = Math.round(price * 0.6); // 60% default therapist fee
+  const estimatedTherapist = Math.round((price * therapistRate) / 100);
   const netProfit = Math.max(0, price - cogs - estimatedTherapist);
 
   return (
@@ -1068,7 +1099,14 @@ const ServiceShowView = () => {
               </span>
             </div>
             <div className="p-3 rounded-lg bg-muted/20 border border-border/50 space-y-1">
-              <span className="text-muted-foreground text-[11px] block">{isEn ? "Therapist Share (60%)" : "Hak Terapis (60%)"}</span>
+              <span className="text-muted-foreground text-[11px] block">
+                {isEn ? `Therapist Share (${therapistRate}%)` : `Hak Terapis (${therapistRate}%)`}
+                {rateRange && (
+                  <span className="text-[10px] text-muted-foreground/70 block">
+                    {isEn ? `(Range: ${rateRange.min}% - ${rateRange.max}%)` : `(Rentang: ${rateRange.min}% - ${rateRange.max}%)`}
+                  </span>
+                )}
+              </span>
               <span className="font-bold text-muted-foreground text-sm">
                 -{formatIDR(estimatedTherapist)}
               </span>
@@ -1135,7 +1173,7 @@ const ServiceShowView = () => {
               ))}
               <div className="pt-3 flex items-center justify-between font-bold text-xs">
                 <span>{isEn ? "Total Material Cost:" : "Total HPP Bahan per Sesi:"}</span>
-                <span className="font-mono text-sm">{formatIDR(cogs)}</span>
+                <span className="text-sm">{formatIDR(cogs)}</span>
               </div>
             </div>
           )}

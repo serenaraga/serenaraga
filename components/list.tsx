@@ -68,7 +68,7 @@ export const List = <RecordType extends RaRecord = RaRecord>(
     queryOptions,
     resource,
     sort = defaultSort,
-    storeKey,
+    storeKey = false,
     ...rest
   } = props;
 

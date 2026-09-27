@@ -451,7 +451,7 @@ const CustomerShowContent = () => {
                 </CardTitle>
                 <CardDescription className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
                   <Phone className="w-3.5 h-3.5" />
-                  <span className="font-mono">{record.phone}</span>
+                  <span>{record.phone}</span>
                   {record.email && (
                     <>
                       <span>•</span>
@@ -470,7 +470,7 @@ const CustomerShowContent = () => {
             <span className="text-[11px] text-muted-foreground block">
               {isEn ? "Completed Orders" : "Total Order Lunas"}
             </span>
-            <span className="text-lg font-bold text-foreground font-mono">{metrics.ordersCount}x</span>
+            <span className="text-lg font-bold text-foreground">{metrics.ordersCount}x</span>
             {metrics.manualOrdersCount > 0 && (
               <span className="text-[10px] text-muted-foreground block mt-0.5">
                 ({metrics.invoiceOrdersCount} online + {metrics.manualOrdersCount} offline)
@@ -481,7 +481,7 @@ const CustomerShowContent = () => {
             <span className="text-[11px] text-muted-foreground block">
               {isEn ? "Lifetime Value (LTV)" : "Total Belanja (LTV)"}
             </span>
-            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
               {formatIDR(metrics.totalSpent)}
             </span>
           </div>
@@ -489,7 +489,7 @@ const CustomerShowContent = () => {
             <span className="text-[11px] text-muted-foreground block">
               {isEn ? "Avg. Order Value" : "Rata-rata Order"}
             </span>
-            <span className="text-sm font-semibold text-foreground font-mono">
+            <span className="text-sm font-semibold text-foreground">
               {formatIDR(metrics.invoiceOrdersCount > 0 ? Math.round(metrics.totalSpent / metrics.invoiceOrdersCount) : 0)}
             </span>
           </div>

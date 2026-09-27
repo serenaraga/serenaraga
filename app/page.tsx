@@ -904,8 +904,7 @@ export default function LandingPage() {
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center flex flex-col items-center justify-center py-16 sm:py-28">
           {/* Main Title: SoBali SPA in Gallient Luxury Roman Serif */}
           <h1
-            className="text-4xl sm:text-6xl md:text-7xl lg:text-[84px] text-white font-normal tracking-[0.14em] sm:tracking-[0.22em] leading-tight drop-shadow-[0_3px_15px_rgba(0,0,0,0.45)] uppercase select-none"
-            style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+            className="text-4xl sm:text-6xl md:text-7xl lg:text-[84px] text-white font-normal tracking-[0.14em] sm:tracking-[0.22em] leading-tight drop-shadow-[0_3px_15px_rgba(0,0,0,0.45)] uppercase select-none font-gallient"
           >
             {settings.brand_name || "SoBali SPA"}
           </h1>
@@ -960,8 +959,7 @@ export default function LandingPage() {
             <div className="lg:col-span-6 xl:col-span-5 flex flex-col justify-center text-left">
               {/* Main Headline */}
               <h2
-                className="text-2.5xl sm:text-4xl lg:text-[42px] xl:text-[46px] text-[#221c19] font-normal leading-[1.14] tracking-tight"
-                style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+                className="text-2.5xl sm:text-4xl lg:text-[42px] xl:text-[46px] text-[#221c19] font-normal leading-[1.14] tracking-tight font-gallient"
               >
                 {settings.brand_name ? `${settings.brand_name} Homeservice` : "SoBali SPA Homeservice"}
               </h2>
@@ -1019,8 +1017,7 @@ export default function LandingPage() {
             {/* Left: Two-Tone Large Headline */}
             <div>
               <h2
-                className="text-3xl sm:text-4xl lg:text-[46px] xl:text-[52px] text-[#221c19] font-normal leading-[1.14] tracking-tight"
-                style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+                className="text-3xl sm:text-4xl lg:text-[46px] xl:text-[52px] text-[#221c19] font-normal leading-[1.14] tracking-tight font-gallient"
               >
                 <span className="text-[#1c1815] block">Wellness</span>
                 <span className="text-[#b3a498] block">Treatments</span>
@@ -1055,8 +1052,7 @@ export default function LandingPage() {
           {/* PART 1: OUR SERVICES */}
           <div className="text-center mb-8 sm:mb-14">
             <h2
-              className="text-2.5xl sm:text-4xl lg:text-[44px] text-[#1c1815] font-normal tracking-tight"
-              style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+              className="text-2.5xl sm:text-4xl lg:text-[44px] text-[#1c1815] font-normal tracking-tight font-gallient"
             >
               {isEn ? "Our Services" : "Layanan Kami"}
             </h2>
@@ -1120,8 +1116,7 @@ export default function LandingPage() {
                 {/* Text Content Overlay */}
                 <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 text-center text-white flex flex-col items-center justify-end">
                   <h3
-                    className="text-lg sm:text-xl font-normal text-stone-100 tracking-wide"
-                    style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+                    className="text-lg sm:text-xl font-normal text-stone-100 tracking-wide font-gallient"
                   >
                     {isEn ? service.title : service.titleId}
                   </h3>
@@ -1150,8 +1145,7 @@ export default function LandingPage() {
             {/* Left Column: Heading */}
             <div className="lg:col-span-4 xl:col-span-4 lg:sticky lg:top-28">
               <h3
-                className="text-3xl sm:text-5xl lg:text-[54px] text-[#1c1815] font-normal leading-[1.08] tracking-tight"
-                style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+                className="text-3xl sm:text-5xl lg:text-[54px] text-[#1c1815] font-normal leading-[1.08] tracking-tight font-gallient"
               >
                 {isEn ? (
                   <>
@@ -1328,8 +1322,7 @@ export default function LandingPage() {
               {/* Right: Section Title, Subtitle Description & Carousel Navigation */}
               <div className="lg:col-span-6 xl:col-span-6 flex flex-col justify-center space-y-6 lg:pl-2">
                 <h2
-                  className="text-3xl sm:text-4xl lg:text-[44px] xl:text-[50px] text-stone-100 font-normal tracking-tight leading-[1.15]"
-                  style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+                  className="text-3xl sm:text-4xl lg:text-[44px] xl:text-[50px] text-stone-100 font-normal tracking-tight leading-[1.15] font-gallient"
                 >
                   {isEn ? (
                     <>
@@ -1395,8 +1388,7 @@ export default function LandingPage() {
 
               <div className="lg:col-span-6 xl:col-span-6 flex flex-col justify-center space-y-6 lg:pl-2">
                 <h2
-                  className="text-3xl sm:text-4xl lg:text-[44px] xl:text-[50px] text-stone-100 font-normal tracking-tight leading-[1.15]"
-                  style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+                  className="text-3xl sm:text-4xl lg:text-[44px] xl:text-[50px] text-stone-100 font-normal tracking-tight leading-[1.15] font-gallient"
                 >
                   {isEn ? (
                     <>
@@ -1426,8 +1418,7 @@ export default function LandingPage() {
             <div className="lg:col-span-7 space-y-5 sm:space-y-6">
               <div>
                 <h2
-                  className="text-2.5xl sm:text-4xl lg:text-[42px] xl:text-[46px] text-stone-100 leading-[1.14] tracking-tight mb-2"
-                  style={{ fontFamily: "var(--font-gallient), Georgia, serif", fontWeight: 400 }}
+                  className="text-2.5xl sm:text-4xl lg:text-[42px] xl:text-[46px] text-stone-100 leading-[1.14] tracking-tight mb-2 font-normal font-gallient"
                 >
                   {isEn ? (
                     <>
@@ -1520,8 +1511,7 @@ export default function LandingPage() {
             <div className="bg-stone-950/45 sm:bg-stone-950/50 p-5 sm:p-11 lg:p-14 text-stone-100 flex flex-col items-center text-center">
               {/* Gallient Headline */}
               <h2
-                className="text-2.5xl sm:text-4xl lg:text-[48px] text-white leading-[1.14] tracking-tight font-normal"
-                style={{ fontFamily: "var(--font-gallient), Georgia, serif" }}
+                className="text-2.5xl sm:text-4xl lg:text-[48px] text-white leading-[1.14] tracking-tight font-normal font-gallient"
               >
                 {isEn ? (
                   <>

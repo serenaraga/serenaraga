@@ -38,6 +38,9 @@ export interface BookingBreakdownItem {
   customer_name?: string;
   total_price: number;
   discount_amount?: number;
+  transport_fee?: number;
+  additional_charge?: number;
+  additional_charge_description?: string;
   applied_promo_name?: string;
   is_post_discount?: boolean;
   commission_base?: number;
@@ -459,16 +462,21 @@ export const PayoutSlipCard = ({
                 <div className="divide-y divide-dashed divide-border/60">
                   {payout.bookings_breakdown && payout.bookings_breakdown.length > 0 ? (
                     payout.bookings_breakdown.map((item, idx) => {
+                      const isPostDisc = item.is_post_discount !== false && Boolean(item.discount_amount && item.discount_amount > 0);
                       const commBase =
                         typeof item.commission_base === "number"
                           ? item.commission_base
-                          : item.discount_amount && item.discount_amount > 0
-                          ? Math.max(0, item.total_price - item.discount_amount)
+                          : isPostDisc
+                          ? Math.max(0, item.total_price - (item.discount_amount || 0))
                           : item.total_price;
+
+                      const transportFee = Number(item.transport_fee || 0);
+                      const additionalCharge = Number(item.additional_charge || 0);
+                      const additionalChargeDesc = item.additional_charge_description?.trim();
 
                       // Extract clean percentage or formatted amount for formula
                       let discountFormulaPart = "";
-                      if (item.discount_amount && item.discount_amount > 0) {
+                      if (isPostDisc && item.discount_amount && item.discount_amount > 0) {
                         const percentMatch = item.applied_promo_name?.match(/(\d+(?:\.\d+)?)\s*%/);
                         if (percentMatch) {
                           discountFormulaPart = `${percentMatch[1]}%`;
@@ -484,10 +492,14 @@ export const PayoutSlipCard = ({
                         }
                       }
 
-                      const formulaText =
-                        item.discount_amount && item.discount_amount > 0
-                          ? `( ${formatCurrency(item.total_price)} - ${discountFormulaPart} ) × ${payout.commission_rate}%`
-                          : `${formatCurrency(commBase)} × ${payout.commission_rate}%`;
+                      const transportFormulaPart = transportFee > 0 ? ` + ${formatCurrency(transportFee)} (Transport)` : "";
+                      const chargePartInside = additionalCharge > 0 ? ` + ${formatCurrency(additionalCharge)}` : "";
+
+                      const formulaText = isPostDisc
+                        ? `( ${formatCurrency(item.total_price)} - ${discountFormulaPart}${chargePartInside} ) × ${payout.commission_rate}%${transportFormulaPart}`
+                        : additionalCharge > 0
+                        ? `( ${formatCurrency(commBase)} + ${formatCurrency(additionalCharge)} ) × ${payout.commission_rate}%${transportFormulaPart}`
+                        : `${formatCurrency(commBase)} × ${payout.commission_rate}%${transportFormulaPart}`;
 
                       // Direct clean date/time formatting without redundant label prefix
                       let formattedItemDate = item.booking_date || "";
@@ -517,6 +529,16 @@ export const PayoutSlipCard = ({
                               {item.applied_promo_name && (
                                 <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                                   ( {item.applied_promo_name} )
+                                </span>
+                              )}
+                              {transportFee > 0 && (
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300">
+                                  +Transport {formatCurrency(transportFee)}
+                                </span>
+                              )}
+                              {additionalCharge > 0 && (
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-800 dark:text-blue-300">
+                                  +Charge {formatCurrency(additionalCharge)}{additionalChargeDesc ? ` (${additionalChargeDesc})` : ""}
                                 </span>
                               )}
                             </div>

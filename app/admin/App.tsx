@@ -41,9 +41,22 @@ import {
   MessageSquareQuote,
   TicketPercent,
 } from "lucide-react";
+import { QueryClient } from "@tanstack/react-query";
+
+const adminQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes fresh cache
+      gcTime: 10 * 60 * 1000,   // 10 minutes memory retention
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <Admin
+    queryClient={adminQueryClient}
     dataProvider={dataProvider}
     authProvider={authProvider}
     i18nProvider={i18nProvider}

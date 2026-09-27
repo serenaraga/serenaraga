@@ -167,7 +167,11 @@ export const RowActions = ({
 
   const handleCreateInvoice = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate("/invoices/create");
+    if (record?.id) {
+      navigate(`/invoices/create?booking_id=${record.id}`);
+    } else {
+      navigate("/invoices/create");
+    }
   };
 
   const handleMakePayout = (e: React.MouseEvent) => {

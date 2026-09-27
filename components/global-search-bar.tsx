@@ -363,7 +363,7 @@ export function GlobalSearchBar({ className }: { className?: string }) {
 
         const mappedTherapists: SearchResultItem[] = (therRes.data || []).map((t) => ({
           id: t.id,
-          title: `${t.name} (${t.commission_rate || 70}%)`,
+          title: `${t.name} (${t.commission_rate ?? 60}%)`,
           subtitle: `${t.phone} • ${t.specialties || "Pijat Tradisional"}`,
           badge: t.status,
           badgeVariant: "outline",

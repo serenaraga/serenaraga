@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useBrandSettings, cleanWhatsAppNumber } from "@/lib/brand-settings";
 import { BrandLogo } from "@/components/brand-logo";
-import { cn, formatIDR, localizePromoName } from "@/lib/utils";
+import { cn, formatIDR, localizePromoName, formatDeduplicatedDescription } from "@/lib/utils";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
 
@@ -45,6 +45,8 @@ export interface InvoiceData {
   subtotal: number;
   discount?: number;
   transport_fee?: number;
+  additional_charge?: number;
+  additional_charge_description?: string;
   total_amount: number;
   payment_method?: string;
   payment_status?: string;
@@ -326,6 +328,26 @@ export const InvoiceCard = ({
     } catch (e) {}
   }
 
+  const effectiveAdditionalCharge = Number(
+    invoice.additional_charge !== undefined
+      ? invoice.additional_charge
+      : meta?.additional_charge !== undefined
+      ? meta.additional_charge
+      : Array.isArray(meta?.items)
+      ? meta.items.reduce((acc: number, it: any) => acc + (Number(it.additional_charge) || 0), 0)
+      : 0
+  );
+
+  const effectiveAdditionalChargeDesc = formatDeduplicatedDescription(
+    invoice.additional_charge_description ||
+    meta?.additional_charge_description ||
+    (Array.isArray(meta?.items)
+      ? meta.items.map((it: any) => it.additional_charge_description)
+      : "")
+  );
+
+  const formattedAdditionalCharge = formatIDR(effectiveAdditionalCharge);
+
   const promoMatch = rawNotesText?.match(/\[Promo:\s*([^\]]+)\]/i);
   const promoNameFromNotes = promoMatch ? promoMatch[1].trim() : (meta?.promo_name || null);
   const cleanNotes = rawNotesText
@@ -335,10 +357,93 @@ export const InvoiceCard = ({
         .trim()
     : "";
 
-  const itemsList: Array<{ name: string; price: number }> =
-    meta?.items && Array.isArray(meta.items) && meta.items.length > 0
-      ? meta.items
-      : [];
+  const resolvedItems: Array<{ name: string; price: number }> = React.useMemo(() => {
+    // 1. From metadata JSON items
+    if (meta?.items && Array.isArray(meta.items) && meta.items.length > 0) {
+      const grouped: Array<{ name: string; price: number }> = [];
+      const coupleMap = new Map<string, { name: string; price: number }>();
+
+      for (const it of meta.items) {
+        if (it.is_couple_package) {
+          const key = it.parent_package_name || it.name;
+          const existing = coupleMap.get(key);
+          if (existing) {
+            existing.price += Number(it.price || 0);
+          } else {
+            const entry = {
+              name: key,
+              price: Number(it.price || 0),
+            };
+            coupleMap.set(key, entry);
+            grouped.push(entry);
+          }
+        } else {
+          grouped.push({
+            name: it.name || it.service_name || "Layanan",
+            price: Number(it.price || 0),
+          });
+        }
+      }
+      return grouped;
+    }
+
+    // 2. From direct invoice.items array if present in runtime
+    if (Array.isArray((invoice as any).items) && (invoice as any).items.length > 0) {
+      const grouped: Array<{ name: string; price: number }> = [];
+      const coupleMap = new Map<string, { name: string; price: number }>();
+
+      for (const it of (invoice as any).items) {
+        if (it.is_couple && it.therapist_mode === "couple_split") {
+          const key = it.service_name || "Couple Package";
+          const totalPrice = (Number(it.price) || 0) + (Number(it.secondary_price) || 0);
+          grouped.push({
+            name: key,
+            price: totalPrice,
+          });
+        } else if (it.is_couple_package) {
+          const key = it.parent_package_name || it.name;
+          const existing = coupleMap.get(key);
+          if (existing) {
+            existing.price += Number(it.price || 0);
+          } else {
+            const entry = {
+              name: key,
+              price: Number(it.price || 0),
+            };
+            coupleMap.set(key, entry);
+            grouped.push(entry);
+          }
+        } else {
+          grouped.push({
+            name: it.service_name || it.name || "Layanan",
+            price: Number(it.price || 0),
+          });
+        }
+      }
+      return grouped;
+    }
+
+    // 3. From service_name containing " + " delimiter
+    if (invoice.service_name && invoice.service_name.includes(" + ")) {
+      const parts = invoice.service_name.split(" + ").map((s) => s.trim()).filter(Boolean);
+      if (parts.length > 1) {
+        const sub = Number(invoice.subtotal || invoice.total_amount || 0);
+        const estPrice = Math.round(sub / parts.length);
+        return parts.map((partName) => ({
+          name: partName,
+          price: estPrice,
+        }));
+      }
+    }
+
+    // 4. Single item fallback
+    return [
+      {
+        name: invoice.service_name || (isEn ? "Home Massage Service" : "Layanan Pijat di Rumah"),
+        price: Number(invoice.subtotal || invoice.total_amount || 0),
+      },
+    ];
+  }, [meta, invoice.service_name, invoice.subtotal, invoice.total_amount, (invoice as any).items, isEn]);
 
   const rawDiscountName =
     invoice.discount_name || invoice.applied_promo_name || promoNameFromNotes;
@@ -389,7 +494,7 @@ export const InvoiceCard = ({
       {showShareActions && (
         <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-card border border-border rounded-xl shadow-none print:hidden">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-semibold text-foreground">
+            <span className="text-xs font-bold text-foreground">
               {invoice.invoice_number}
             </span>
             <span
@@ -524,35 +629,27 @@ export const InvoiceCard = ({
                 </div>
 
                 {/* Item Rows */}
-                {itemsList.length > 0 ? (
-                  <div className="divide-y divide-border/30">
-                    {itemsList.map((it, idx) => (
-                      <div key={idx} className="py-2 flex justify-between items-start gap-4">
-                        <div className="space-y-0.5 pr-2">
-                          <p className="font-bold text-sm text-foreground leading-tight">
-                            {it.name}
-                          </p>
-                        </div>
-                        <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
-                          {formatIDR(it.price)}
-                        </span>
+                <div className="divide-y divide-border/25">
+                  {resolvedItems.map((it, idx) => (
+                    <div key={idx} className="py-1.5 flex justify-between items-start gap-3">
+                      <div className="flex items-baseline gap-1.5 min-w-0 pr-2">
+                        {resolvedItems.length > 1 && (
+                          <span className="text-xs font-medium text-muted-foreground select-none shrink-0">
+                            {idx + 1}.
+                          </span>
+                        )}
+                        <p className="font-semibold text-[13px] text-foreground leading-snug">
+                          {it.name}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-2 flex justify-between items-start gap-4">
-                    <div className="space-y-1 pr-2">
-                      <p className="font-bold text-sm text-foreground leading-tight">
-                        {invoice.service_name || (isEn ? "Home Massage Service" : "Layanan Pijat di Rumah")}
-                      </p>
+                      <span className="font-semibold text-[13px] text-foreground shrink-0 whitespace-nowrap">
+                        {formatIDR(it.price)}
+                      </span>
                     </div>
-                    <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
-                      {formattedSubtotal}
-                    </span>
-                  </div>
-                )}
+                  ))}
+                </div>
 
-                {cleanNotes ? (
+                {cleanNotes && !cleanNotes.startsWith("{") ? (
                   <p className="text-[11px] text-muted-foreground leading-relaxed pt-1">
                     {cleanNotes}
                   </p>
@@ -580,8 +677,27 @@ export const InvoiceCard = ({
                       {isEn ? "TRANSPORT FEE" : "BIAYA TRANSPORT"}
                     </span>
                     <span className="font-semibold text-foreground text-xs">
-                      +{formattedTransport}
+                      {formattedTransport}
                     </span>
+                  </div>
+                )}
+
+                {/* Additional Charge if any */}
+                {effectiveAdditionalCharge > 0 && (
+                  <div className="space-y-0.5 text-xs">
+                    <div className="flex justify-between items-center text-xs text-muted-foreground">
+                      <span className="font-medium tracking-wider uppercase text-[10.5px]">
+                        {isEn ? "ADDITIONAL CHARGE" : "BIAYA TAMBAHAN"}
+                      </span>
+                      <span className="font-semibold text-foreground text-xs">
+                        {formattedAdditionalCharge}
+                      </span>
+                    </div>
+                    {effectiveAdditionalChargeDesc ? (
+                      <div className="pl-2 text-[10.5px] text-muted-foreground font-medium">
+                        └ {effectiveAdditionalChargeDesc}
+                      </div>
+                    ) : null}
                   </div>
                 )}
 

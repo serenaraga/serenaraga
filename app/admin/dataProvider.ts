@@ -10,6 +10,107 @@ const getTableName = (resource: string) => {
   return resource;
 };
 
+async function syncBookingItems(bookingId: number | string, specialRequests: string | null) {
+  if (!bookingId || !specialRequests) return;
+  try {
+    const trimmed = String(specialRequests).trim();
+    if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return;
+    const parsed = JSON.parse(trimmed);
+    if (!Array.isArray(parsed.items) || parsed.items.length === 0) return;
+
+    // Delete existing items for this booking
+    await supabase.from("booking_items").delete().eq("booking_id", bookingId);
+
+    // Insert new relational items
+    const rowsToInsert = parsed.items.map((it: any) => ({
+      booking_id: bookingId,
+      service_id: it.service_id ? Number(it.service_id) : null,
+      service_name_snapshot: it.name || it.service_name || "Layanan",
+      therapist_id: it.therapist_id ? Number(it.therapist_id) : null,
+      therapist_name_snapshot: it.therapist || it.therapist_name || null,
+      price: Number(it.price || 0),
+      commission_rate_snapshot: Number(it.rate || 60),
+      consumables_cost_snapshot: Number(it.bhp || 0),
+      duration_minutes_snapshot: Number(it.duration_minutes || 60),
+      transport_fee: Number(it.transport_fee || 0),
+      additional_charge: Number(it.additional_charge || 0),
+      additional_charge_description: it.additional_charge_description || null,
+    }));
+
+    await supabase.from("booking_items").insert(rowsToInsert);
+  } catch (err) {
+    console.warn("Could not sync booking_items:", err);
+  }
+}
+
+async function syncInvoiceItems(invoiceId: number | string, itemsSource: any) {
+  if (!invoiceId || !itemsSource) return;
+  try {
+    let itemsList: any[] = [];
+    if (Array.isArray(itemsSource)) {
+      itemsList = itemsSource;
+    } else if (typeof itemsSource === "string") {
+      const trimmed = itemsSource.trim();
+      if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed.items)) {
+          itemsList = parsed.items;
+        }
+      }
+    }
+
+    if (!Array.isArray(itemsList) || itemsList.length === 0) return;
+
+    // Delete existing items for this invoice
+    await supabase.from("invoice_items").delete().eq("invoice_id", invoiceId);
+
+    // Insert new relational items
+    const rowsToInsert = itemsList.map((it: any) => {
+      const p = Number(it.price || 0);
+      const r = Number(it.rate || 60);
+      const chg = Number(it.additional_charge || 0);
+      const trans = Number(it.transport_fee || 0);
+      const serviceComm = Math.round((p * r) / 100);
+      const chgComm = Math.round((chg * r) / 100);
+      const totalFee = Number(it.commission || (serviceComm + chgComm + trans));
+
+      return {
+        invoice_id: invoiceId,
+        service_id: it.service_id ? Number(it.service_id) : null,
+        service_name_snapshot: it.name || it.service_name || "Layanan",
+        therapist_id: it.therapist_id ? Number(it.therapist_id) : null,
+        therapist_name_snapshot: it.therapist || it.therapist_name || null,
+        price: p,
+        commission_rate_snapshot: r,
+        consumables_cost_snapshot: Number(it.bhp || 0),
+        therapist_fee_calculated: totalFee,
+        transport_fee: trans,
+        additional_charge: chg,
+        additional_charge_description: it.additional_charge_description || null,
+      };
+    });
+
+    await supabase.from("invoice_items").insert(rowsToInsert);
+  } catch (err) {
+    console.warn("Could not sync invoice_items:", err);
+  }
+}
+
+interface CacheEntry {
+  timestamp: number;
+  data: any[];
+}
+const masterCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes
+
+export function invalidateMasterCache(resource?: string) {
+  if (resource) {
+    masterCache.delete(resource);
+  } else {
+    masterCache.clear();
+  }
+}
+
 export const dataProvider: DataProvider = {
   getList: async (resource, params) => {
     const table = getTableName(resource);
@@ -191,6 +292,29 @@ export const dataProvider: DataProvider = {
       };
     }
 
+    // Attach relational items for 3NF multi-item support if available
+    if (resource === "bookings" && data?.id) {
+      try {
+        const { data: bItems } = await supabase
+          .from("booking_items")
+          .select("*")
+          .eq("booking_id", data.id);
+        if (bItems && bItems.length > 0) {
+          (data as any).relational_items = bItems;
+        }
+      } catch (e) {}
+    } else if (resource === "invoices" && data?.id) {
+      try {
+        const { data: invItems } = await supabase
+          .from("invoice_items")
+          .select("*")
+          .eq("invoice_id", data.id);
+        if (invItems && invItems.length > 0) {
+          (data as any).relational_items = invItems;
+        }
+      } catch (e) {}
+    }
+
     return { data };
   },
 
@@ -198,6 +322,20 @@ export const dataProvider: DataProvider = {
     const table = getTableName(resource);
     if (!params.ids || params.ids.length === 0) {
       return { data: [] };
+    }
+
+    const now = Date.now();
+    const isMaster = ["services", "therapists", "consumables", "promotions", "customers"].includes(resource);
+
+    if (isMaster) {
+      const cached = masterCache.get(resource);
+      if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+        const idSet = new Set(params.ids.map((id) => String(id)));
+        const found = cached.data.filter((item) => idSet.has(String(item.id)));
+        if (found.length === params.ids.length) {
+          return { data: found };
+        }
+      }
     }
 
     const { data, error } = await supabase
@@ -208,6 +346,18 @@ export const dataProvider: DataProvider = {
     if (error) {
       console.error(`Error in getMany on ${resource}:`, error);
       throw error;
+    }
+
+    // Populate/merge into master cache
+    if (data && data.length > 0 && isMaster) {
+      const existing = masterCache.get(resource)?.data || [];
+      const mergedMap = new Map<string, any>();
+      existing.forEach((item) => mergedMap.set(String(item.id), item));
+      data.forEach((item) => mergedMap.set(String(item.id), item));
+      masterCache.set(resource, {
+        timestamp: now,
+        data: Array.from(mergedMap.values()),
+      });
     }
 
     // Ensure all requested IDs return an entry so ReferenceField renders seamlessly
@@ -402,13 +552,39 @@ export const dataProvider: DataProvider = {
       if (!dataToInsert.status) {
         dataToInsert.status = "pending";
       }
+
+      delete dataToInsert.relational_items;
+      delete dataToInsert.items;
+      delete dataToInsert.raw_items;
+      delete dataToInsert.additional_charge;
+      delete dataToInsert.additional_charge_description;
+      delete dataToInsert.customer_name;
+      delete dataToInsert.customer_phone;
+      delete dataToInsert.city_area;
+      delete dataToInsert.customers;
+      delete dataToInsert.services;
+      delete dataToInsert.therapists;
     } else if (resource === "invoices") {
+      const bId = dataToInsert.booking_id ? Number(dataToInsert.booking_id) : null;
+      const requestedBookingStatus = dataToInsert.booking_status;
+      const payStatus = dataToInsert.payment_status || "paid";
+      const payMethod = dataToInsert.payment_method || "qris";
+      const addCharge = Number(dataToInsert.additional_charge || 0);
+
+      delete dataToInsert.relational_items;
       delete dataToInsert.applied_promo_name;
       delete dataToInsert.discount_name;
       delete dataToInsert.customers;
       delete dataToInsert.bookings;
       delete dataToInsert.services;
       delete dataToInsert.therapists;
+      delete dataToInsert.booking_status;
+      delete dataToInsert.items;
+      delete dataToInsert.raw_items;
+
+      dataToInsert.additional_charge = addCharge;
+      dataToInsert.additional_charge_description = dataToInsert.additional_charge_description || null;
+      dataToInsert.booking_id = bId && !isNaN(bId) && bId > 0 ? bId : null;
 
       // Auto-generate invoice number: SR-YYMMDD-XXXX
       if (!dataToInsert.invoice_number) {
@@ -427,35 +603,29 @@ export const dataProvider: DataProvider = {
       dataToInsert.subtotal = sub;
       dataToInsert.discount = disc;
       dataToInsert.transport_fee = transport;
-      dataToInsert.total_amount = Math.max(0, sub + transport - disc);
+      dataToInsert.total_amount = Math.max(0, sub + transport + addCharge - disc);
+      dataToInsert.payment_method = payMethod;
+      dataToInsert.payment_status = payStatus;
 
-      if (!dataToInsert.payment_method) dataToInsert.payment_method = "qris";
-      if (!dataToInsert.payment_status) dataToInsert.payment_status = "paid";
-
-      // If associated with a booking, sync the booking's status & payment
+      // If associated with a booking, reliably sync the booking's status & payment
       if (dataToInsert.booking_id) {
-        const bookingUpdate: any = {};
-        if (dataToInsert.booking_status) {
-          bookingUpdate.status = dataToInsert.booking_status;
-        } else if (dataToInsert.payment_status === "paid") {
-          bookingUpdate.status = "completed";
-        }
-        if (dataToInsert.payment_status) {
-          bookingUpdate.payment_status = dataToInsert.payment_status;
-        }
-        if (dataToInsert.payment_method) {
-          bookingUpdate.payment_method = dataToInsert.payment_method;
-        }
+        const bookingUpdate: any = {
+          payment_status: payStatus,
+          payment_method: payMethod,
+          status: requestedBookingStatus || (payStatus === "paid" ? "completed" : "confirmed"),
+        };
 
-        if (Object.keys(bookingUpdate).length > 0) {
-          await supabase
-            .from("bookings")
-            .update(bookingUpdate)
-            .eq("id", dataToInsert.booking_id);
+        const { error: bErr } = await supabase
+          .from("bookings")
+          .update(bookingUpdate)
+          .eq("id", dataToInsert.booking_id);
+
+        if (bErr) {
+          console.error("Failed to sync booking status on create:", bErr);
+        } else {
+          invalidateMasterCache("bookings");
         }
       }
-
-      delete dataToInsert.booking_status;
     } else if (resource === "therapists") {
       // Default new therapists to null rating until real customer reviews arrive
       if (!dataToInsert.rating) {
@@ -516,6 +686,12 @@ export const dataProvider: DataProvider = {
       }
     }
 
+    const invoiceRawItems = dataToInsert.items || dataToInsert.raw_items;
+    if (resource === "invoices") {
+      delete dataToInsert.items;
+      delete dataToInsert.raw_items;
+    }
+
     let { data, error } = await supabase
       .from(table)
       .insert(dataToInsert)
@@ -544,6 +720,20 @@ export const dataProvider: DataProvider = {
       throw error;
     }
 
+    // Auto-sync relational items for bookings
+    if (resource === "bookings" && data?.id && dataToInsert.special_requests) {
+      syncBookingItems(data.id, dataToInsert.special_requests).catch((e) =>
+        console.warn("Relational booking_items sync error:", e)
+      );
+    }
+
+    // Auto-sync relational items for invoices
+    if (resource === "invoices" && data?.id) {
+      syncInvoiceItems(data.id, invoiceRawItems || dataToInsert.notes).catch((e) =>
+        console.warn("Relational invoice_items sync error:", e)
+      );
+    }
+
     // Recalculate therapist rating after new review
     if (resource === "reviews") {
       const targetTherapistId = data?.therapist_id || dataToInsert.therapist_id;
@@ -552,6 +742,7 @@ export const dataProvider: DataProvider = {
       }
     }
 
+    invalidateMasterCache(resource);
     return { data };
   },
 
@@ -565,13 +756,27 @@ export const dataProvider: DataProvider = {
         delete dataToUpdate.password;
       }
     } else if (resource === "bookings") {
+      delete dataToUpdate.relational_items;
+      delete dataToUpdate.items;
+      delete dataToUpdate.raw_items;
+      delete dataToUpdate.additional_charge;
+      delete dataToUpdate.additional_charge_description;
       delete dataToUpdate.customer_name;
       delete dataToUpdate.customer_phone;
       delete dataToUpdate.city_area;
       delete dataToUpdate.customers;
       delete dataToUpdate.services;
       delete dataToUpdate.therapists;
-    } else if (resource === "invoices") {
+    }
+
+    const invoiceRawItems = dataToUpdate.items || dataToUpdate.raw_items;
+    if (resource === "invoices") {
+      const bId = dataToUpdate.booking_id ? Number(dataToUpdate.booking_id) : null;
+      const requestedBookingStatus = dataToUpdate.booking_status;
+      const requestedPaymentStatus = dataToUpdate.payment_status;
+      const requestedPaymentMethod = dataToUpdate.payment_method;
+
+      delete dataToUpdate.relational_items;
       delete dataToUpdate.booking_status;
       delete dataToUpdate.applied_promo_name;
       delete dataToUpdate.discount_name;
@@ -579,6 +784,43 @@ export const dataProvider: DataProvider = {
       delete dataToUpdate.bookings;
       delete dataToUpdate.services;
       delete dataToUpdate.therapists;
+      delete dataToUpdate.items;
+      delete dataToUpdate.raw_items;
+
+      if (dataToUpdate.additional_charge !== undefined) {
+        dataToUpdate.additional_charge = Number(dataToUpdate.additional_charge || 0);
+      }
+      if (dataToUpdate.additional_charge_description !== undefined) {
+        dataToUpdate.additional_charge_description = dataToUpdate.additional_charge_description || null;
+      }
+
+      if (bId && !isNaN(bId) && bId > 0) {
+        dataToUpdate.booking_id = bId;
+        const bookingUpdate: any = {};
+        if (requestedBookingStatus) {
+          bookingUpdate.status = requestedBookingStatus;
+        } else if (requestedPaymentStatus === "paid") {
+          bookingUpdate.status = "completed";
+        }
+        if (requestedPaymentStatus) {
+          bookingUpdate.payment_status = requestedPaymentStatus;
+        }
+        if (requestedPaymentMethod) {
+          bookingUpdate.payment_method = requestedPaymentMethod;
+        }
+
+        if (Object.keys(bookingUpdate).length > 0) {
+          const { error: bErr } = await supabase
+            .from("bookings")
+            .update(bookingUpdate)
+            .eq("id", bId);
+          if (bErr) {
+            console.error("Failed to sync booking status on update:", bErr);
+          } else {
+            invalidateMasterCache("bookings");
+          }
+        }
+      }
     }
 
     let { data, error } = await supabase
@@ -610,6 +852,20 @@ export const dataProvider: DataProvider = {
       throw error;
     }
 
+    // Auto-sync relational items for bookings on update
+    if (resource === "bookings" && params.id && dataToUpdate.special_requests) {
+      syncBookingItems(params.id, dataToUpdate.special_requests).catch((e) =>
+        console.warn("Relational booking_items sync error on update:", e)
+      );
+    }
+
+    // Auto-sync relational items for invoices on update
+    if (resource === "invoices" && params.id) {
+      syncInvoiceItems(params.id, invoiceRawItems || dataToUpdate.notes).catch((e) =>
+        console.warn("Relational invoice_items sync error on update:", e)
+      );
+    }
+
     // Recalculate therapist rating if review updated
     if (resource === "reviews") {
       const updatedTherapistId = data?.therapist_id || (params.previousData as any)?.therapist_id;
@@ -618,6 +874,7 @@ export const dataProvider: DataProvider = {
       }
     }
 
+    invalidateMasterCache(resource);
     return { data };
   },
 
@@ -636,6 +893,7 @@ export const dataProvider: DataProvider = {
       throw error;
     }
 
+    invalidateMasterCache(resource);
     return { data: (data || []).map((item) => item.id) };
   },
 
@@ -712,6 +970,7 @@ export const dataProvider: DataProvider = {
       }
     }
 
+    invalidateMasterCache(resource);
     return { data: params.previousData as any };
   },
 
@@ -755,6 +1014,7 @@ export const dataProvider: DataProvider = {
       await syncAllTherapistsRatings();
     }
 
+    invalidateMasterCache(resource);
     return { data: params.ids };
   },
 };

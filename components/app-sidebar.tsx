@@ -10,6 +10,7 @@ import {
   useTranslate,
   LinkBase,
   useMatch,
+  useRemoveFromStore,
 } from "ra-core";
 import {
   Sidebar,
@@ -148,11 +149,22 @@ export const ResourceMenuItem = ({
   const resources = useResourceDefinitions();
   const getResourceLabel = useGetResourceLabel();
   const createPath = useCreatePath();
+  const remove = useRemoveFromStore();
   const to = createPath({
     resource: name,
     type: "list",
   });
   const match = useMatch({ path: to, end: false });
+
+  const handleMenuClick = () => {
+    try {
+      remove(`${name}.listParams`);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(`RaStore.${name}.listParams`);
+      }
+    } catch (_) {}
+    onClick?.();
+  };
 
   if (isPending) {
     return <Skeleton className="h-8 w-full" />;
@@ -164,7 +176,7 @@ export const ResourceMenuItem = ({
     <SidebarMenuItem>
       <SidebarMenuButton
         render={
-          <LinkBase to={to} state={{ _scrollToTop: true }} onClick={onClick} />
+          <LinkBase to={to} state={{ _scrollToTop: true }} onClick={handleMenuClick} />
         }
         isActive={!!match}
       >

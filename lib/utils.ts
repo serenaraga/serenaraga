@@ -93,3 +93,57 @@ export function localizePromoName(
   return name;
 }
 
+/**
+ * Deduplicates comma/bullet-separated descriptions or array of strings.
+ * Automatically merges identical reasons across multi-therapist item rows.
+ * E.g. "charge vila, charge vila" -> "charge vila"
+ * E.g. ["charge vila", "charge vila"] -> "charge vila"
+ * E.g. ["charge vila", "extra scrub"] -> "charge vila, extra scrub"
+ */
+export function formatDeduplicatedDescription(
+  input?: string | (string | undefined | null)[] | null
+): string {
+  if (!input) return "";
+  let items: string[] = [];
+  if (Array.isArray(input)) {
+    items = input.flatMap((str) =>
+      typeof str === "string" ? str.split(/[,•;]+/) : []
+    );
+  } else if (typeof input === "string") {
+    items = input.split(/[,•;]+/);
+  }
+
+  const cleaned = items.map((s) => s.trim()).filter(Boolean);
+  if (cleaned.length === 0) return "";
+
+  // Case-insensitive deduplication preserving original casing of first occurrence
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const item of cleaned) {
+    const key = item.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(item);
+    }
+  }
+
+  return unique.join(", ");
+}
+
+/**
+ * Checks whether a service is categorized as a Couple Package
+ * (e.g. category contains 'couple' / 'pasangan', or name contains 'couple').
+ */
+export function isCoupleService(service: any): boolean {
+  if (!service) return false;
+  const category = String(service.category || "").toLowerCase();
+  const name = String(service.name || "").toLowerCase();
+  return (
+    category.includes("couple") ||
+    category.includes("pasangan") ||
+    name.includes("couple") ||
+    name.includes("berdua") ||
+    name.includes("pasangan")
+  );
+}
+
