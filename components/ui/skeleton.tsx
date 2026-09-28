@@ -454,6 +454,43 @@ function InvoiceCardSkeleton({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Reusable QRIS Card Skeleton matching the side-by-side layout
+ */
+function QrisCardSkeleton({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4 shadow-none w-full max-w-[380px] mx-auto animate-in fade-in-50 duration-200",
+        className
+      )}
+    >
+      {/* QRIS Image Frame Skeleton */}
+      <div className="rounded-lg border border-border/80 bg-muted/20 p-4 min-h-[340px] flex flex-col items-center justify-between space-y-3">
+        {/* Header bar */}
+        <div className="flex justify-between w-full px-1">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-12" />
+        </div>
+        {/* Merchant & NMID */}
+        <div className="space-y-1.5 flex flex-col items-center w-full">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-40" />
+        </div>
+        {/* Nominal text */}
+        <Skeleton className="h-5 w-28 rounded-md" />
+        {/* QR Matrix */}
+        <Skeleton className="w-44 h-44 rounded-lg" />
+        {/* Footer text */}
+        <Skeleton className="h-3 w-36" />
+      </div>
+
+      {/* Button Skeleton */}
+      <Skeleton className="h-9 w-full rounded-lg" />
+    </div>
+  );
+}
+
 export {
   Skeleton,
   AvatarSkeleton,
@@ -463,4 +500,5 @@ export {
   DashboardSkeleton,
   DocumentSlipSkeleton,
   InvoiceCardSkeleton,
+  QrisCardSkeleton,
 };

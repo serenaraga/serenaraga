@@ -4,6 +4,7 @@ import * as React from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { InvoiceCard, type InvoiceData } from "@/components/invoice-card";
+import { DynamicQrisCard } from "@/components/dynamic-qris-card";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,7 +40,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useBrandSettings } from "@/lib/brand-settings";
 import { supabase } from "@/lib/supabase";
-import { InvoiceCardSkeleton } from "@/components/ui/skeleton";
+import { InvoiceCardSkeleton, QrisCardSkeleton } from "@/components/ui/skeleton";
 
 export default function PublicInvoicePage() {
   const params = useParams();
@@ -55,8 +56,8 @@ export default function PublicInvoicePage() {
   // Theme state: "light" | "dark" | "system" (Default light mode)
   const [theme, setTheme] = React.useState<"light" | "dark" | "system">("light");
 
-  // Locale state: "id" | "en" (Default en)
-  const [locale, setLocale] = React.useState<"id" | "en">("en");
+  // Locale state: "id" | "en" (Default Bahasa Indonesia)
+  const [locale, setLocale] = React.useState<"id" | "en">("id");
   const isEn = locale === "en";
 
   // Review states
@@ -270,7 +271,7 @@ export default function PublicInvoicePage() {
   return (
     <div className="min-h-screen bg-background text-foreground py-5 sm:py-8 px-3.5 sm:px-6 lg:px-8">
       {/* Top Header Navigation Bar (Matches Dashboard Header Bar with Shadcn UI Primitives) */}
-      <div className="max-w-3xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+      <div className="max-w-5xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
         {/* Left: Brand Logo */}
         <Link
           href="/"
@@ -374,22 +375,43 @@ export default function PublicInvoicePage() {
         </div>
       </div>
 
-      {/* Main Invoice Card Container */}
-      <div className="max-w-3xl mx-auto space-y-6">
+      {/* Main Invoice & QRIS Container (Side-by-Side on Desktop, Stacked on Mobile) */}
+      <div className="max-w-5xl mx-auto space-y-6">
         {loading ? (
-          <InvoiceCardSkeleton />
+          <div className="flex flex-col lg:flex-row items-start justify-center gap-6 w-full">
+            <div className="w-full flex-1 min-w-0 flex justify-center">
+              <InvoiceCardSkeleton />
+            </div>
+            <div className="w-full lg:w-[360px] shrink-0 flex justify-center">
+              <QrisCardSkeleton />
+            </div>
+          </div>
         ) : invoice ? (
           <>
-            <InvoiceCard
-              invoice={invoice}
-              showShareActions={true}
-              publicMode={true}
-              forcedLocale={locale}
-              className="shadow-none"
-            />
+            <div className="flex flex-col lg:flex-row items-start justify-center gap-6 w-full">
+              {/* Left Column: Invoice Card */}
+              <div className="w-full flex-1 min-w-0 flex justify-center">
+                <InvoiceCard
+                  invoice={invoice}
+                  showShareActions={true}
+                  publicMode={true}
+                  forcedLocale={locale}
+                  className="shadow-none w-full"
+                />
+              </div>
+
+              {/* Right Column: Dynamic QRIS Card */}
+              <div className="w-full lg:w-[360px] shrink-0 flex justify-center">
+                <DynamicQrisCard
+                  invoiceNumber={invoice.invoice_number}
+                  totalAmount={invoice.total_amount}
+                  isEn={isEn}
+                />
+              </div>
+            </div>
 
             {/* Leave Review Section (Shadcn Card with minimal 1px border matching action buttons) */}
-            <Card className="border border-border shadow-none bg-card rounded-xl ring-0">
+            <Card className="border border-border shadow-none bg-card rounded-xl ring-0 w-full">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-500" />
@@ -487,7 +509,7 @@ export default function PublicInvoicePage() {
                       ) : (
                         <>
                           <Send className="w-3.5 h-3.5" />
-                          <span>{isEn ? "Submit Relaxation Review" : "Kirim Ulasan Relaksasi"}</span>
+                          <span>{isEn ? "Submit Review" : "Kirim Ulasan"}</span>
                         </>
                       )}
                     </Button>
@@ -512,7 +534,7 @@ export default function PublicInvoicePage() {
       </div>
 
       {/* Bottom Footer */}
-      <div className="max-w-3xl mx-auto mt-8 text-center text-xs text-muted-foreground">
+      <div className="max-w-5xl mx-auto mt-8 text-center text-xs text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} Serena Raga Home Massage. All rights reserved.</p>
       </div>
     </div>

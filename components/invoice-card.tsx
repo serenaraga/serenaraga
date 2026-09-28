@@ -490,16 +490,18 @@ export const InvoiceCard = ({
             <span className="text-xs font-bold text-foreground">
               {invoice.invoice_number}
             </span>
-            <span
-              className={cn(
-                "text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase",
-                isPaid
-                  ? "text-[#8b5e3c] dark:text-[#d49b6a]"
-                  : "text-muted-foreground"
-              )}
-            >
-              {isPaid ? (isEn ? "PAID" : "LUNAS") : isEn ? "UNPAID" : "BELUM LUNAS"}
-            </span>
+            {!publicMode && (
+              <span
+                className={cn(
+                  "text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase",
+                  isPaid
+                    ? "text-[#8b5e3c] dark:text-[#d49b6a]"
+                    : "text-muted-foreground"
+                )}
+              >
+                {isPaid ? (isEn ? "PAID" : "LUNAS") : isEn ? "UNPAID" : "BELUM LUNAS"}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
@@ -532,15 +534,17 @@ export const InvoiceCard = ({
                 : (isEn ? "Download PNG" : "Unduh PNG")}
             </Button>
 
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleShareWhatsApp}
-              className="h-7 sm:h-8 text-[11px] sm:text-xs gap-1 sm:gap-1.5 bg-[#8b5e3c] hover:bg-[#785033] dark:bg-[#d49b6a] dark:hover:bg-[#c28a5a] text-white dark:text-zinc-950 font-medium shadow-none transition-colors cursor-pointer px-2.5 sm:px-3"
-            >
-              <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              {isEn ? "Share WA" : "Kirim WhatsApp"}
-            </Button>
+            {!publicMode && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleShareWhatsApp}
+                className="h-7 sm:h-8 text-[11px] sm:text-xs gap-1 sm:gap-1.5 bg-[#8b5e3c] hover:bg-[#785033] dark:bg-[#d49b6a] dark:hover:bg-[#c28a5a] text-white dark:text-zinc-950 font-medium shadow-none transition-colors cursor-pointer px-2.5 sm:px-3"
+              >
+                <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                {isEn ? "Share WA" : "Kirim WhatsApp"}
+              </Button>
+            )}
           </div>
         </div>
       )}

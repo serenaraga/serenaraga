@@ -520,7 +520,9 @@ export function BrandSettingsPage() {
                 </Label>
                 <QrisImageUploader
                   value={formData.qris_image_url}
+                  payload={formData.qris_payload}
                   onChange={(newUrl) => handleChange("qris_image_url", newUrl)}
+                  onChangePayload={(newPayload) => handleChange("qris_payload", newPayload)}
                   isEn={isEn}
                 />
               </div>

@@ -21,6 +21,7 @@ export interface BrandSettings {
   bank_account_number: string;
   bank_account_holder: string;
   qris_image_url: string;
+  qris_payload?: string;
   invoice_footer_note: string;
   invoice_support_text: string;
   wa_invoice_message_template: string;
@@ -47,6 +48,7 @@ export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   bank_account_number: "8720-1928-33",
   bank_account_holder: "PT Serena Raga Indonesia",
   qris_image_url: "",
+  qris_payload: "",
   invoice_footer_note:
     "Terima kasih telah mempercayakan relaksasi Anda pada Serena Raga.",
   invoice_support_text:
