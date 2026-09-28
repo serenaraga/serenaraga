@@ -347,8 +347,18 @@ async function initGlobalBrandSettings(): Promise<void> {
 
       // 1. Single Supabase Realtime channel
       if (!realtimeChannel) {
-        realtimeChannel = supabase
-          .channel("sr_brand_settings_global_bus")
+        try {
+          const channels = supabase.getChannels();
+          const existing = channels.find(
+            (c) => c.topic === "realtime:sr_brand_settings_global_bus"
+          );
+          if (existing) {
+            supabase.removeChannel(existing);
+          }
+        } catch (e) {}
+
+        const channel = supabase.channel("sr_brand_settings_global_bus");
+        realtimeChannel = channel
           .on(
             "postgres_changes",
             { event: "*", schema: "public", table: "brand_settings" },

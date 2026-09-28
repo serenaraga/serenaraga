@@ -231,6 +231,7 @@ create table if not exists brand_settings (
 alter table brand_settings add column if not exists facebook_url text default 'https://facebook.com/serenaraga';
 alter table brand_settings add column if not exists threads_handle text default '@serenaraga';
 alter table brand_settings add column if not exists tiktok_handle text default '@serenaraga';
+alter table brand_settings add column if not exists qris_payload text default '';
 
 -- Seed default brand settings if empty
 insert into brand_settings (id, brand_name, whatsapp_number)
