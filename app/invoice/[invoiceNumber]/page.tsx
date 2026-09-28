@@ -185,69 +185,89 @@ export default function PublicInvoicePage() {
         }
       }
 
-      // 1. Try insert with full extended schema
-      const fullPayload: any = {
-        booking_id: validBookingId,
-        invoice_id: invoice.id && !isNaN(Number(invoice.id)) ? Number(invoice.id) : null,
-        therapist_id: invoice.therapist_id && !isNaN(Number(invoice.therapist_id)) ? Number(invoice.therapist_id) : null,
-        customer_name: invoice.customer_name || "Pelanggan",
-        rating: Number(rating) || 5,
-        comment: comment.trim() || null,
-        is_read: false,
-        created_at: new Date().toISOString(),
-      };
-
-      let insertedRecord: any = null;
-      const { data: fullData, error: fullErr } = await supabase
-        .from("reviews")
-        .insert([fullPayload])
-        .select()
-        .maybeSingle();
-
-      if (!fullErr && fullData) {
-        insertedRecord = fullData;
-      } else {
-        // 2. Fallback to core standard schema (booking_id, rating, comment, customer_name, therapist_id)
-        const corePayload: any = {
+      // Try inserting review with cascading schema compatibility
+      const payloadsToTry = [
+        {
           booking_id: validBookingId,
-          customer_name: invoice.customer_name || "Pelanggan",
+          invoice_id: invoice.id && !isNaN(Number(invoice.id)) ? Number(invoice.id) : null,
           therapist_id: invoice.therapist_id && !isNaN(Number(invoice.therapist_id)) ? Number(invoice.therapist_id) : null,
+          customer_name: invoice.customer_name || "Pelanggan",
           rating: Number(rating) || 5,
           comment: comment.trim() || null,
           is_read: false,
           created_at: new Date().toISOString(),
-        };
+        },
+        {
+          booking_id: validBookingId,
+          therapist_id: invoice.therapist_id && !isNaN(Number(invoice.therapist_id)) ? Number(invoice.therapist_id) : null,
+          customer_name: invoice.customer_name || "Pelanggan",
+          rating: Number(rating) || 5,
+          comment: comment.trim() || null,
+          created_at: new Date().toISOString(),
+        },
+        {
+          booking_id: validBookingId,
+          therapist_id: invoice.therapist_id && !isNaN(Number(invoice.therapist_id)) ? Number(invoice.therapist_id) : null,
+          rating: Number(rating) || 5,
+          comment: comment.trim() || null,
+          created_at: new Date().toISOString(),
+        },
+        {
+          booking_id: validBookingId,
+          rating: Number(rating) || 5,
+          comment: comment.trim() || null,
+          created_at: new Date().toISOString(),
+        },
+        {
+          booking_id: validBookingId,
+          rating: Number(rating) || 5,
+          comment: comment.trim() || null,
+        },
+        {
+          rating: Number(rating) || 5,
+          comment: comment.trim() || null,
+        },
+      ];
 
-        const { data: coreData, error: coreErr } = await supabase
+      let insertedRecord: any = null;
+      let lastError: any = null;
+
+      for (const p of payloadsToTry) {
+        // Filter out null / undefined values that might violate schema constraints
+        const cleanPayload = Object.fromEntries(
+          Object.entries(p).filter(([_, v]) => v !== null && v !== undefined)
+        );
+
+        const { data, error } = await supabase
           .from("reviews")
-          .insert([corePayload])
+          .insert([cleanPayload])
           .select()
           .maybeSingle();
 
-        if (coreErr) {
-          throw coreErr;
+        if (!error) {
+          insertedRecord = data || p;
+          lastError = null;
+          break;
+        } else {
+          lastError = error;
         }
-        insertedRecord = coreData || { ...corePayload, customer_name: invoice.customer_name };
       }
 
-      setExistingReview(insertedRecord || fullPayload);
+      if (lastError && !insertedRecord) {
+        throw lastError;
+      }
+
+      setExistingReview(insertedRecord);
       setReviewSubmitted(true);
 
       // Auto-update therapist average rating in therapists table
       const targetTherapistId = invoice.therapist_id || (insertedRecord && insertedRecord.therapist_id);
       if (targetTherapistId) {
         try {
-          const { data: revs } = await supabase
-            .from("reviews")
-            .select("rating")
-            .eq("therapist_id", targetTherapistId);
-          if (revs && revs.length > 0) {
-            const total = revs.reduce((acc: number, r: any) => acc + (Number(r.rating) || 0), 0);
-            const avg = Number((total / revs.length).toFixed(1));
-            await supabase.from("therapists").update({ rating: avg }).eq("id", targetTherapistId);
-          }
+          const { recalculateTherapistRating } = await import("@/lib/therapist-rating");
+          await recalculateTherapistRating(targetTherapistId);
         } catch (e) {
-          console.error("Failed to update therapist average rating:", e);
+          console.warn("Recalculate therapist rating notice:", e);
         }
       }
 

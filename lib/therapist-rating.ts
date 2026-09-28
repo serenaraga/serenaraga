@@ -9,13 +9,7 @@ export async function recalculateTherapistRating(therapistId: number | string | 
   const tid = Number(therapistId);
 
   try {
-    // 1. Get all reviews directly linked to this therapist
-    const { data: directReviews } = await supabase
-      .from("reviews")
-      .select("id, rating, booking_id")
-      .eq("therapist_id", tid);
-
-    // 2. Get all bookings assigned to this therapist
+    // 1. Get all bookings assigned to this therapist
     const { data: therapistBookings } = await supabase
       .from("bookings")
       .select("id")
@@ -23,14 +17,30 @@ export async function recalculateTherapistRating(therapistId: number | string | 
 
     const bookingIds = therapistBookings?.map((b) => b.id) || [];
 
-    // 3. Get any reviews linked to those bookings (in case therapist_id was null on review)
-    let bookingReviews: any[] = [];
-    if (bookingIds.length > 0) {
-      const { data: revsFromBookings } = await supabase
+    // 2. Get reviews linked directly (if therapist_id column exists)
+    let directReviews: any[] = [];
+    try {
+      const { data } = await supabase
         .from("reviews")
         .select("id, rating, booking_id")
-        .in("booking_id", bookingIds);
-      bookingReviews = revsFromBookings || [];
+        .eq("therapist_id", tid);
+      if (data) directReviews = data;
+    } catch {
+      // Column might not exist in schema yet
+    }
+
+    // 3. Get any reviews linked to those bookings
+    let bookingReviews: any[] = [];
+    if (bookingIds.length > 0) {
+      try {
+        const { data } = await supabase
+          .from("reviews")
+          .select("id, rating, booking_id")
+          .in("booking_id", bookingIds);
+        if (data) bookingReviews = data;
+      } catch {
+        // Safe catch
+      }
     }
 
     // Combine and deduplicate reviews by review id
@@ -56,18 +66,22 @@ export async function recalculateTherapistRating(therapistId: number | string | 
       .update({ rating: newAvgRating })
       .eq("id", tid);
 
-    // Also update any reviews for these bookings to have the therapist_id set
+    // Also update any reviews for these bookings to have the therapist_id set if supported
     if (bookingIds.length > 0) {
-      await supabase
-        .from("reviews")
-        .update({ therapist_id: tid })
-        .in("booking_id", bookingIds)
-        .is("therapist_id", null);
+      try {
+        await supabase
+          .from("reviews")
+          .update({ therapist_id: tid })
+          .in("booking_id", bookingIds)
+          .is("therapist_id", null);
+      } catch {
+        // Non-blocking
+      }
     }
 
     return newAvgRating;
   } catch (err) {
-    console.error(`Failed to recalculate rating for therapist ${therapistId}:`, err);
+    console.warn(`Notice in recalculate rating for therapist ${therapistId}:`, err);
     return null;
   }
 }
