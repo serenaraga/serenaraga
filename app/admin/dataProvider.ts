@@ -2,6 +2,7 @@ import type { DataProvider } from "ra-core";
 import { supabase } from "@/lib/supabase";
 import { recalculateTherapistRating, syncAllTherapistsRatings } from "@/lib/therapist-rating";
 import { standardizePhoneNumber } from "@/lib/brand-settings";
+import { generateInvoicePublicToken } from "@/lib/utils";
 
 export { supabase };
 
@@ -665,6 +666,11 @@ export const dataProvider: DataProvider = {
         const dd = String(today.getDate()).padStart(2, "0");
         const rand = Math.floor(1000 + Math.random() * 9000);
         dataToInsert.invoice_number = `SR-${yy}${mm}${dd}-${rand}`;
+      }
+
+      // Auto-generate secure public capability token (Midtrans/Stripe style)
+      if (!dataToInsert.public_token) {
+        dataToInsert.public_token = generateInvoicePublicToken();
       }
 
       // Calculate totals

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { supabase } from "@/lib/supabase";
 
 export interface BrandSettings {
@@ -52,7 +52,7 @@ export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   invoice_support_text:
     "Dokumen ini merupakan bukti transaksi resmi. Layanan pelanggan WhatsApp {whatsapp}.",
   wa_invoice_message_template:
-    "Halo {customer_name},\n\nTerima kasih telah menggunakan layanan *{brand_name}* ({service_name}).\nBerikut adalah rincian nota & invoice resmi Anda:\n\n📄 *No. Invoice:* {invoice_number}\n💰 *Total Tagihan:* {total_amount}\n📅 *Jadwal:* {booking_date} jam {booking_time}\n💳 *Status:* {payment_status}\n\n🔗 *Lihat Nota Digital:* {invoice_url}\n\nJika ada pertanyaan, silakan hubungi kami via WhatsApp ini.",
+    "Halo {customer_name},\n\nTerima kasih telah menggunakan layanan *{brand_name} – {service_name}* 🤎\n\nBerikut rincian invoice {customer_name}:\n📄 No. Invoice: *{invoice_number}*\n📅 Jadwal: *{booking_date}, {booking_time} WIB*\n💰 Total: *{total_amount}*\n💳 Status: *{payment_status}*\n\n🧾 Nota digital:\n{invoice_url}\n\nSalam hangat,\n*{brand_name}*",
   wa_booking_message_template:
     "Halo {customer_name},\n\nPesanan *{service_name}* di *{brand_name}* Anda telah dikonfirmasi!\n\n📅 *Tanggal:* {booking_date}\n⏰ *Jam:* {booking_time}\n📍 *Alamat:* {address}\n💆 *Terapis:* {therapist_name}\n\nMohon bersiap 10 menit sebelum waktu pelayanan.",
   wa_support_default_message:
@@ -285,129 +285,168 @@ export async function saveBrandSettings(
   }
 }
 
-/**
- * React Hook for consuming Brand Settings throughout the application
- */
-export function useBrandSettings() {
-  const [settings, setSettings] = useState<BrandSettings>(() => getCachedBrandSettings());
-  const [loading, setLoading] = useState<boolean>(true);
+// In-memory singleton store for BrandSettings across the entire app
+let currentSettings: BrandSettings = getCachedBrandSettings();
+let isInitialized = false;
+let initPromise: Promise<void> | null = null;
+const subscribers = new Set<() => void>();
+let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+let listenersAttached = false;
 
-  // Load from localStorage and sync with Supabase on mount
-  useEffect(() => {
-    let mounted = true;
+function notifySubscribers() {
+  subscribers.forEach((cb) => {
+    try {
+      cb();
+    } catch {}
+  });
+}
 
-    async function loadRemoteSettings() {
-      try {
-        const { data, error } = await supabase
-          .from("brand_settings")
-          .select("*")
-          .order("id", { ascending: true })
-          .limit(1)
-          .maybeSingle();
+function setGlobalBrandSettings(next: Partial<BrandSettings> | null | undefined) {
+  if (!next) return;
+  currentSettings = {
+    ...currentSettings,
+    ...next,
+  };
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentSettings));
+    } catch {}
+  }
+  notifySubscribers();
+}
 
-        if (!error && data && mounted) {
-          const merged: BrandSettings = {
-            ...DEFAULT_BRAND_SETTINGS,
-            ...data,
-          };
-          setSettings(merged);
-          if (typeof window !== "undefined") {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-          }
-        }
-      } catch (e) {
-        // Fallback to localStorage data
-      } finally {
-        if (mounted) setLoading(false);
+async function initGlobalBrandSettings(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (isInitialized) return;
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    try {
+      const { data, error } = await supabase
+        .from("brand_settings")
+        .select("*")
+        .order("id", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && data) {
+        setGlobalBrandSettings(data);
       }
+    } catch (e) {
+      // Fallback to localStorage data
+    } finally {
+      isInitialized = true;
+      initPromise = null;
     }
 
-    loadRemoteSettings();
+    // Attach single realtime channel and window listeners once
+    if (!listenersAttached && typeof window !== "undefined") {
+      listenersAttached = true;
 
-    // Supabase Realtime Subscription for instant database updates
-    const channel = supabase
-      .channel("brand_settings_realtime_sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "brand_settings" },
-        (payload: any) => {
-          if (payload.new && mounted) {
-            const merged: BrandSettings = {
-              ...DEFAULT_BRAND_SETTINGS,
-              ...payload.new,
-            };
-            setSettings(merged);
-            if (typeof window !== "undefined") {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      // 1. Single Supabase Realtime channel
+      if (!realtimeChannel) {
+        realtimeChannel = supabase
+          .channel("sr_brand_settings_global_bus")
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "brand_settings" },
+            (payload: any) => {
+              if (payload.new) {
+                setGlobalBrandSettings(payload.new);
+              }
             }
+          )
+          .subscribe();
+      }
+
+      // 2. Custom local event listener
+      window.addEventListener("brand_settings_updated", (e: any) => {
+        if (e.detail) {
+          setGlobalBrandSettings(e.detail);
+        }
+      });
+
+      // 3. Storage event listener for multi-tab sync
+      window.addEventListener("storage", (e: StorageEvent) => {
+        if (e.key === STORAGE_KEY && e.newValue) {
+          try {
+            const parsed = JSON.parse(e.newValue);
+            setGlobalBrandSettings(parsed);
+          } catch {}
+        }
+      });
+
+      // 4. BroadcastChannel listener
+      try {
+        const bc = new BroadcastChannel("brand_settings_channel");
+        bc.onmessage = (e) => {
+          if (e.data) {
+            setGlobalBrandSettings(e.data);
           }
-        }
-      )
-      .subscribe();
+        };
+      } catch {}
+    }
+  })();
 
-    // Listen to local custom event in the same window
-    const handleLocalUpdate = (e: any) => {
-      if (e.detail && mounted) {
-        setSettings(e.detail);
-      }
-    };
+  return initPromise;
+}
 
-    // Listen to storage events from other tabs/windows
-    const handleStorageUpdate = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY && e.newValue && mounted) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          setSettings({ ...DEFAULT_BRAND_SETTINGS, ...parsed });
-        } catch (err) {}
-      }
-    };
-
-    // Listen to BroadcastChannel for instant cross-tab sync
-    let bc: BroadcastChannel | null = null;
-    try {
-      bc = new BroadcastChannel("brand_settings_channel");
-      bc.onmessage = (e) => {
-        if (e.data && mounted) {
-          setSettings(e.data);
-        }
+/**
+ * React Hook for consuming Brand Settings throughout the application.
+ * Uses a singleton external store with useSyncExternalStore to eliminate redundant
+ * network requests, duplicate Realtime channels, and event listener leaks.
+ */
+export function useBrandSettings() {
+  const settings = useSyncExternalStore(
+    (callback) => {
+      subscribers.add(callback);
+      initGlobalBrandSettings();
+      return () => {
+        subscribers.delete(callback);
       };
-    } catch (e) {}
+    },
+    () => currentSettings,
+    () => DEFAULT_BRAND_SETTINGS
+  );
 
-    window.addEventListener("brand_settings_updated", handleLocalUpdate);
-    window.addEventListener("storage", handleStorageUpdate);
+  const [loading, setLoading] = useState<boolean>(!isInitialized);
 
+  useEffect(() => {
+    let mounted = true;
+    if (isInitialized) {
+      setLoading(false);
+    } else {
+      initGlobalBrandSettings().then(() => {
+        if (mounted) setLoading(false);
+      });
+    }
     return () => {
       mounted = false;
-      supabase.removeChannel(channel);
-      window.removeEventListener("brand_settings_updated", handleLocalUpdate);
-      window.removeEventListener("storage", handleStorageUpdate);
-      if (bc) {
-        try {
-          bc.close();
-        } catch (e) {}
-      }
     };
   }, []);
 
   const updateSettings = useCallback(async (newSettings: BrandSettings) => {
-    setSettings(newSettings);
+    setGlobalBrandSettings(newSettings);
     return await saveBrandSettings(newSettings);
   }, []);
 
   const resetToDefault = useCallback(async () => {
-    setSettings(DEFAULT_BRAND_SETTINGS);
+    setGlobalBrandSettings(DEFAULT_BRAND_SETTINGS);
     return await saveBrandSettings(DEFAULT_BRAND_SETTINGS);
   }, []);
 
-  const adminWhatsAppUrl = (customText?: string) => {
-    const text =
-      customText ||
-      settings.wa_support_default_message.replace(
-        /\{brand_name\}/g,
-        settings.brand_name
-      );
-    return getWhatsAppUrl(settings.whatsapp_number, text);
-  };
+  const adminWhatsAppUrl = useCallback(
+    (customText?: string) => {
+      const text =
+        customText ||
+        settings.wa_support_default_message.replace(
+          /\{brand_name\}/g,
+          settings.brand_name
+        );
+      return getWhatsAppUrl(settings.whatsapp_number, text);
+    },
+    [settings]
+  );
 
   return {
     settings,

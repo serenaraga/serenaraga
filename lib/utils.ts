@@ -149,3 +149,25 @@ export function isCoupleService(service: any): boolean {
   );
 }
 
+/**
+ * Generates a secure, unguessable public access token for customer invoice links (Midtrans/Stripe style)
+ * Format: 'inv_' + 16 cryptographic random alphanumeric characters
+ * Example: 'inv_k8X9pL2vM4qR1zW7'
+ */
+export function generateInvoicePublicToken(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let token = "inv_";
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    for (let i = 0; i < 16; i++) {
+      token += chars[bytes[i] % chars.length];
+    }
+  } else {
+    for (let i = 0; i < 16; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+  }
+  return token;
+}
+

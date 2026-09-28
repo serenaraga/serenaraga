@@ -34,7 +34,14 @@ import {
   Medal,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatIDR, localizePromoName, formatDeduplicatedDescription, isCoupleService, standardizePhoneNumber } from "@/lib/utils";
+import {
+  formatIDR,
+  localizePromoName,
+  formatDeduplicatedDescription,
+  isCoupleService,
+  standardizePhoneNumber,
+  generateInvoicePublicToken,
+} from "@/lib/utils";
 import { PAYMENT_METHODS } from "@/components/payment-method";
 import { getPaymentStatusSelectItems } from "@/components/status-badge";
 import { POSDatePicker, POSTimePicker } from "./pos-pickers";
@@ -102,11 +109,13 @@ export const InvoiceCreate = () => {
     return `SR-${yy}${mm}${dd}-${rand}`;
   }, []);
 
+  const defaultPublicToken = React.useMemo(() => generateInvoicePublicToken(), []);
   const todayStr = React.useMemo(() => new Date().toISOString().split("T")[0], []);
 
   // Form State
   const [formData, setFormData] = React.useState<InvoiceData>({
     invoice_number: defaultInvoiceNumber,
+    public_token: defaultPublicToken,
     booking_id: null,
     customer_id: null,
     customer_name: "",

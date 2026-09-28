@@ -31,6 +31,7 @@ import { toPng } from "html-to-image";
 export interface InvoiceData {
   id?: number | string;
   invoice_number: string;
+  public_token?: string | null;
   booking_id?: number | string | null;
   customer_id?: number | string | null;
   customer_name: string;
@@ -183,12 +184,13 @@ export const InvoiceCard = ({
     locale: isEn ? localeEn : localeId,
   });
 
-  // Public Invoice URL
+  // Public Invoice URL (Strictly uses secure public_token)
   const publicInvoiceUrl = React.useMemo(() => {
     if (typeof window === "undefined") return "";
     const origin = window.location.origin;
-    return `${origin}/invoice/${invoice.invoice_number || invoice.id || "preview"}`;
-  }, [invoice.invoice_number, invoice.id]);
+    const identifier = invoice.public_token || "preview";
+    return `${origin}/invoice/${identifier}`;
+  }, [invoice.public_token]);
 
   const handleCopyLink = () => {
     if (!publicInvoiceUrl) return;
@@ -209,8 +211,8 @@ export const InvoiceCard = ({
       .replace(/\{invoice_number\}/g, invoice.invoice_number || "-")
       .replace(/\{total_amount\}/g, formattedTotal)
       .replace(/\{booking_date\}/g, formattedDate)
-      .replace(/\{booking_time\}/g, invoice.booking_time ? `${invoice.booking_time} WIB` : "")
-      .replace(/\{payment_status\}/g, invoice.payment_status === "paid" ? (isEn ? "PAID / LUNAS" : "LUNAS") : (isEn ? "UNPAID" : "BELUM LUNAS"))
+      .replace(/\{booking_time\}/g, invoice.booking_time ? String(invoice.booking_time).replace(/\s*WIB/i, "").trim() : "10:00")
+      .replace(/\{payment_status\}/g, invoice.payment_status === "paid" ? (isEn ? "Paid" : "Lunas") : (isEn ? "Unpaid" : "Belum Lunas"))
       .replace(/\{invoice_url\}/g, publicInvoiceUrl)
       .replace(/\{admin_phone\}/g, formattedPhone);
 
@@ -285,14 +287,28 @@ export const InvoiceCard = ({
 
   const isPaid = invoice.payment_status === "paid";
 
-  // Footer Notes & Support Texts directly from Settings
+  // Footer Notes & Support Texts directly from Settings with robust multilingual translation
   const defaultIdFooterNote = "Terima kasih telah mempercayakan relaksasi Anda pada Serena Raga.";
   const defaultEnFooterNote = "Thank you for choosing Serena Raga for your wellness and relaxation.";
-  const displayFooterNote = settings.invoice_footer_note || (isEn ? defaultEnFooterNote : defaultIdFooterNote);
+  let displayFooterNote = settings.invoice_footer_note;
+  if (
+    !displayFooterNote ||
+    displayFooterNote.trim() === defaultIdFooterNote ||
+    displayFooterNote.toLowerCase().includes("terima kasih telah mempercayakan")
+  ) {
+    displayFooterNote = isEn ? defaultEnFooterNote : defaultIdFooterNote;
+  }
 
   const defaultIdSupportText = "Dokumen ini merupakan bukti transaksi resmi. Layanan pelanggan WhatsApp {whatsapp}.";
   const defaultEnSupportText = "This document is an official transaction record. For customer support, WhatsApp {whatsapp}.";
-  const rawSupportText = settings.invoice_support_text || (isEn ? defaultEnSupportText : defaultIdSupportText);
+  let rawSupportText = settings.invoice_support_text;
+  if (
+    !rawSupportText ||
+    rawSupportText.trim() === defaultIdSupportText ||
+    rawSupportText.toLowerCase().includes("dokumen ini merupakan bukti transaksi resmi")
+  ) {
+    rawSupportText = isEn ? defaultEnSupportText : defaultIdSupportText;
+  }
   const displaySupportText = rawSupportText.replace(/\{whatsapp\}/g, formattedPhone);
 
   // Extract promo name and parse JSON metadata from notes if present
@@ -683,7 +699,7 @@ export const InvoiceCard = ({
                   <div className="space-y-0.5 text-xs">
                     <div className="flex justify-between items-center text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
                       <span className="inline-flex items-center gap-1 uppercase tracking-wider text-[10.5px]">
-                        <Tag className="w-3 h-3" /> {isEn ? "DISCOUNT APPLIED" : "DISCOUNT APPLIED"}
+                        <Tag className="w-3 h-3" /> {isEn ? "DISCOUNT APPLIED" : "DISKON DIGUNAKAN"}
                       </span>
                       <span className="font-bold">-{formattedDiscount}</span>
                     </div>

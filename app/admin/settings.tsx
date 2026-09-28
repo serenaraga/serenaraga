@@ -34,6 +34,8 @@ import {
   DEFAULT_BRAND_SETTINGS,
 } from "@/lib/brand-settings";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbPage } from "@/components/breadcrumb";
+import { WhatsAppTemplateEditor } from "@/components/whatsapp-template-editor";
+import { QrisImageUploader } from "@/components/qris-image-uploader";
 
 export function BrandSettingsPage() {
   const [locale] = useLocaleState();
@@ -48,7 +50,15 @@ export function BrandSettingsPage() {
 
   // Keep form in sync when settings are loaded from server
   React.useEffect(() => {
-    setFormData(settings);
+    setFormData({
+      ...settings,
+      wa_invoice_message_template: settings.wa_invoice_message_template
+        ? settings.wa_invoice_message_template.replace(/\\n/g, "\n")
+        : settings.wa_invoice_message_template,
+      wa_booking_message_template: settings.wa_booking_message_template
+        ? settings.wa_booking_message_template.replace(/\\n/g, "\n")
+        : settings.wa_booking_message_template,
+    });
   }, [settings]);
 
   const handleChange = (field: keyof BrandSettings, value: string) => {
@@ -504,16 +514,14 @@ export function BrandSettingsPage() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="qris_image_url" className="text-xs font-semibold">
-                  {isEn ? "QRIS Image URL (Optional)" : "URL Gambar QRIS (Opsional)"}
+              <div className="space-y-2 pt-2 border-t border-border">
+                <Label className="text-xs font-semibold">
+                  {isEn ? "QRIS Merchant Code Image" : "Gambar / Barcode QRIS Pembayaran"}
                 </Label>
-                <Input
-                  id="qris_image_url"
-                  placeholder="https://.../qris.jpg"
+                <QrisImageUploader
                   value={formData.qris_image_url}
-                  onChange={(e) => handleChange("qris_image_url", e.target.value)}
-                  className="text-xs h-9 shadow-none"
+                  onChange={(newUrl) => handleChange("qris_image_url", newUrl)}
+                  isEn={isEn}
                 />
               </div>
             </CardContent>
@@ -556,16 +564,15 @@ export function BrandSettingsPage() {
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-3 pt-2 border-t border-border">
                 <Label htmlFor="wa_invoice_message_template" className="text-xs font-semibold">
                   {isEn ? "WhatsApp Share Invoice Template" : "Template Pesan WhatsApp Kirim Nota ke Pelanggan"}
                 </Label>
-                <Textarea
-                  id="wa_invoice_message_template"
-                  rows={6}
+                <WhatsAppTemplateEditor
                   value={formData.wa_invoice_message_template}
-                  onChange={(e) => handleChange("wa_invoice_message_template", e.target.value)}
-                  className="text-xs shadow-none leading-relaxed"
+                  onChange={(newVal) => handleChange("wa_invoice_message_template", newVal)}
+                  brandName={formData.brand_name || "Serena Raga"}
+                  isEn={isEn}
                 />
               </div>
             </CardContent>

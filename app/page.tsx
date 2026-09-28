@@ -550,8 +550,9 @@ export default function LandingPage() {
 
     fetchTestimonials();
 
+    const channelName = `testimonials_realtime_${Math.random().toString(36).substring(2, 9)}`;
     const channel = supabase
-      .channel("testimonials_realtime_landing")
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "testimonials" },

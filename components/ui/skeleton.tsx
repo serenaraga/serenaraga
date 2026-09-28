@@ -337,6 +337,123 @@ function DocumentSlipSkeleton({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Reusable Invoice Card Skeleton matching Serena Raga official receipt layout
+ */
+function InvoiceCardSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn("space-y-6 w-full animate-in fade-in-50 duration-200", className)}>
+      {/* Top Action Bar Buttons Skeleton */}
+      <div className="flex items-center justify-end gap-2 pb-1">
+        <Skeleton className="h-8 w-24 rounded-lg" />
+        <Skeleton className="h-8 w-28 rounded-lg" />
+        <Skeleton className="h-8 w-32 rounded-lg" />
+      </div>
+
+      {/* Main Invoice Card Skeleton */}
+      <div className="rounded-xl border border-border bg-card p-6 sm:p-8 space-y-6 shadow-none">
+        {/* Header with Logo & Invoice Meta */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-border">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-5 w-36" />
+              <Skeleton className="h-3.5 w-48" />
+            </div>
+          </div>
+          <div className="flex flex-col sm:items-end space-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+            </div>
+            <Skeleton className="h-3 w-36" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+        </div>
+
+        {/* 2 Meta Information Grids (Customer & Schedule) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-2.5">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-3.5 w-3.5 rounded" />
+              <Skeleton className="h-3.5 w-28" />
+            </div>
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-48" />
+          </div>
+          <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-2.5">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-3.5 w-3.5 rounded" />
+              <Skeleton className="h-3.5 w-28" />
+            </div>
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-3 w-44" />
+          </div>
+        </div>
+
+        {/* Services Table Skeleton */}
+        <div className="rounded-xl border border-border overflow-hidden shadow-none">
+          <div className="flex items-center justify-between p-3.5 bg-muted/40 border-b border-border">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-3.5 w-20" />
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+        </div>
+
+        {/* Breakdown Calculation Rows */}
+        <div className="space-y-2.5 pt-2 border-t border-border/80">
+          <div className="flex justify-between">
+            <Skeleton className="h-3.5 w-24" />
+            <Skeleton className="h-3.5 w-20" />
+          </div>
+          <div className="flex justify-between">
+            <Skeleton className="h-3.5 w-28" />
+            <Skeleton className="h-3.5 w-16" />
+          </div>
+          <div className="flex justify-between">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-3.5 w-16" />
+          </div>
+          <div className="flex justify-between items-center p-3.5 mt-3 rounded-lg bg-muted/30 border border-border">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-6 w-36" />
+          </div>
+        </div>
+
+        {/* Footer Note Skeleton */}
+        <div className="pt-4 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-2">
+          <Skeleton className="h-3 w-64" />
+          <Skeleton className="h-3 w-36" />
+        </div>
+      </div>
+
+      {/* Review Box Skeleton */}
+      <div className="rounded-xl border border-border bg-card p-6 space-y-4 shadow-none">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-4 rounded" />
+          <Skeleton className="h-4 w-44" />
+        </div>
+        <Skeleton className="h-3 w-3/4 max-w-md" />
+        <div className="flex gap-2 py-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-7 w-7 rounded" />
+          ))}
+        </div>
+        <Skeleton className="h-20 w-full rounded-md" />
+        <Skeleton className="h-9 w-32 rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
 export {
   Skeleton,
   AvatarSkeleton,
@@ -345,4 +462,5 @@ export {
   TableSkeleton,
   DashboardSkeleton,
   DocumentSlipSkeleton,
+  InvoiceCardSkeleton,
 };

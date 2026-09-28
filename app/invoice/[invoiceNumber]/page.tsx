@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useBrandSettings } from "@/lib/brand-settings";
 import { supabase } from "@/lib/supabase";
+import { InvoiceCardSkeleton } from "@/components/ui/skeleton";
 
 export default function PublicInvoicePage() {
   const params = useParams();
@@ -97,22 +98,12 @@ export default function PublicInvoicePage() {
       try {
         setLoading(true);
 
-        // Search by invoice_number first, then by id
-        const query = supabase
+        // Strict Capability Token Lookup: Only accessible via unique cryptographic public_token
+        let { data } = await supabase
           .from("invoices")
           .select("*")
-          .eq("invoice_number", rawId);
-
-        let { data } = await query.maybeSingle();
-
-        if (!data && !isNaN(Number(rawId))) {
-          const { data: byIdData } = await supabase
-            .from("invoices")
-            .select("*")
-            .eq("id", Number(rawId))
-            .maybeSingle();
-          data = byIdData;
-        }
+          .eq("public_token", rawId)
+          .maybeSingle();
 
         if (data) {
           setInvoice(data);
@@ -135,10 +126,10 @@ export default function PublicInvoicePage() {
           } catch (e) {
             // Non-blocking
           }
-        } else {
+        } else if (rawId === "preview" || rawId?.startsWith("preview")) {
           // Fallback preview
           setInvoice({
-            invoice_number: rawId,
+            invoice_number: "SR-PREVIEW-001",
             customer_name: "Pelanggan Serena Raga",
             service_name: "Traditional Body Massage (90 Menit)",
             therapist_name: "Siti Rahmawati",
@@ -153,6 +144,8 @@ export default function PublicInvoicePage() {
             payment_status: "paid",
             notes: "Nota resmi relaksasi Serena Raga Home Massage.",
           });
+        } else {
+          setInvoice(null);
         }
       } catch (err: any) {
         setError(err.message || "Failed to load invoice");
@@ -384,12 +377,7 @@ export default function PublicInvoicePage() {
       {/* Main Invoice Card Container */}
       <div className="max-w-3xl mx-auto space-y-6">
         {loading ? (
-          <Card className="p-16 text-center border border-border shadow-none bg-card space-y-3 rounded-xl ring-0">
-            <Loader2 className="w-6 h-6 animate-spin text-foreground mx-auto" />
-            <p className="text-xs text-muted-foreground">
-              {isEn ? "Loading official Serena Raga receipt..." : "Memuat nota resmi Serena Raga..."}
-            </p>
-          </Card>
+          <InvoiceCardSkeleton />
         ) : invoice ? (
           <>
             <InvoiceCard
