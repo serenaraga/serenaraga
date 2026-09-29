@@ -3,65 +3,18 @@
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { supabase } from "@/lib/supabase";
 
-export interface BrandSettings {
-  brand_name: string;
-  tagline: string;
-  description: string;
-  whatsapp_number: string;
-  phone_number: string;
-  email: string;
-  website_url: string;
-  instagram_handle: string;
-  tiktok_handle?: string;
-  facebook_url?: string;
-  threads_handle?: string;
-  operational_hours: string;
-  service_areas: string;
-  bank_name: string;
-  bank_account_number: string;
-  bank_account_holder: string;
-  qris_image_url: string;
-  qris_payload?: string;
-  invoice_footer_note: string;
-  invoice_support_text: string;
-  wa_invoice_message_template: string;
-  wa_booking_message_template: string;
-  wa_support_default_message: string;
-  wa_service_book_message_template?: string;
-}
+import {
+  type BrandSettings,
+  type FeaturedServiceCard,
+  DEFAULT_FEATURED_SERVICES,
+  DEFAULT_BRAND_SETTINGS,
+} from "./brand-settings-types";
 
-export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
-  brand_name: "Serena Raga",
-  tagline: "Comfortable Home Massage",
-  description:
-    "Layanan pijat panggilan yang nyaman langsung ke rumah, hotel, dan apartemen Anda.",
-  whatsapp_number: "6289518359037",
-  phone_number: "+62 895-1835-9037",
-  email: "ragaserena@gmail.com",
-  website_url: "https://www.serenaraga.com",
-  instagram_handle: "@serena.raga",
-  tiktok_handle: "@serenaraga",
-  facebook_url: "https://facebook.com/serenaraga",
-  threads_handle: "@serena.raga",
-  operational_hours: "08:00 - 22:00 WIB (Setiap Hari)",
-  service_areas: "Yogyakarta, Sleman, Bantul, & Sekitarnya",
-  bank_name: "BCA (Bank Central Asia)",
-  bank_account_number: "8720-1928-33",
-  bank_account_holder: "PT Serena Raga Indonesia",
-  qris_image_url: "",
-  qris_payload: "",
-  invoice_footer_note:
-    "Terima kasih telah mempercayakan relaksasi Anda pada Serena Raga.",
-  invoice_support_text:
-    "Dokumen ini merupakan bukti transaksi resmi. Layanan pelanggan WhatsApp {whatsapp}.",
-  wa_invoice_message_template:
-    "Halo {customer_name},\n\nTerima kasih telah menggunakan layanan *{brand_name} – {service_name}* 🤎\n\nBerikut rincian invoice {customer_name}:\n📄 No. Invoice: *{invoice_number}*\n📅 Jadwal: *{booking_date}, {booking_time} WIB*\n💰 Total: *{total_amount}*\n💳 Status: *{payment_status}*\n\n🧾 Nota digital:\n{invoice_url}\n\nSalam hangat,\n*{brand_name}*",
-  wa_booking_message_template:
-    "Halo {customer_name},\n\nPesanan *{service_name}* di *{brand_name}* Anda telah dikonfirmasi!\n\n📅 *Tanggal:* {booking_date}\n⏰ *Jam:* {booking_time}\n📍 *Alamat:* {address}\n💆 *Terapis:* {therapist_name}\n\nMohon bersiap 10 menit sebelum waktu pelayanan.",
-  wa_support_default_message:
-    "Halo Admin SerenaRaga! Saya ingin tanya layanan massage di rumah. Bisa bantu informasinya?",
-  wa_service_book_message_template:
-    "Halo {brand_name}, saya ingin memesan layanan pijat:\n\n✨ Treatment: *{service_name}*\n💆🏻‍♀️ Detail Treatment: *{detail_treatment}*\n💵 Tarif: *{price}*\n\nMohon info ketersediaan jadwal terapis untuk lokasi saya. Terima kasih!",
+export {
+  type BrandSettings,
+  type FeaturedServiceCard,
+  DEFAULT_FEATURED_SERVICES,
+  DEFAULT_BRAND_SETTINGS,
 };
 
 const STORAGE_KEY = "serenaraga_brand_settings";
@@ -326,10 +279,14 @@ export async function saveBrandSettings(
     }
 
     // 2. Persist directly to Supabase brand_settings table
+    // Sanitize payload to only persist standard database schema columns
+    const payload: any = { ...newSettings };
+    delete payload.featured_services;
+
     const { data, error } = await supabase
       .from("brand_settings")
       .upsert(
-        { id: targetId, ...newSettings, updated_at: new Date().toISOString() },
+        { id: targetId, ...payload, updated_at: new Date().toISOString() },
         { onConflict: "id" }
       )
       .select()
@@ -340,7 +297,10 @@ export async function saveBrandSettings(
       return { success: false, error };
     }
 
-    const savedData: BrandSettings = (data as BrandSettings) || newSettings;
+    const savedData: BrandSettings = {
+      ...newSettings,
+      ...(data as Partial<BrandSettings> || {}),
+    };
 
     // 3. Update localStorage and broadcast
     if (typeof window !== "undefined") {
@@ -366,6 +326,30 @@ export async function saveBrandSettings(
   }
 }
 
+/**
+ * Fetch latest brand settings directly on server for SSR / instant pre-render without flash
+ */
+export async function fetchBrandSettingsServer(): Promise<BrandSettings> {
+  try {
+    const { data, error } = await supabase
+      .from("brand_settings")
+      .select("*")
+      .order("id", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data) {
+      return {
+        ...DEFAULT_BRAND_SETTINGS,
+        ...data,
+      };
+    }
+  } catch (e) {
+    console.warn("fetchBrandSettingsServer error:", e);
+  }
+  return DEFAULT_BRAND_SETTINGS;
+}
+
 // In-memory singleton store for BrandSettings across the entire app
 let currentSettings: BrandSettings = getCachedBrandSettings();
 let isInitialized = false;
@@ -382,13 +366,30 @@ function notifySubscribers() {
   });
 }
 
-function setGlobalBrandSettings(next: Partial<BrandSettings> | null | undefined) {
+function areSettingsEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
+export function setGlobalBrandSettings(next: Partial<BrandSettings> | null | undefined) {
   if (!next) return;
 
-  currentSettings = {
+  const candidate: BrandSettings = {
     ...currentSettings,
     ...next,
   };
+
+  // Skip update if there is no actual change in content
+  if (areSettingsEqual(currentSettings, candidate)) {
+    return;
+  }
+
+  currentSettings = candidate;
 
   if (typeof window !== "undefined") {
     try {
@@ -502,7 +503,7 @@ function getBrandSettingsSnapshot(): BrandSettings {
 }
 
 function getBrandSettingsServerSnapshot(): BrandSettings {
-  return DEFAULT_BRAND_SETTINGS;
+  return currentSettings || DEFAULT_BRAND_SETTINGS;
 }
 
 /**
@@ -510,7 +511,14 @@ function getBrandSettingsServerSnapshot(): BrandSettings {
  * Uses a singleton external store with useSyncExternalStore to eliminate redundant
  * network requests, duplicate Realtime channels, and event listener leaks.
  */
-export function useBrandSettings() {
+export function useBrandSettings(initialSettings?: BrandSettings) {
+  if (initialSettings && !areSettingsEqual(currentSettings, initialSettings)) {
+    currentSettings = {
+      ...currentSettings,
+      ...initialSettings,
+    };
+  }
+
   const settings = useSyncExternalStore(
     subscribeBrandSettings,
     getBrandSettingsSnapshot,
@@ -518,6 +526,12 @@ export function useBrandSettings() {
   );
 
   const [loading, setLoading] = useState<boolean>(!isInitialized);
+
+  useEffect(() => {
+    if (initialSettings) {
+      setGlobalBrandSettings(initialSettings);
+    }
+  }, [initialSettings]);
 
   useEffect(() => {
     let mounted = true;

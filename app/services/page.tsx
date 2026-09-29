@@ -33,6 +33,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sparkles,
   Clock,
   MapPin,
@@ -47,6 +52,7 @@ import {
   Search,
   SlidersHorizontal,
   X,
+  Info,
 } from "lucide-react";
 import { cn, formatIDR } from "@/lib/utils";
 
@@ -93,6 +99,7 @@ export default function ServicesPage() {
   const [services, setServices] = React.useState<ServiceItem[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [detailService, setDetailService] = React.useState<ServiceItem | null>(null);
 
   // Filter States
   const [selectedCategory, setSelectedCategory] = React.useState<string>("Layanan Pijat");
@@ -835,8 +842,18 @@ export default function ServicesPage() {
                       )}
                     </div>
 
-                    {/* Card Action: Book via WhatsApp */}
-                    <div className="pt-2.5 sm:pt-3 border-t border-stone-100">
+                    {/* Card Actions: View Details & Book via WhatsApp */}
+                    <div className="pt-2 sm:pt-2.5 flex flex-col gap-1 sm:gap-1.5 border-t border-stone-100">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setDetailService(service)}
+                        className="w-full h-7 text-[11px] sm:text-xs text-stone-600 hover:text-[#947864] font-medium tracking-wide flex items-center justify-center gap-1.5 cursor-pointer rounded-none bg-transparent hover:bg-transparent border-0 shadow-none p-0 transition-colors"
+                      >
+                        <Info className="w-3.5 h-3.5 text-[#947864]" />
+                        <span>{isEn ? "View Details" : "Lihat Detail"}</span>
+                      </Button>
+
                       <Button
                         type="button"
                         onClick={() => handleBookService(service)}
@@ -1093,6 +1110,79 @@ export default function ServicesPage() {
           </div>
         </div>
       </footer>
+
+      {/* 7. CLEAN & LUXURY TREATMENT DETAIL MODAL POP-UP */}
+      <Dialog open={!!detailService} onOpenChange={(open) => !open && setDetailService(null)}>
+        {detailService && (
+          <DialogContent className="w-full max-w-lg p-0 overflow-hidden bg-white border border-stone-300/90 shadow-2xl rounded-none">
+            {/* Modal Header */}
+            <div className="bg-[#f6f3ee] p-5 sm:p-7 border-b border-stone-200/80 relative">
+              <div className="flex items-center gap-2 flex-wrap mb-2.5">
+                <span className="text-[10px] uppercase tracking-[0.14em] font-semibold text-[#947864] bg-[#947864]/10 px-2.5 py-0.5 rounded-none">
+                  {getCategoryLabel(detailService.category)}
+                </span>
+                <div className="flex items-center gap-1 text-[11px] text-stone-600 font-medium bg-white/70 px-2 py-0.5 rounded-none border border-stone-200/60">
+                  <Clock className="w-3.5 h-3.5 text-[#947864]" />
+                  <span>{detailService.duration_minutes || 60} {isEn ? "mins" : "menit"}</span>
+                </div>
+              </div>
+
+              <DialogTitle className="text-xl sm:text-2xl font-gallient text-[#1c1815] font-normal leading-snug">
+                {detailService.name}
+              </DialogTitle>
+
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-2xl font-bold text-[#1c1815] font-sans">
+                  {formatIDR(detailService.price)}
+                </span>
+                <span className="text-xs text-stone-500 font-light">
+                  {isEn ? "/ session" : "/ sesi"}
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Body: Full Unclipped Description */}
+            <div className="p-5 sm:p-7 space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
+              <div>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">
+                  {isEn ? "Treatment Description" : "Deskripsi Lengkap Layanan"}
+                </h4>
+                <p className="text-xs sm:text-[13.5px] text-stone-700 font-light leading-relaxed whitespace-pre-line">
+                  {detailService.description ||
+                    (isEn
+                      ? "Authentic massage therapy delivered by certified professional therapists directly to your location."
+                      : "Layanan pijat dan perawatan holistik oleh terapis bersertifikat profesional langsung ke lokasi Anda.")}
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-4 sm:p-5 bg-stone-50/90 border-t border-stone-200/80 flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setDetailService(null)}
+                className="text-xs text-stone-600 hover:text-stone-900 h-10 px-4 cursor-pointer rounded-none"
+              >
+                {isEn ? "Close" : "Tutup"}
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  const target = detailService;
+                  setDetailService(null);
+                  handleBookService(target);
+                }}
+                className="flex-1 h-10 bg-[#947864] hover:bg-[#7e6451] text-white text-xs tracking-wider uppercase font-medium rounded-none shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>{isEn ? "Book via WhatsApp" : "Pesan via WhatsApp"}</span>
+              </Button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
     </div>
   );
 }

@@ -234,6 +234,8 @@ alter table brand_settings add column if not exists threads_handle text default 
 alter table brand_settings add column if not exists tiktok_handle text default '@serenaraga';
 alter table brand_settings add column if not exists qris_payload text default '';
 alter table brand_settings add column if not exists wa_service_book_message_template text default 'Halo {brand_name}, saya ingin memesan layanan pijat:\n\n✨ Treatment: *{service_name}*\n💆🏻‍♀️ Detail Treatment: *{detail_treatment}*\n💵 Tarif: *{price}*\n\nMohon info ketersediaan jadwal terapis untuk lokasi saya. Terima kasih!';
+alter table brand_settings add column if not exists landing_services_section jsonb;
+alter table brand_settings add column if not exists featured_services jsonb;
 
 -- Seed default brand settings if empty
 insert into brand_settings (id, brand_name, whatsapp_number)

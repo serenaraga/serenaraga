@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocaleState, LinkBase, Translate } from "ra-core";
+import { useLocaleState, LinkBase, Translate, useNavigate } from "ra-core";
 import {
   Card,
   CardContent,
@@ -40,6 +40,7 @@ import { QrisImageUploader } from "@/components/qris-image-uploader";
 export function BrandSettingsPage() {
   const [locale] = useLocaleState();
   const isEn = locale === "en";
+  const navigate = useNavigate();
   const { settings, updateSettings, resetToDefault } = useBrandSettings();
 
   const [formData, setFormData] = React.useState<BrandSettings>(settings);
@@ -49,8 +50,12 @@ export function BrandSettingsPage() {
   >("contact");
 
   // Keep form in sync when settings are loaded from server
+  const lastSyncedRef = React.useRef(settings);
   React.useEffect(() => {
-    setFormData(settings);
+    if (JSON.stringify(lastSyncedRef.current) !== JSON.stringify(settings)) {
+      lastSyncedRef.current = settings;
+      setFormData(settings);
+    }
   }, [settings]);
 
   const handleChange = (field: keyof BrandSettings, value: string) => {
@@ -132,6 +137,17 @@ export function BrandSettingsPage() {
 
         {/* Action Buttons Top */}
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/settings/landing-page")}
+            className="text-xs gap-1.5 shadow-none border-border hover:bg-muted/50 cursor-pointer"
+          >
+            <Globe className="w-3.5 h-3.5 text-primary" />
+            <span>Landing Page</span>
+          </Button>
+
           <Button
             type="button"
             variant="outline"
@@ -643,3 +659,4 @@ export function BrandSettingsPage() {
     </div>
   );
 }
+

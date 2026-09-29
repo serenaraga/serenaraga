@@ -29,6 +29,7 @@ import {
 import { InvoiceList, InvoiceCreate, InvoiceShow } from "./invoices";
 import { PayoutCreate, PayoutShow } from "./payouts";
 import { BrandSettingsPage } from "./settings";
+import { LandingPageSettingsPage } from "./landing-page-settings";
 import { UserList, UserCreate, UserEdit } from "./users";
 import {
   CalendarCheck,
@@ -198,8 +199,9 @@ const App = () => (
             icon={SlidersHorizontal}
           />
         ) : null,
-        <CustomRoutes key="custom-therapist-routes">
+        <CustomRoutes key="custom-admin-routes">
           <Route path="/therapists/milestones" element={<TherapistMilestonesPage />} />
+          <Route path="/settings/landing-page" element={<LandingPageSettingsPage />} />
         </CustomRoutes>,
       ];
     }}
