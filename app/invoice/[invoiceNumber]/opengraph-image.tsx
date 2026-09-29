@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { supabase } from "@/lib/supabase";
 import QRCode from "qrcode";
 import { generateDynamicQRIS } from "@/lib/qris";
+import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -11,7 +12,7 @@ export const size = {
   width: 1200,
   height: 630,
 };
-export const contentType = "image/png";
+export const contentType = "image/jpeg";
 
 function formatIDR(amount: number): string {
   const rounded = Math.round(amount || 0);
@@ -191,7 +192,7 @@ export default async function Image({
     qrCodeDataUrl = await QRCode.toDataURL(dynamicPayload, {
       errorCorrectionLevel: "M",
       margin: 1,
-      width: 280,
+      width: 340,
       color: {
         dark: "#000000",
         light: "#FFFFFF",
@@ -207,7 +208,7 @@ export default async function Image({
   const formattedAdditionalCharge = formatIDR(additionalCharge);
   const formattedDiscount = formatIDR(discount);
 
-  return new ImageResponse(
+  const ogResponse = new ImageResponse(
     (
       <div
         style={{
@@ -215,29 +216,25 @@ export default async function Image({
           height: "100%",
           display: "flex",
           flexDirection: "row",
-          backgroundColor: "#f4f3ef",
-          padding: "24px 36px",
-          gap: "28px",
-          alignItems: "center",
-          justifyContent: "center",
+          backgroundColor: "#ffffff",
+          padding: 0,
+          margin: 0,
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         }}
       >
         {/* ========================================================= */}
-        {/* LEFT COLUMN: 100% Exact Replica of Real Serena Raga Invoice */}
+        {/* LEFT COLUMN: Clean, Scaled Replica of Serena Raga Invoice */}
         {/* ========================================================= */}
         <div
           style={{
-            width: "560px",
-            height: "582px",
+            width: "645px",
+            height: "630px",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
             backgroundColor: "#ffffff",
-            borderRadius: "16px",
-            padding: "22px 26px",
-            border: "1px solid #e7e5e4",
-            boxShadow: "0 6px 24px -6px rgba(0, 0, 0, 0.08)",
+            padding: "26px 36px 20px 36px",
+            borderRight: "1.5px solid #e7e5e4",
             position: "relative",
           }}
         >
@@ -245,9 +242,9 @@ export default async function Image({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%" }}>
             {/* Brand Logo & Tagline */}
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
                 {/* Authentic Serena Icon SVG Emblem */}
-                <svg width="24" height="24" viewBox="0 0 500 500" style={{ display: "flex" }}>
+                <svg width="28" height="28" viewBox="0 0 500 500" style={{ display: "flex" }}>
                   <g transform="translate(250, 250) scale(0.95) translate(-320.38, -750.0)">
                     <path
                       fill="#8b5e3c"
@@ -277,7 +274,7 @@ export default async function Image({
                 </svg>
                 <span
                   style={{
-                    fontSize: "19px",
+                    fontSize: "23px",
                     fontWeight: 800,
                     letterSpacing: "0.08em",
                     color: "#1c1917",
@@ -288,11 +285,11 @@ export default async function Image({
               </div>
               <span
                 style={{
-                  fontSize: "9.5px",
+                  fontSize: "11px",
                   letterSpacing: "0.18em",
                   fontWeight: 700,
                   color: "#8b5e3c",
-                  marginTop: "2px",
+                  marginTop: "3px",
                   textTransform: "uppercase",
                 }}
               >
@@ -306,20 +303,20 @@ export default async function Image({
                 style={{
                   backgroundColor: "#8b5e3c",
                   color: "#ffffff",
-                  fontSize: "10px",
+                  fontSize: "12px",
                   fontWeight: 800,
                   fontStyle: "italic",
                   letterSpacing: "0.08em",
-                  padding: "2px 8px",
-                  borderRadius: "4px",
+                  padding: "3px 12px",
+                  borderRadius: "5px",
                 }}
               >
                 INVOICE
               </span>
-              <span style={{ fontSize: "12px", fontWeight: 700, color: "#1c1917", marginTop: "3px" }}>
+              <span style={{ fontSize: "14.5px", fontWeight: 700, color: "#1c1917", marginTop: "4px" }}>
                 {invoiceNo}
               </span>
-              <span style={{ fontSize: "10px", color: "#78716c", marginTop: "1px" }}>
+              <span style={{ fontSize: "12px", color: "#78716c", marginTop: "2px" }}>
                 {formattedDate}
               </span>
             </div>
@@ -330,14 +327,14 @@ export default async function Image({
             style={{
               display: "flex",
               flexDirection: "column",
-              borderLeft: "3px solid #8b5e3c",
-              paddingLeft: "10px",
-              margin: "8px 0 4px 0",
+              borderLeft: "4px solid #8b5e3c",
+              paddingLeft: "14px",
+              margin: "6px 0",
             }}
           >
             <span
               style={{
-                fontSize: "9.5px",
+                fontSize: "11px",
                 fontWeight: 800,
                 letterSpacing: "0.15em",
                 color: "#8b5e3c",
@@ -346,7 +343,7 @@ export default async function Image({
             >
               DITUJUKAN UNTUK:
             </span>
-            <span style={{ fontSize: "18px", fontWeight: 800, color: "#1c1917", marginTop: "1px" }}>
+            <span style={{ fontSize: "22px", fontWeight: 800, color: "#1c1917", marginTop: "2px" }}>
               {customerName}
             </span>
           </div>
@@ -358,14 +355,14 @@ export default async function Image({
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                borderBottom: "1px solid #e7e5e4",
-                paddingBottom: "5px",
+                borderBottom: "1.5px solid #e7e5e4",
+                paddingBottom: "6px",
               }}
             >
-              <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
+              <span style={{ fontSize: "11.5px", fontWeight: 800, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
                 ITEM & LAYANAN
               </span>
-              <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
+              <span style={{ fontSize: "11.5px", fontWeight: 800, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
                 HARGA
               </span>
             </div>
@@ -376,13 +373,13 @@ export default async function Image({
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "8px 0",
+                padding: "10px 0",
               }}
             >
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "#1c1917" }}>
+              <span style={{ fontSize: "15px", fontWeight: 600, color: "#1c1917" }}>
                 {serviceName}
               </span>
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#1c1917" }}>
+              <span style={{ fontSize: "15.5px", fontWeight: 700, color: "#1c1917" }}>
                 {formattedSubtotal}
               </span>
             </div>
@@ -391,20 +388,20 @@ export default async function Image({
           {/* 4. Calculation Breakdown */}
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
+              <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
                 SUBTOTAL
               </span>
-              <span style={{ fontSize: "12px", fontWeight: 700, color: "#1c1917" }}>
+              <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#1c1917" }}>
                 {formattedSubtotal}
               </span>
             </div>
 
             {transportFee > 0 ? (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "10.5px", fontWeight: 600, letterSpacing: "0.05em", color: "#78716c", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.05em", color: "#78716c", textTransform: "uppercase" }}>
                   BIAYA TRANSPORT
                 </span>
-                <span style={{ fontSize: "12px", fontWeight: 600, color: "#1c1917" }}>
+                <span style={{ fontSize: "13.5px", fontWeight: 600, color: "#1c1917" }}>
                   {formattedTransport}
                 </span>
               </div>
@@ -413,15 +410,15 @@ export default async function Image({
             {additionalCharge > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "10.5px", fontWeight: 600, letterSpacing: "0.05em", color: "#78716c", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.05em", color: "#78716c", textTransform: "uppercase" }}>
                     BIAYA TAMBAHAN
                   </span>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#1c1917" }}>
+                  <span style={{ fontSize: "13.5px", fontWeight: 600, color: "#1c1917" }}>
                     {formattedAdditionalCharge}
                   </span>
                 </div>
                 {additionalChargeDesc ? (
-                  <span style={{ fontSize: "10px", color: "#78716c", paddingLeft: "8px" }}>
+                  <span style={{ fontSize: "11px", color: "#78716c", paddingLeft: "8px" }}>
                     ↳ {additionalChargeDesc}
                   </span>
                 ) : null}
@@ -431,15 +428,15 @@ export default async function Image({
             {discount > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.05em", color: "#059669", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.05em", color: "#059669", textTransform: "uppercase" }}>
                     🏷️ DISKON DIGUNAKAN
                   </span>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#059669" }}>
+                  <span style={{ fontSize: "13.5px", fontWeight: 700, color: "#059669" }}>
                     -{formattedDiscount}
                   </span>
                 </div>
                 {discountName ? (
-                  <span style={{ fontSize: "10px", color: "#059669", paddingLeft: "16px" }}>
+                  <span style={{ fontSize: "11px", color: "#059669", paddingLeft: "16px" }}>
                     ↳ {discountName}
                   </span>
                 ) : null}
@@ -455,18 +452,18 @@ export default async function Image({
               alignItems: "center",
               backgroundColor: "#8b5e3c",
               color: "#ffffff",
-              padding: "10px 16px",
+              padding: "12px 20px",
               borderRadius: "10px",
               marginTop: "4px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <div style={{ width: "2px", height: "14px", backgroundColor: "rgba(255,255,255,0.4)" }} />
-              <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              <div style={{ width: "2.5px", height: "18px", backgroundColor: "rgba(255,255,255,0.4)" }} />
+              <span style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                 TOTAL BAYAR
               </span>
             </div>
-            <span style={{ fontSize: "20px", fontWeight: 800, fontStyle: "italic", letterSpacing: "-0.01em" }}>
+            <span style={{ fontSize: "24px", fontWeight: 800, fontStyle: "italic", letterSpacing: "-0.01em" }}>
               {formattedTotal}
             </span>
           </div>
@@ -479,243 +476,201 @@ export default async function Image({
               alignItems: "center",
               borderTop: "1px solid #f5f5f4",
               paddingTop: "6px",
-              marginTop: "2px",
             }}
           >
-            <span style={{ fontSize: "9.5px", fontWeight: 600, color: "#44403c", textAlign: "center" }}>
+            <span style={{ fontSize: "10.5px", fontWeight: 600, color: "#44403c", textAlign: "center" }}>
               Terima kasih telah mempercayakan relaksasi Anda pada Serena Raga.
             </span>
-            <span style={{ fontSize: "8.5px", color: "#78716c", textAlign: "center", marginTop: "1px" }}>
+            <span style={{ fontSize: "9.5px", color: "#78716c", textAlign: "center", marginTop: "1px" }}>
               Dokumen ini merupakan bukti transaksi resmi. Layanan pelanggan WhatsApp {adminPhone}.
             </span>
           </div>
         </div>
 
         {/* ========================================================= */}
-        {/* RIGHT COLUMN: 100% Exact Official Template Replica of Serena Raga QRIS */}
+        {/* RIGHT COLUMN: Full-Bleed Scaled QRIS Template             */}
         {/* ========================================================= */}
         <div
           style={{
-            width: "380px",
-            height: "582px",
+            width: "555px",
+            height: "630px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "space-between",
             backgroundColor: "#ffffff",
-            borderRadius: "16px",
-            padding: "18px 20px",
-            border: "1px solid #e7e5e4",
-            boxShadow: "0 6px 24px -6px rgba(0, 0, 0, 0.08)",
+            padding: "24px 34px 16px 34px",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          {/* Official QRIS Template Frame Container */}
+          {/* Left Red Chevron Accent */}
+          <svg
+            style={{
+              position: "absolute",
+              left: "-1px",
+              top: "165px",
+              width: "38px",
+              height: "100px",
+            }}
+            viewBox="0 0 38 100"
+          >
+            <polygon points="0,0 36,50 0,100" fill="#e11d48" />
+          </svg>
+
+          {/* Bottom-Right Red Ribbon Banner */}
+          <svg
+            style={{
+              position: "absolute",
+              right: "-1px",
+              bottom: "-1px",
+              width: "155px",
+              height: "95px",
+            }}
+            viewBox="0 0 155 95"
+          >
+            <polygon points="155,0 155,95 0,95" fill="#e11d48" />
+          </svg>
+
+          {/* Content on top of the red bottom-right ribbon */}
           <div
             style={{
-              width: "100%",
-              height: "485px",
+              position: "absolute",
+              right: "8px",
+              bottom: "7px",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              justifyContent: "space-between",
-              backgroundColor: "#ffffff",
-              borderRadius: "12px",
-              border: "1.5px solid #e2e8f0",
-              padding: "14px 14px 10px 14px",
-              position: "relative",
-              overflow: "hidden",
+              color: "#ffffff",
+              width: "100px",
             }}
           >
-            {/* Left Red Chevron Accent */}
-            <svg
-              style={{
-                position: "absolute",
-                left: "-1px",
-                top: "145px",
-                width: "30px",
-                height: "85px",
-              }}
-              viewBox="0 0 30 85"
-            >
-              <polygon points="0,0 28,42.5 0,85" fill="#e11d48" />
-            </svg>
-
-            {/* Bottom-Right Red Ribbon Banner */}
-            <svg
-              style={{
-                position: "absolute",
-                right: "-1px",
-                bottom: "-1px",
-                width: "120px",
-                height: "75px",
-              }}
-              viewBox="0 0 120 75"
-            >
-              <polygon points="120,0 120,75 0,75" fill="#e11d48" />
-            </svg>
-
-            {/* Content on top of the red bottom-right ribbon */}
-            <div
-              style={{
-                position: "absolute",
-                right: "6px",
-                bottom: "5px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                color: "#ffffff",
-                width: "80px",
-              }}
-            >
-              <span style={{ fontSize: "5.5px", fontWeight: 700, letterSpacing: "0.02em" }}>
-                Cara pembayaran QRIS:
-              </span>
-              <div style={{ display: "flex", alignItems: "center", gap: "3px", marginTop: "2px" }}>
-                {/* 3 Step Icon Circles */}
-                <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: "7px", color: "#e11d48" }}>📱</span>
-                </div>
-                <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: "7px", color: "#e11d48" }}>📷</span>
-                </div>
-                <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: "7px", color: "#e11d48" }}>✓</span>
-                </div>
-              </div>
-              <span style={{ fontSize: "4.5px", marginTop: "1px", opacity: 0.9 }}>
-                Buka • Scan • Bayar
-              </span>
-            </div>
-
-            {/* Top QRIS + GPN Header Bar */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                width: "100%",
-                paddingBottom: "6px",
-                borderBottom: "1.5px solid #f1f5f9",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ fontSize: "20px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" }}>
-                  QRIS
-                </span>
-                <div style={{ display: "flex", flexDirection: "column", fontSize: "7px", fontWeight: 700, color: "#64748b", lineHeight: 1 }}>
-                  <span>QR Code Standar</span>
-                  <span>Pembayaran Nasional</span>
-                </div>
-              </div>
-
-              {/* GPN Bird Emblem */}
-              <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
-                <svg width="18" height="18" viewBox="0 0 100 100">
-                  <path
-                    fill="#e11d48"
-                    d="M10,60 C30,30 60,20 90,10 C80,35 65,55 45,70 C35,78 20,85 10,60 Z"
-                  />
-                  <path
-                    fill="#dc2626"
-                    d="M30,50 C50,35 70,30 85,25 C75,45 60,60 40,65 Z"
-                  />
-                </svg>
-                <span style={{ fontSize: "14px", fontWeight: 900, color: "#e11d48", fontStyle: "italic" }}>
-                  GPN
-                </span>
-              </div>
-            </div>
-
-            {/* Merchant Name & NMID */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "4px" }}>
-              <span style={{ fontSize: "13px", fontWeight: 800, color: "#000000", textTransform: "uppercase" }}>
-                {brandName}
-              </span>
-              <span style={{ fontSize: "9px", color: "#64748b", fontWeight: 600, marginTop: "1px" }}>
-                NMID: {nmid}
-              </span>
-            </div>
-
-            {/* Exact Nominal Text (Pitch Black) */}
-            <span
-              style={{
-                fontSize: "17px",
-                fontWeight: 900,
-                color: "#000000",
-                marginTop: "3px",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {formattedTotal}
+            <span style={{ fontSize: "7.5px", fontWeight: 700, letterSpacing: "0.02em" }}>
+              Cara pembayaran QRIS:
             </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "3px" }}>
+              <div style={{ width: "15px", height: "15px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: "9px", color: "#e11d48" }}>📱</span>
+              </div>
+              <div style={{ width: "15px", height: "15px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: "9px", color: "#e11d48" }}>📷</span>
+              </div>
+              <div style={{ width: "15px", height: "15px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: "9px", color: "#e11d48" }}>✓</span>
+              </div>
+            </div>
+            <span style={{ fontSize: "6.5px", marginTop: "2px", opacity: 0.9 }}>
+              Buka • Scan • Bayar
+            </span>
+          </div>
 
-            {/* Dynamic QR Code Matrix */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "2px",
-                marginTop: "2px",
-              }}
-            >
-              {qrCodeDataUrl ? (
-                <img
-                  src={qrCodeDataUrl}
-                  alt="Dynamic QR Code"
-                  style={{
-                    width: "215px",
-                    height: "215px",
-                    objectFit: "contain",
-                  }}
-                />
-              ) : (
-                <div style={{ width: "215px", height: "215px", backgroundColor: "#f8fafc" }} />
-              )}
+          {/* Top QRIS + GPN Header Bar */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              width: "100%",
+              paddingBottom: "10px",
+              borderBottom: "1.5px solid #f1f5f9",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+              <span style={{ fontSize: "28px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" }}>
+                QRIS
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", fontSize: "9.5px", fontWeight: 700, color: "#64748b", lineHeight: 1.1 }}>
+                <span>QR Code Standar</span>
+                <span>Pembayaran Nasional</span>
+              </div>
             </div>
 
-            {/* Template Footer Area */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "2px" }}>
-              <span style={{ fontSize: "8px", fontWeight: 800, color: "#334155", letterSpacing: "0.04em" }}>
-                SATU QRIS UNTUK SEMUA
+            {/* GPN Bird Emblem */}
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <svg width="24" height="24" viewBox="0 0 100 100">
+                <path
+                  fill="#e11d48"
+                  d="M10,60 C30,30 60,20 90,10 C80,35 65,55 45,70 C35,78 20,85 10,60 Z"
+                />
+                <path
+                  fill="#dc2626"
+                  d="M30,50 C50,35 70,30 85,25 C75,45 60,60 40,65 Z"
+                />
+              </svg>
+              <span style={{ fontSize: "19px", fontWeight: 900, color: "#e11d48", fontStyle: "italic" }}>
+                GPN
               </span>
-              <span style={{ fontSize: "6.5px", color: "#94a3b8", marginTop: "1px" }}>
-                Cek aplikasi penyelenggara di: www.aspi-qris.id
-              </span>
-
-              {/* Bottom Left Print Info */}
-              <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: "6px" }}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ fontSize: "6.5px", color: "#64748b", fontWeight: 600 }}>
-                    Dicetak oleh: 93600914
-                  </span>
-                  <span style={{ fontSize: "6px", color: "#94a3b8" }}>
-                    Versi cetak: v0.0.2026.05.09
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* Bottom Download Button Mockup */}
+          {/* Merchant Name & NMID */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "4px" }}>
+            <span style={{ fontSize: "16.5px", fontWeight: 800, color: "#000000", textTransform: "uppercase" }}>
+              {brandName}
+            </span>
+            <span style={{ fontSize: "11.5px", color: "#64748b", fontWeight: 600, marginTop: "1px" }}>
+              NMID: {nmid}
+            </span>
+          </div>
+
+          {/* Exact Nominal Text (Pitch Black) */}
+          <span
+            style={{
+              fontSize: "23px",
+              fontWeight: 900,
+              color: "#000000",
+              marginTop: "4px",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {formattedTotal}
+          </span>
+
+          {/* Dynamic QR Code Matrix */}
           <div
             style={{
-              width: "100%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "6px",
-              padding: "7px 12px",
-              borderRadius: "8px",
-              border: "1px solid #e2e8f0",
-              backgroundColor: "#ffffff",
-              color: "#334155",
-              fontSize: "11px",
-              fontWeight: 600,
+              padding: "2px",
+              marginTop: "2px",
             }}
           >
-            <span>⬇</span>
-            <span>Unduh QRIS (PNG)</span>
+            {qrCodeDataUrl ? (
+              <img
+                src={qrCodeDataUrl}
+                alt="Dynamic QR Code"
+                style={{
+                  width: "275px",
+                  height: "275px",
+                  objectFit: "contain",
+                }}
+              />
+            ) : (
+              <div style={{ width: "275px", height: "275px", backgroundColor: "#f8fafc" }} />
+            )}
+          </div>
+
+          {/* Template Footer Area */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "2px" }}>
+            <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#334155", letterSpacing: "0.04em" }}>
+              SATU QRIS UNTUK SEMUA
+            </span>
+            <span style={{ fontSize: "9px", color: "#94a3b8", marginTop: "1px" }}>
+              Cek aplikasi penyelenggara di: www.aspi-qris.id
+            </span>
+
+            {/* Bottom Left Print Info */}
+            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: "6px" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "9px", color: "#64748b", fontWeight: 600 }}>
+                  Dicetak oleh: 93600914
+                </span>
+                <span style={{ fontSize: "8.5px", color: "#94a3b8" }}>
+                  Versi cetak: v0.0.2026.05.09
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -724,4 +679,21 @@ export default async function Image({
       ...size,
     }
   );
+
+  try {
+    const pngArrayBuffer = await ogResponse.arrayBuffer();
+    const jpegBuffer = await sharp(Buffer.from(pngArrayBuffer))
+      .jpeg({ quality: 88, mozjpeg: true })
+      .toBuffer();
+
+    return new Response(jpegBuffer, {
+      headers: {
+        "Content-Type": "image/jpeg",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  } catch (err) {
+    console.warn("Sharp compression fallback:", err);
+    return ogResponse;
+  }
 }

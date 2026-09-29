@@ -82,7 +82,7 @@ export async function generateMetadata({
           width: 1200,
           height: 630,
           alt: `Nota Digital & QRIS ${title}`,
-          type: "image/png",
+          type: "image/jpeg",
         },
       ],
     },

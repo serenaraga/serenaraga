@@ -38,6 +38,21 @@ export const metadata: Metadata = {
     locale: "id_ID",
     url: "https://serenaraga.com",
     siteName: "SerenaRaga",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "SerenaRaga - Comfortable Home Massage Jogja",
+        type: "image/jpeg",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SerenaRaga - Pijat Panggilan Jogja & Home Massage Nyaman",
+    description: "Layanan pijat panggilan Jogja & home massage profesional, bersertifikat, dan nyaman ke rumah, hotel, villa, serta kos di Yogyakarta.",
+    images: ["/opengraph-image"],
   },
 };
 

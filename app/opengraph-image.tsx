@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import fs from "fs";
 import path from "path";
+import sharp from "sharp";
 
 export const runtime = "nodejs";
 export const alt = "SerenaRaga - Comfortable Home Massage Jogja";
@@ -8,15 +9,17 @@ export const size = {
   width: 1200,
   height: 630,
 };
-export const contentType = "image/png";
+export const contentType = "image/jpeg";
 
 export default async function Image() {
-  // 1. Load Hero Sanctuary Image as Base64 Data URL
+  // 1. Load Optimized Hero Sanctuary Image as Base64 Data URL
   let heroImageBase64 = "";
   try {
-    const heroImgPath = path.join(process.cwd(), "public/images/hero-sanctuary.jpg");
-    if (fs.existsSync(heroImgPath)) {
-      const heroBuf = fs.readFileSync(heroImgPath);
+    const ogImgPath = path.join(process.cwd(), "public/images/hero-sanctuary-og.jpg");
+    const fallbackImgPath = path.join(process.cwd(), "public/images/hero-sanctuary.jpg");
+    const targetPath = fs.existsSync(ogImgPath) ? ogImgPath : fallbackImgPath;
+    if (fs.existsSync(targetPath)) {
+      const heroBuf = fs.readFileSync(targetPath);
       heroImageBase64 = `data:image/jpeg;base64,${heroBuf.toString("base64")}`;
     }
   } catch (err) {
@@ -63,7 +66,7 @@ export default async function Image() {
     }
   } catch (e) {}
 
-  return new ImageResponse(
+  const ogResponse = new ImageResponse(
     (
       <div
         style={{
@@ -121,14 +124,14 @@ export default async function Image() {
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
-            padding: "0 60px",
+            padding: "0 50px",
             maxWidth: "1050px",
           }}
         >
           {/* Main Title: SERENA RAGA in Gallient Luxury Roman Serif */}
           <h1
             style={{
-              fontSize: "88px",
+              fontSize: "92px",
               fontWeight: 400,
               fontFamily: "Gallient, serif",
               letterSpacing: "0.22em",
@@ -136,7 +139,7 @@ export default async function Image() {
               textTransform: "uppercase",
               margin: 0,
               lineHeight: 1.1,
-              textShadow: "0 4px 30px rgba(0, 0, 0, 0.65)",
+              textShadow: "0 4px 30px rgba(0, 0, 0, 0.75)",
             }}
           >
             SERENA RAGA
@@ -145,14 +148,14 @@ export default async function Image() {
           {/* Subtitle */}
           <p
             style={{
-              fontSize: "22px",
+              fontSize: "24px",
               fontWeight: 300,
               color: "rgba(255, 255, 255, 0.95)",
               letterSpacing: "0.04em",
-              marginTop: "18px",
-              marginBottom: "32px",
-              maxWidth: "680px",
-              textShadow: "0 2px 14px rgba(0, 0, 0, 0.7)",
+              marginTop: "16px",
+              marginBottom: "30px",
+              maxWidth: "700px",
+              textShadow: "0 2px 14px rgba(0, 0, 0, 0.8)",
               lineHeight: 1.4,
             }}
           >
@@ -166,14 +169,14 @@ export default async function Image() {
               alignItems: "center",
               justifyContent: "center",
               padding: "14px 48px",
-              border: "1.5px solid rgba(255, 255, 255, 0.88)",
+              border: "1.5px solid rgba(255, 255, 255, 0.9)",
               color: "#ffffff",
               fontSize: "14px",
               fontWeight: 400,
               letterSpacing: "0.22em",
               textTransform: "uppercase",
-              backgroundColor: "rgba(0, 0, 0, 0.15)",
-              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.35)",
+              backgroundColor: "rgba(0, 0, 0, 0.2)",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4)",
             }}
           >
             BOOK NOW
@@ -186,4 +189,21 @@ export default async function Image() {
       fonts: fonts.length > 0 ? fonts : undefined,
     }
   );
+
+  try {
+    const pngArrayBuffer = await ogResponse.arrayBuffer();
+    const jpegBuffer = await sharp(Buffer.from(pngArrayBuffer))
+      .jpeg({ quality: 85, mozjpeg: true })
+      .toBuffer();
+
+    return new Response(jpegBuffer, {
+      headers: {
+        "Content-Type": "image/jpeg",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  } catch (err) {
+    console.warn("Sharp compression error fallback:", err);
+    return ogResponse;
+  }
 }
