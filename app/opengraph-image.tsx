@@ -116,7 +116,6 @@ export default async function Image() {
         <div
           style={{
             position: "relative",
-            zIndex: 10,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",

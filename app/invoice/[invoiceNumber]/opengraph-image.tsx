@@ -1,8 +1,10 @@
 import { ImageResponse } from "next/og";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import QRCode from "qrcode";
 import { generateDynamicQRIS } from "@/lib/qris";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export const runtime = "nodejs";
 export const alt = "SerenaRaga Official Invoice & Dynamic QRIS";
 export const size = {
@@ -19,14 +21,15 @@ function formatIDR(amount: number): string {
 export default async function Image({
   params,
 }: {
-  params: Promise<{ invoiceNumber: string }>;
+  params: Promise<{ invoiceNumber: string }> | { invoiceNumber: string };
 }) {
-  const { invoiceNumber } = await params;
-
-  // Initialize server-side Supabase client
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  let invoiceNumber = "";
+  try {
+    const resolvedParams = await Promise.resolve(params);
+    invoiceNumber = resolvedParams?.invoiceNumber || "";
+  } catch {
+    // fallback
+  }
 
   // Default fallback data
   let invoiceNo = invoiceNumber || "SR-260929-3067";

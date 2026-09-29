@@ -1,60 +1,69 @@
 import type { Metadata } from "next";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
+
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+export const revalidate = 0;
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ invoiceNumber: string }>;
+  params: Promise<{ invoiceNumber: string }> | { invoiceNumber: string };
 }): Promise<Metadata> {
-  const { invoiceNumber } = await params;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://serenaraga.com";
+  let invoiceNumber = "";
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  try {
+    const resolvedParams = await Promise.resolve(params);
+    invoiceNumber = resolvedParams?.invoiceNumber || "";
+  } catch {
+    // safe fallback
+  }
 
-  let title = `Invoice ${invoiceNumber} - SerenaRaga`;
+  let title = invoiceNumber ? `Invoice ${invoiceNumber} - SerenaRaga` : "Invoice - SerenaRaga";
   let description = "Nota digital & pembayaran QRIS resmi Serena Raga Home Massage Jogja.";
   let customerName = "";
   let totalAmount = 0;
   let formattedTotal = "";
 
   try {
-    const cleanParam = decodeURIComponent(invoiceNumber || "").trim();
-    const isNumeric = !isNaN(Number(cleanParam)) && cleanParam !== "";
+    if (invoiceNumber) {
+      const cleanParam = decodeURIComponent(invoiceNumber || "").trim();
+      const isNumeric = !isNaN(Number(cleanParam)) && cleanParam !== "";
 
-    let query = supabase.from("invoices").select(`
-      id,
-      invoice_number,
-      public_token,
-      total_amount,
-      payment_status,
-      customer_name
-    `);
+      let query = supabase.from("invoices").select(`
+        id,
+        invoice_number,
+        public_token,
+        total_amount,
+        payment_status,
+        customer_name
+      `);
 
-    if (isNumeric) {
-      query = query.or(`public_token.ilike.${cleanParam},invoice_number.ilike.${cleanParam},id.eq.${Number(cleanParam)}`);
-    } else {
-      query = query.or(`public_token.ilike.${cleanParam},invoice_number.ilike.${cleanParam}`);
-    }
+      if (isNumeric) {
+        query = query.or(`public_token.ilike.${cleanParam},invoice_number.ilike.${cleanParam},id.eq.${Number(cleanParam)}`);
+      } else {
+        query = query.or(`public_token.ilike.${cleanParam},invoice_number.ilike.${cleanParam}`);
+      }
 
-    const { data: invoice } = await query.maybeSingle();
+      const { data: invoice } = await query.maybeSingle();
 
-    if (invoice) {
-      const invNo = invoice.invoice_number || `SR-${invoice.id}`;
-      customerName = invoice.customer_name || "Pelanggan";
-      totalAmount = Number(invoice.total_amount) || 0;
-      formattedTotal = "Rp " + totalAmount.toLocaleString("id-ID");
+      if (invoice) {
+        const invNo = invoice.invoice_number || `SR-${invoice.id}`;
+        customerName = invoice.customer_name || "Pelanggan";
+        totalAmount = Number(invoice.total_amount) || 0;
+        formattedTotal = "Rp " + totalAmount.toLocaleString("id-ID");
 
-      title = `Nota Digital #${invNo} (${customerName}) - SerenaRaga`;
-      description = `Rincian tagihan ${customerName} sebesar ${formattedTotal}. Buka tautan untuk melihat nota lengkap dan scan pembayaran QRIS.`;
+        title = `Nota Digital #${invNo} (${customerName}) - SerenaRaga`;
+        description = `Rincian tagihan ${customerName} sebesar ${formattedTotal}. Buka tautan untuk melihat nota lengkap dan scan pembayaran QRIS.`;
+      }
     }
   } catch (err) {
     console.error("Failed to generate metadata for invoice:", err);
   }
 
-  const pageUrl = `${siteUrl}/invoice/${invoiceNumber}`;
-  const ogImageUrl = `${siteUrl}/invoice/${invoiceNumber}/opengraph-image`;
+  const pageUrl = invoiceNumber ? `${siteUrl}/invoice/${invoiceNumber}` : siteUrl;
+  const ogImageUrl = invoiceNumber ? `${siteUrl}/invoice/${invoiceNumber}/opengraph-image` : `${siteUrl}/opengraph-image`;
 
   return {
     metadataBase: new URL(siteUrl),
