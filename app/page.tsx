@@ -733,16 +733,20 @@ export default function LandingPage() {
             {[
               { href: "#", label: isEn ? "Home" : "Beranda", active: true },
               { href: "#about", label: isEn ? "About Us" : "Tentang Kami" },
-              { href: "#services", label: isEn ? "Services" : "Layanan" },
+              { href: "/services", label: isEn ? "Services Catalog" : "Katalog Layanan" },
               { href: "#benefits", label: isEn ? "Why Choose Us" : "Keunggulan" },
               { href: "#testimonials", label: isEn ? "Testimonials" : "Testimoni" },
-              { href: "#faq", label: isEn ? "FAQ" : "FAQ" },
               { href: "#reservation", label: isEn ? "Reservation" : "Reservasi" },
             ].map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                onClick={(e) => handleNavScroll(e, item.href)}
+                onClick={(e) => {
+                  if (item.href.startsWith("/")) {
+                    return; // Let standard link navigation handle /services
+                  }
+                  handleNavScroll(e, item.href);
+                }}
                 className={cn(
                   "text-[13px] lg:text-[13.5px] tracking-[0.03em] transition-colors duration-200 font-sans cursor-pointer",
                   item.active
@@ -821,7 +825,7 @@ export default function LandingPage() {
                     {[
                       { href: "#", label: isEn ? "Home" : "Beranda", active: true },
                       { href: "#about", label: isEn ? "About Us" : "Tentang Kami" },
-                      { href: "#services", label: isEn ? "Services" : "Layanan" },
+                      { href: "/services", label: isEn ? "Services Catalog" : "Katalog Layanan" },
                       { href: "#benefits", label: isEn ? "Why Choose Us" : "Keunggulan" },
                       { href: "#testimonials", label: isEn ? "Testimonials" : "Testimoni" },
                       { href: "#faq", label: isEn ? "FAQ" : "FAQ" },
@@ -1072,8 +1076,8 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          {/* 4-Card Service Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+          {/* 4-Card Service Grid (2 Cards side-by-side on Mobile, 4 Cards on Desktop) */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
             {[
               {
                 id: "traditional",
@@ -1115,7 +1119,7 @@ export default function LandingPage() {
               <div
                 key={service.id}
                 onClick={() => handleServiceClick()}
-                className="group relative aspect-[4/3] sm:aspect-[3/4] overflow-hidden cursor-pointer shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)] transition-all duration-500"
+                className="group relative aspect-[3/4] overflow-hidden cursor-pointer shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)] transition-all duration-500"
               >
                 {/* Background Image */}
                 <img
@@ -1125,16 +1129,16 @@ export default function LandingPage() {
                 />
 
                 {/* Dark Gradient Overlay for Text Readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-4 sm:p-6 text-center text-white" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-3 sm:p-5 lg:p-6 text-center text-white" />
 
                 {/* Text Content Overlay */}
-                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 text-center text-white flex flex-col items-center justify-end">
+                <div className="absolute inset-x-0 bottom-0 p-3 sm:p-5 lg:p-6 text-center text-white flex flex-col items-center justify-end">
                   <h3
-                    className="text-lg sm:text-xl font-normal text-stone-100 tracking-wide font-gallient"
+                    className="text-[14.5px] sm:text-lg lg:text-xl font-normal text-stone-100 tracking-wide font-gallient leading-tight"
                   >
                     {isEn ? service.title : service.titleId}
                   </h3>
-                  <p className="text-[12px] sm:text-[13px] text-stone-300 font-light font-sans mt-1">
+                  <p className="text-[10.5px] sm:text-[12px] lg:text-[13px] text-stone-300 font-light font-sans mt-0.5 sm:mt-1 line-clamp-1 sm:line-clamp-none">
                     {isEn ? service.tagline : service.taglineId}
                   </p>
                 </div>
@@ -1144,22 +1148,13 @@ export default function LandingPage() {
 
           {/* Explore Other Treatments Link */}
           <div className="text-center mt-7 sm:mt-12">
-            <button
-              type="button"
-              onClick={() => {
-                const message = buildWhatsAppInboundMessage({
-                  template: settings.wa_support_default_message,
-                  brandName: settings.brand_name,
-                  isEn,
-                });
-                const url = getWhatsAppUrl(settings.whatsapp_number, message);
-                window.open(url, "_blank");
-              }}
+            <Link
+              href="/services"
               className="inline-flex items-center gap-1.5 text-[#9a6a43] hover:text-[#785033] font-serif text-[14.5px] sm:text-base font-normal tracking-wide transition-colors cursor-pointer group"
             >
               <span>{isEn ? "Explore Other Treatments" : "Jelajahi Layanan Lainnya"}</span>
               <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
-            </button>
+            </Link>
           </div>
 
           {/* PART 2: WHY CHOOSE US ? */}

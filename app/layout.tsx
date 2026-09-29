@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://www.serenaraga.com"
   ),
   title: "SerenaRaga - Pijat Panggilan Jogja & Home Massage Nyaman",
-  description: "Layanan pijat panggilan Jogja & home massage profesional, bersertifikat, dan nyaman ke rumah, hotel, villa, serta kos di Yogyakarta.",
+  description: "Layanan pijat panggilan Jogja & home massage profesional, dan nyaman ke rumah, hotel, villa, resort, serta kos di Yogyakarta.",
   keywords: [
     "pijat panggilan jogja",
     "massage panggilan jogja",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "SerenaRaga - Pijat Panggilan Jogja & Home Massage Nyaman",
-    description: "Layanan pijat panggilan Jogja & home massage profesional, bersertifikat, dan nyaman ke rumah, hotel, villa, serta kos di Yogyakarta.",
+    description: "Layanan pijat panggilan Jogja & home massage profesional, dan nyaman ke rumah, hotel, villa, resort, serta kos di Yogyakarta.",
     type: "website",
     locale: "id_ID",
     url: "https://www.serenaraga.com",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "SerenaRaga - Pijat Panggilan Jogja & Home Massage Nyaman",
-    description: "Layanan pijat panggilan Jogja & home massage profesional, bersertifikat, dan nyaman ke rumah, hotel, villa, serta kos di Yogyakarta.",
+    description: "Layanan pijat panggilan Jogja & home massage profesional, dan nyaman ke rumah, hotel, villa, resort, serta kos di Yogyakarta.",
     images: ["https://www.serenaraga.com/opengraph-image"],
   },
 };
@@ -71,7 +71,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const geistHeading = Geist({subsets:['latin'],variable:'--font-heading'});
+const geistHeading = Geist({ subsets: ['latin'], variable: '--font-heading' });
 
 const gallient = localFont({
   src: "../public/font/Gallient Regular.ttf",

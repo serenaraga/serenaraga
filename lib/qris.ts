@@ -561,7 +561,7 @@ export async function compositeDynamicQRISImage({
 
           // Draw nominal in bold clean sans-serif matching official QRIS typography
           ctx.font = `bold ${fontSize}px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
-          ctx.fillStyle = "#1e293b";
+          ctx.fillStyle = "#000000";
           ctx.textAlign = "center";
           ctx.textBaseline = "bottom";
           ctx.fillText(nominalStr, canvas.width / 2, textY);
