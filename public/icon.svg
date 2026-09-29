@@ -4,11 +4,11 @@
       <path d="M 95.441406 803 L 522 803 L 522 877 L 95.441406 877 Z M 95.441406 803" clip-rule="nonzero"/>
     </clipPath>
     <clipPath id="sr-fav-clip-2">
-      <path d="M 417 854 L 545.3125 854 L 545.3125 889 L 417 889 Z M 417 854" clip-rule="nonzero"/>
+      <path d="M 417 854 L 545.3125 854 L 545.3125 889 L 417 889 Z M 417 889 Z M 417 854" clip-rule="nonzero"/>
     </clipPath>
   </defs>
-  <!-- Sleek luxury dark squircle background for high-contrast visibility on any browser tab -->
-  <rect width="480" height="480" x="10" y="10" rx="110" fill="#171513" />
+  <!-- Full-bleed luxury signature terracotta brown (#8b5e3c) background matching invoice -->
+  <rect width="500" height="500" x="0" y="0" fill="#8b5e3c" />
   
   <!-- Enlarged pure white monochrome emblem -->
   <g transform="translate(250, 250) scale(0.98) translate(-320.38, -750.0)">
