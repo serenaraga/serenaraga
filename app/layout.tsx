@@ -8,6 +8,9 @@ import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://serenaraga.com"
+  ),
   title: "SerenaRaga - Pijat Panggilan Jogja & Home Massage Nyaman",
   description: "Layanan pijat panggilan Jogja & home massage profesional, bersertifikat, dan nyaman ke rumah, hotel, villa, serta kos di Yogyakarta.",
   keywords: [

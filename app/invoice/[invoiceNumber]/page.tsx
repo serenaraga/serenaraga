@@ -99,12 +99,21 @@ export default function PublicInvoicePage() {
       try {
         setLoading(true);
 
-        // Strict Capability Token Lookup: Only accessible via unique cryptographic public_token
-        let { data } = await supabase
-          .from("invoices")
-          .select("*")
-          .eq("public_token", rawId)
-          .maybeSingle();
+        const cleanParam = decodeURIComponent(rawId || "").trim();
+        const isNumeric = !isNaN(Number(cleanParam)) && cleanParam !== "";
+
+        let query = supabase.from("invoices").select("*");
+        if (isNumeric) {
+          query = query.or(
+            `public_token.ilike.${cleanParam},invoice_number.ilike.${cleanParam},id.eq.${Number(cleanParam)}`
+          );
+        } else {
+          query = query.or(
+            `public_token.ilike.${cleanParam},invoice_number.ilike.${cleanParam}`
+          );
+        }
+
+        const { data, error: dbError } = await query.maybeSingle();
 
         if (data) {
           setInvoice(data);
