@@ -6,6 +6,7 @@ import { Show } from "@/components/show";
 import { InvoiceCard } from "@/components/invoice-card";
 import { DynamicQrisCard } from "@/components/dynamic-qris-card";
 import { InvoiceCardSkeleton, QrisCardSkeleton } from "@/components/ui/skeleton";
+import { InvoicePaymentStatusSelect } from "./invoice-payment-status-select";
 
 /**
  * Detailed view of an existing Invoice
@@ -51,8 +52,18 @@ export const InvoiceShowView = () => {
   );
 };
 
+export const InvoiceShowActions = () => {
+  const { record, isPending } = useShowContext();
+  if (isPending || !record) return null;
+  return (
+    <div className="flex items-center gap-2">
+      <InvoicePaymentStatusSelect record={record} className="h-8 text-xs min-w-[130px]" />
+    </div>
+  );
+};
+
 export const InvoiceShow = () => (
-  <Show>
+  <Show actions={<InvoiceShowActions />}>
     <InvoiceShowView />
   </Show>
 );

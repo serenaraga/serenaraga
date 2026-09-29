@@ -435,8 +435,12 @@ export default function LandingPage() {
     }
   };
 
-  // Mobile navigation click helper that closes drawer before scrolling
+  // Mobile navigation click helper that closes drawer before scrolling or navigating
   const handleMobileNavClick = (e: React.MouseEvent<HTMLElement>, href: string) => {
+    if (href.startsWith("/")) {
+      setMobileMenuOpen(false);
+      return;
+    }
     e.preventDefault();
     setMobileMenuOpen(false);
     setTimeout(() => {
@@ -830,22 +834,43 @@ export default function LandingPage() {
                       { href: "#testimonials", label: isEn ? "Testimonials" : "Testimoni" },
                       { href: "#faq", label: isEn ? "FAQ" : "FAQ" },
                       { href: "#reservation", label: isEn ? "Reservation" : "Reservasi" },
-                    ].map((item) => (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        onClick={(e) => handleMobileNavClick(e, item.href)}
-                        className={cn(
-                          "text-[14px] sm:text-[14.5px] font-sans tracking-[0.03em] py-2.5 px-1 border-b border-[#f0ece4] transition-colors flex items-center justify-between group cursor-pointer",
-                          item.active
-                            ? "text-[#9a6a43] font-medium"
-                            : "text-[#3c342f] hover:text-[#9a6a43] font-[350]"
-                        )}
-                      >
-                        <span>{item.label}</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#9a6a43] group-hover:translate-x-0.5 transition-all" />
-                      </a>
-                    ))}
+                    ].map((item) => {
+                      const isRoute = item.href.startsWith("/");
+                      if (isRoute) {
+                        return (
+                          <Link
+                            key={item.label}
+                            href={item.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className={cn(
+                              "text-[14px] sm:text-[14.5px] font-sans tracking-[0.03em] py-2.5 px-1 border-b border-[#f0ece4] transition-colors flex items-center justify-between group cursor-pointer",
+                              item.active
+                                ? "text-[#9a6a43] font-medium"
+                                : "text-[#3c342f] hover:text-[#9a6a43] font-[350]"
+                            )}
+                          >
+                            <span>{item.label}</span>
+                            <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#9a6a43] group-hover:translate-x-0.5 transition-all" />
+                          </Link>
+                        );
+                      }
+                      return (
+                        <a
+                          key={item.label}
+                          href={item.href}
+                          onClick={(e) => handleMobileNavClick(e, item.href)}
+                          className={cn(
+                            "text-[14px] sm:text-[14.5px] font-sans tracking-[0.03em] py-2.5 px-1 border-b border-[#f0ece4] transition-colors flex items-center justify-between group cursor-pointer",
+                            item.active
+                              ? "text-[#9a6a43] font-medium"
+                              : "text-[#3c342f] hover:text-[#9a6a43] font-[350]"
+                          )}
+                        >
+                          <span>{item.label}</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-[#9a6a43] group-hover:translate-x-0.5 transition-all" />
+                        </a>
+                      );
+                    })}
                   </nav>
                 </div>
 

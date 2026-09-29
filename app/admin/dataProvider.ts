@@ -856,6 +856,32 @@ export const dataProvider: DataProvider = {
       if (dataToUpdate.customer_phone) {
         dataToUpdate.customer_phone = standardizePhoneNumber(dataToUpdate.customer_phone);
       }
+      const bId = Number(params.id);
+      const requestedPaymentStatus = dataToUpdate.payment_status;
+      const requestedPaymentMethod = dataToUpdate.payment_method;
+
+      // Sync payment status & method to all invoices linked to this booking
+      if (bId && !isNaN(bId) && (requestedPaymentStatus || requestedPaymentMethod)) {
+        const invoiceUpdate: any = {};
+        if (requestedPaymentStatus) {
+          invoiceUpdate.payment_status = requestedPaymentStatus;
+        }
+        if (requestedPaymentMethod) {
+          invoiceUpdate.payment_method = requestedPaymentMethod;
+        }
+        supabase
+          .from("invoices")
+          .update(invoiceUpdate)
+          .eq("booking_id", bId)
+          .then(({ error: invErr }) => {
+            if (invErr) {
+              console.error("Failed to sync invoice on booking update:", invErr);
+            } else {
+              invalidateMasterCache("invoices");
+            }
+          });
+      }
+
       delete dataToUpdate.relational_items;
       delete dataToUpdate.items;
       delete dataToUpdate.raw_items;

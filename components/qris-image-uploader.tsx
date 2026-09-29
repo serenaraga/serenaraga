@@ -457,7 +457,7 @@ export function QrisImageUploader({
                 onChangePayload?.(val);
                 setParsedInfo(val ? parseQRIS(val) : null);
               }}
-              className="text-xs h-8 shadow-none bg-background font-mono"
+              className="text-xs h-8 shadow-none bg-background"
             />
             <p className="text-[11px] text-muted-foreground">
               {isEn
@@ -479,7 +479,7 @@ export function QrisImageUploader({
                 setPreviewError(false);
                 onChange(e.target.value);
               }}
-              className="text-xs h-8 shadow-none bg-background font-mono"
+              className="text-xs h-8 shadow-none bg-background"
             />
           </div>
         </div>

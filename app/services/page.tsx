@@ -11,6 +11,9 @@ import {
   getTikTokUrl,
   getFacebookUrl,
   getThreadsUrl,
+  buildWhatsAppInboundMessage,
+  buildWhatsAppServiceBookingMessage,
+  getWhatsAppUrl,
 } from "@/lib/brand-settings";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -92,7 +95,7 @@ export default function ServicesPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   // Filter States
-  const [selectedCategory, setSelectedCategory] = React.useState<string>("Paket Pijat");
+  const [selectedCategory, setSelectedCategory] = React.useState<string>("Layanan Pijat");
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [durationFilter, setDurationFilter] = React.useState<string>("all");
   const [sortBy, setSortBy] = React.useState<"default" | "price_asc" | "price_desc" | "duration_desc">("default");
@@ -110,10 +113,14 @@ export default function ServicesPage() {
       if (!error && data) {
         setServices(data);
         if (data.length > 0) {
-          const hasPaketPijat = data.some(
-            (s: ServiceItem) => s.category?.toLowerCase() === "paket pijat"
+          const match = data.find(
+            (s: ServiceItem) =>
+              s.category?.toLowerCase() === "layanan pijat" ||
+              s.category?.toLowerCase() === "massage services"
           );
-          if (!hasPaketPijat && data[0]?.category) {
+          if (match?.category) {
+            setSelectedCategory(match.category);
+          } else if (data[0]?.category) {
             setSelectedCategory(data[0].category);
           }
         }
@@ -146,7 +153,7 @@ export default function ServicesPage() {
     };
   }, [fetchServices]);
 
-  // Derived Dynamic Categories (Ensuring 'Paket Pijat' is placed first)
+  // Derived Dynamic Categories (Ensuring 'Massage Services' is 1st and 'Massage Packages' is 2nd)
   const categoriesList = React.useMemo(() => {
     const set = new Set<string>();
     services.forEach((s) => {
@@ -154,16 +161,26 @@ export default function ServicesPage() {
     });
     const list = Array.from(set);
     return list.sort((a, b) => {
-      if (a.toLowerCase() === "paket pijat") return -1;
-      if (b.toLowerCase() === "paket pijat") return 1;
-      return 0;
+      const aLower = a.toLowerCase();
+      const bLower = b.toLowerCase();
+      const getPriority = (name: string) => {
+        if (name === "layanan pijat" || name === "massage services") return 1;
+        if (name === "paket pijat" || name === "massage packages") return 2;
+        return 99;
+      };
+      const pA = getPriority(aLower);
+      const pB = getPriority(bLower);
+      if (pA !== pB) return pA - pB;
+      return a.localeCompare(b);
     });
   }, [services]);
 
-  // Derived Default Category
+  // Derived Default Category (Massage Services / Layanan Pijat)
   const defaultCategory = React.useMemo(() => {
-    if (categoriesList.length === 0) return "Paket Pijat";
-    const found = categoriesList.find((c) => c.toLowerCase() === "paket pijat");
+    if (categoriesList.length === 0) return "Layanan Pijat";
+    const found = categoriesList.find(
+      (c) => c.toLowerCase() === "layanan pijat" || c.toLowerCase() === "massage services"
+    );
     return found || categoriesList[0];
   }, [categoriesList]);
 
@@ -235,30 +252,35 @@ export default function ServicesPage() {
     return counts;
   }, [services]);
 
-  // WhatsApp Booking Action Generator
+  // WhatsApp Booking Action Generator (Using Dedicated Book Treatment Inbound Setting)
   const handleBookService = (service: ServiceItem) => {
     const brandName = settings.brand_name || "Serena Raga";
-    const durationText = service.duration_minutes ? `${service.duration_minutes} ${isEn ? "mins" : "menit"}` : "-";
+    const durationText = service.duration_minutes ? `${service.duration_minutes} Menit` : "";
     const priceText = formatIDR(service.price);
 
-    const message = isEn
-      ? `Hello ${brandName}, I would like to book a treatment:\n\n✨ Treatment: *${service.name}*\n⏱ Duration: *${durationText}*\n💵 Price: *${priceText}*\n\nPlease let me know therapist availability and next steps. Thank you!`
-      : `Halo CS ${brandName}, saya ingin memesan layanan pijat:\n\n✨ Layanan: *${service.name}*\n⏱ Durasi: *${durationText}*\n💵 Tarif: *${priceText}*\n\nMohon info ketersediaan jadwal terapis untuk lokasi saya. Terima kasih!`;
+    const message = buildWhatsAppServiceBookingMessage({
+      template: settings.wa_service_book_message_template,
+      brandName,
+      serviceName: service.name,
+      detailTreatment: service.description,
+      durationText,
+      priceText,
+    });
 
-    const cleanNumber = cleanWhatsAppNumber(settings.whatsapp_number);
-    const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+    const url = getWhatsAppUrl(settings.whatsapp_number, message);
     window.open(url, "_blank");
   };
 
-  // Consultation WhatsApp Action
+  // Consultation WhatsApp Action (Synchronized with Admin Dashboard Inbound Setting)
   const handleConsultation = () => {
     const brandName = settings.brand_name || "Serena Raga";
-    const message = isEn
-      ? `Hello ${brandName}, I would like a consultation regarding the best massage treatment for my condition.`
-      : `Halo CS ${brandName}, saya ingin konsultasi mengenai pilihan paket pijat yang paling sesuai dengan kebutuhan tubuh saya saat ini.`;
+    const message = buildWhatsAppInboundMessage({
+      template: settings.wa_support_default_message,
+      brandName,
+      isEn,
+    });
 
-    const cleanNumber = cleanWhatsAppNumber(settings.whatsapp_number);
-    const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+    const url = getWhatsAppUrl(settings.whatsapp_number, message);
     window.open(url, "_blank");
   };
 

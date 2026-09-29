@@ -27,6 +27,7 @@ export interface BrandSettings {
   wa_invoice_message_template: string;
   wa_booking_message_template: string;
   wa_support_default_message: string;
+  wa_service_book_message_template?: string;
 }
 
 export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
@@ -59,6 +60,8 @@ export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
     "Halo {customer_name},\n\nPesanan *{service_name}* di *{brand_name}* Anda telah dikonfirmasi!\n\n📅 *Tanggal:* {booking_date}\n⏰ *Jam:* {booking_time}\n📍 *Alamat:* {address}\n💆 *Terapis:* {therapist_name}\n\nMohon bersiap 10 menit sebelum waktu pelayanan.",
   wa_support_default_message:
     "Halo Admin SerenaRaga! Saya ingin tanya layanan massage di rumah. Bisa bantu informasinya?",
+  wa_service_book_message_template:
+    "Halo {brand_name}, saya ingin memesan layanan pijat:\n\n✨ Treatment: *{service_name}*\n💆🏻‍♀️ Detail Treatment: *{detail_treatment}*\n💵 Tarif: *{price}*\n\nMohon info ketersediaan jadwal terapis untuk lokasi saya. Terima kasih!",
 };
 
 const STORAGE_KEY = "serenaraga_brand_settings";
@@ -206,11 +209,16 @@ export function getThreadsUrl(handleOrUrl?: string): string {
 export function buildWhatsAppInboundMessage({
   template,
   brandName,
+  serviceName,
+  durationText,
+  priceText,
   isEn,
 }: {
   template?: string;
   brandName?: string;
   serviceName?: string;
+  durationText?: string;
+  priceText?: string;
   isEn?: boolean;
 }): string {
   const brand = brandName || "Serena Raga";
@@ -218,12 +226,60 @@ export function buildWhatsAppInboundMessage({
   if (template && template.trim()) {
     return template
       .replace(/\{brand_name\}/gi, brand)
-      .replace(/\{brand\}/gi, brand);
+      .replace(/\{brand\}/gi, brand)
+      .replace(/\{service_name\}/gi, serviceName || "")
+      .replace(/\{service\}/gi, serviceName || "")
+      .replace(/\{duration\}/gi, durationText || "")
+      .replace(/\{price\}/gi, priceText || "");
+  }
+
+  if (serviceName) {
+    return isEn
+      ? `Hello ${brand}, I would like to book the *${serviceName}* treatment. Could you please let me know therapist availability and next steps? Thank you!`
+      : `Halo ${brand}, saya ingin memesan layanan *${serviceName}*. Mohon info ketersediaan jadwal terapis untuk lokasi saya. Terima kasih!`;
   }
 
   return isEn
     ? `Hello ${brand}, I would like to inquire about your home massage & spa services. Could you please help?`
     : `Halo ${brand}, saya ingin tanya mengenai layanan home massage & spa. Bisa bantu informasinya?`;
+}
+
+/**
+ * Generate inbound booking message specifically for services catalog "Book Treatment" buttons
+ */
+export function buildWhatsAppServiceBookingMessage({
+  template,
+  brandName,
+  serviceName,
+  detailTreatment,
+  durationText,
+  priceText,
+}: {
+  template?: string;
+  brandName?: string;
+  serviceName: string;
+  detailTreatment?: string | null;
+  durationText?: string;
+  priceText?: string;
+}): string {
+  const brand = brandName || "Serena Raga";
+  const detail = detailTreatment?.trim() || durationText || "-";
+
+  const defaultTemplate =
+    "Halo {brand_name}, saya ingin memesan layanan pijat:\n\n✨ Treatment: *{service_name}*\n💆🏻‍♀️ Detail Treatment: *{detail_treatment}*\n💵 Tarif: *{price}*\n\nMohon info ketersediaan jadwal terapis untuk lokasi saya. Terima kasih!";
+
+  const targetTemplate = template && template.trim() ? template : defaultTemplate;
+
+  return targetTemplate
+    .replace(/\{brand_name\}/gi, brand)
+    .replace(/\{brand\}/gi, brand)
+    .replace(/\{service_name\}/gi, serviceName)
+    .replace(/\{service\}/gi, serviceName)
+    .replace(/\{detail_treatment\}/gi, detail)
+    .replace(/\{description\}/gi, detail)
+    .replace(/\{detail\}/gi, detail)
+    .replace(/\{duration\}/gi, durationText || "")
+    .replace(/\{price\}/gi, priceText || "");
 }
 
 /**
@@ -246,43 +302,66 @@ export function getCachedBrandSettings(): BrandSettings {
 }
 
 /**
- * Save brand settings to localStorage and sync with Supabase
+ * Save brand settings to Supabase and update local state
  */
 export async function saveBrandSettings(
   newSettings: BrandSettings
 ): Promise<{ success: boolean; error?: any }> {
   try {
+    // 1. Determine target row id from Supabase
+    let targetId = 1;
+    try {
+      const { data: existing } = await supabase
+        .from("brand_settings")
+        .select("id")
+        .order("id", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        targetId = existing.id;
+      }
+    } catch (e) {
+      console.warn("Could not query existing brand_settings row id:", e);
+    }
+
+    // 2. Persist directly to Supabase brand_settings table
+    const { data, error } = await supabase
+      .from("brand_settings")
+      .upsert(
+        { id: targetId, ...newSettings, updated_at: new Date().toISOString() },
+        { onConflict: "id" }
+      )
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.error("Supabase brand_settings save error:", error);
+      return { success: false, error };
+    }
+
+    const savedData: BrandSettings = (data as BrandSettings) || newSettings;
+
+    // 3. Update localStorage and broadcast
     if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
+      } catch {}
       window.dispatchEvent(
-        new CustomEvent("brand_settings_updated", { detail: newSettings })
+        new CustomEvent("brand_settings_updated", { detail: savedData })
       );
       try {
         const bc = new BroadcastChannel("brand_settings_channel");
-        bc.postMessage(newSettings);
+        bc.postMessage(savedData);
         bc.close();
-      } catch (e) {
-        // BroadcastChannel optional fallback
-      }
+      } catch {}
     }
 
-    // Persist all fields to Supabase brand_settings table
-    try {
-      const { error } = await supabase
-        .from("brand_settings")
-        .upsert(
-          { id: 1, ...newSettings, updated_at: new Date().toISOString() },
-          { onConflict: "id" }
-        );
-      if (error) {
-        console.warn("Supabase brand_settings table sync notice:", error.message);
-      }
-    } catch (dbErr) {
-      // Table may not exist yet in Supabase, localStorage fallback remains active
-    }
+    setGlobalBrandSettings(savedData);
 
     return { success: true };
   } catch (err) {
+    console.error("saveBrandSettings exception:", err);
     return { success: false, error: err };
   }
 }
@@ -305,10 +384,12 @@ function notifySubscribers() {
 
 function setGlobalBrandSettings(next: Partial<BrandSettings> | null | undefined) {
   if (!next) return;
+
   currentSettings = {
     ...currentSettings,
     ...next,
   };
+
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(currentSettings));
@@ -332,10 +413,15 @@ async function initGlobalBrandSettings(): Promise<void> {
         .maybeSingle();
 
       if (!error && data) {
-        setGlobalBrandSettings(data);
+        // Direct merge: DB data is source of truth, defaults only fill missing fields
+        const merged: BrandSettings = {
+          ...DEFAULT_BRAND_SETTINGS,
+          ...data,
+        };
+        setGlobalBrandSettings(merged);
       }
     } catch (e) {
-      // Fallback to localStorage data
+      console.error("Failed to load brand_settings from database:", e);
     } finally {
       isInitialized = true;
       initPromise = null;
@@ -403,6 +489,22 @@ async function initGlobalBrandSettings(): Promise<void> {
   return initPromise;
 }
 
+function subscribeBrandSettings(callback: () => void) {
+  subscribers.add(callback);
+  initGlobalBrandSettings();
+  return () => {
+    subscribers.delete(callback);
+  };
+}
+
+function getBrandSettingsSnapshot(): BrandSettings {
+  return currentSettings;
+}
+
+function getBrandSettingsServerSnapshot(): BrandSettings {
+  return DEFAULT_BRAND_SETTINGS;
+}
+
 /**
  * React Hook for consuming Brand Settings throughout the application.
  * Uses a singleton external store with useSyncExternalStore to eliminate redundant
@@ -410,15 +512,9 @@ async function initGlobalBrandSettings(): Promise<void> {
  */
 export function useBrandSettings() {
   const settings = useSyncExternalStore(
-    (callback) => {
-      subscribers.add(callback);
-      initGlobalBrandSettings();
-      return () => {
-        subscribers.delete(callback);
-      };
-    },
-    () => currentSettings,
-    () => DEFAULT_BRAND_SETTINGS
+    subscribeBrandSettings,
+    getBrandSettingsSnapshot,
+    getBrandSettingsServerSnapshot
   );
 
   const [loading, setLoading] = useState<boolean>(!isInitialized);
