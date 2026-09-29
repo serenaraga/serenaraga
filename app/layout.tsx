@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://serenaraga.com"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.serenaraga.com"
   ),
   title: "SerenaRaga - Pijat Panggilan Jogja & Home Massage Nyaman",
   description: "Layanan pijat panggilan Jogja & home massage profesional, bersertifikat, dan nyaman ke rumah, hotel, villa, serta kos di Yogyakarta.",
@@ -36,11 +36,12 @@ export const metadata: Metadata = {
     description: "Layanan pijat panggilan Jogja & home massage profesional, bersertifikat, dan nyaman ke rumah, hotel, villa, serta kos di Yogyakarta.",
     type: "website",
     locale: "id_ID",
-    url: "https://serenaraga.com",
+    url: "https://www.serenaraga.com",
     siteName: "SerenaRaga",
     images: [
       {
-        url: "/opengraph-image",
+        url: "https://www.serenaraga.com/opengraph-image",
+        secureUrl: "https://www.serenaraga.com/opengraph-image",
         width: 1200,
         height: 630,
         alt: "SerenaRaga - Comfortable Home Massage Jogja",
@@ -52,7 +53,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SerenaRaga - Pijat Panggilan Jogja & Home Massage Nyaman",
     description: "Layanan pijat panggilan Jogja & home massage profesional, bersertifikat, dan nyaman ke rumah, hotel, villa, serta kos di Yogyakarta.",
-    images: ["/opengraph-image"],
+    images: ["https://www.serenaraga.com/opengraph-image"],
   },
 };
 

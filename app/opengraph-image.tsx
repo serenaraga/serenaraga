@@ -2,7 +2,10 @@ import { ImageResponse } from "next/og";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
+import { supabase } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export const runtime = "nodejs";
 export const alt = "SerenaRaga - Comfortable Home Massage Jogja";
 export const size = {
@@ -12,7 +15,24 @@ export const size = {
 export const contentType = "image/jpeg";
 
 export default async function Image() {
-  // 1. Load Optimized Hero Sanctuary Image as Base64 Data URL
+  // 1. Fetch Dynamic Brand Settings
+  let brandName = "SERENA RAGA";
+  let tagline = "Relaxing massage to your doorstep.";
+  try {
+    const { data: brandSetting } = await supabase
+      .from("brand_settings")
+      .select("brand_name, tagline")
+      .limit(1)
+      .maybeSingle();
+
+    if (brandSetting?.brand_name) {
+      brandName = brandSetting.brand_name.toUpperCase();
+    }
+  } catch (e) {
+    // Non-blocking fallback
+  }
+
+  // 2. Load Optimized Hero Sanctuary Image as Base64 Data URL
   let heroImageBase64 = "";
   try {
     const ogImgPath = path.join(process.cwd(), "public/images/hero-sanctuary-og.jpg");
@@ -26,7 +46,7 @@ export default async function Image() {
     console.warn("Could not load hero-sanctuary image:", err);
   }
 
-  // 2. Load Fonts: Geist (Sans) + Gallient (Luxury Serif)
+  // 3. Load Fonts: Geist (Sans) + Gallient (Luxury Serif)
   const fonts = [];
 
   // Primary Sans Font: Geist
@@ -128,7 +148,7 @@ export default async function Image() {
             maxWidth: "1050px",
           }}
         >
-          {/* Main Title: SERENA RAGA in Gallient Luxury Roman Serif */}
+          {/* Main Title: Dynamic Brand Name in Gallient Luxury Roman Serif */}
           <h1
             style={{
               fontSize: "92px",
@@ -142,7 +162,7 @@ export default async function Image() {
               textShadow: "0 4px 30px rgba(0, 0, 0, 0.75)",
             }}
           >
-            SERENA RAGA
+            {brandName}
           </h1>
 
           {/* Subtitle */}
@@ -159,7 +179,7 @@ export default async function Image() {
               lineHeight: 1.4,
             }}
           >
-            Relaxing massage to your doorstep.
+            {tagline}
           </p>
 
           {/* Outlined Luxury Book Now Button */}

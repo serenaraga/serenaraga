@@ -32,18 +32,22 @@ export default async function Image({
     // fallback
   }
 
-  // Default fallback data
-  let invoiceNo = invoiceNumber || "SR-260929-3067";
-  let customerName = "Kak Nurul J";
-  let serviceName = "Essential Relax";
-  let formattedDate = "28 September 2026";
-  let subtotal = 110000;
-  let transportFee = 10000;
+  // Default clean fallback data
+  let invoiceNo = invoiceNumber || "SR-INVOICE";
+  let customerName = "Pelanggan Serena Raga";
+  let serviceName = "Layanan Home Massage";
+  let formattedDate = new Date().toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  let subtotal = 0;
+  let transportFee = 0;
   let additionalCharge = 0;
   let additionalChargeDesc = "";
-  let discount = 5500;
-  let discountName = "First-Time Customer Promo";
-  let totalAmount = 114500;
+  let discount = 0;
+  let discountName = "";
+  let totalAmount = 0;
   let adminPhone = "+62 895-1835-9037";
   let brandName = "SERENA RAGA";
   let nmid = "ID1026517681023";

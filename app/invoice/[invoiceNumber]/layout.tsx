@@ -10,7 +10,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ invoiceNumber: string }> | { invoiceNumber: string };
 }): Promise<Metadata> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://serenaraga.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.serenaraga.com";
   let invoiceNumber = "";
 
   try {
@@ -79,6 +79,7 @@ export async function generateMetadata({
       images: [
         {
           url: ogImageUrl,
+          secureUrl: ogImageUrl,
           width: 1200,
           height: 630,
           alt: `Nota Digital & QRIS ${title}`,

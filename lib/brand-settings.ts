@@ -37,7 +37,7 @@ export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   whatsapp_number: "6289518359037",
   phone_number: "+62 895-1835-9037",
   email: "ragaserena@gmail.com",
-  website_url: "https://serenaraga.com",
+  website_url: "https://www.serenaraga.com",
   instagram_handle: "@serena.raga",
   tiktok_handle: "@serenaraga",
   facebook_url: "https://facebook.com/serenaraga",
