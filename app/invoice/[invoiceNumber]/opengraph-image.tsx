@@ -28,7 +28,7 @@ export default async function Image({
   try {
     const resolvedParams = await Promise.resolve(params);
     invoiceNumber = resolvedParams?.invoiceNumber || "";
-  } catch {
+  } catch (e) {
     // fallback
   }
 
@@ -80,8 +80,6 @@ export default async function Image({
       total_amount,
       subtotal,
       discount,
-      discount_name,
-      applied_promo_name,
       transport_fee,
       additional_charge,
       additional_charge_description,
@@ -93,16 +91,7 @@ export default async function Image({
       booking_time,
       created_at,
       notes,
-      booking_id,
-      bookings (
-        id,
-        booking_date,
-        booking_time,
-        service_name,
-        therapist_name,
-        total_price,
-        customer_name
-      )
+      booking_id
     `);
 
     if (isNumeric) {
@@ -113,67 +102,65 @@ export default async function Image({
 
     const { data: invoiceData } = await query.maybeSingle();
 
-    if (invoiceData) {
-      invoiceNo = invoiceData.invoice_number || `SR-${invoiceData.id}`;
-      customerName =
-        invoiceData.customer_name ||
-        (invoiceData.bookings as any)?.customer_name ||
-        "Pelanggan";
+    if (!invoiceData) {
+      // Invalid or non-existent invoice: do not generate empty Rp 0 card
+      return new Response("Invoice Not Found", { status: 404 });
+    }
 
-      let meta: any = null;
-      let rawNotesText = invoiceData.notes || "";
-      if (rawNotesText.trim().startsWith("{") && rawNotesText.trim().endsWith("}")) {
-        try {
-          meta = JSON.parse(rawNotesText.trim());
-          rawNotesText = meta.raw_notes || "";
-        } catch (e) {}
-      }
+    invoiceNo = invoiceData.invoice_number || `SR-${invoiceData.id}`;
+    customerName = invoiceData.customer_name || "Pelanggan";
 
-      totalAmount = Number(invoiceData.total_amount) || 0;
-      subtotal = Number(invoiceData.subtotal) || totalAmount;
-      discount = Number(invoiceData.discount) || 0;
+    let meta: any = null;
+    let rawNotesText = invoiceData.notes || "";
+    if (rawNotesText.trim().startsWith("{") && rawNotesText.trim().endsWith("}")) {
+      try {
+        meta = JSON.parse(rawNotesText.trim());
+        rawNotesText = meta.raw_notes || "";
+      } catch (e) {}
+    }
 
-      const promoMatch = rawNotesText?.match(/\[Promo:\s*([^\]]+)\]/i);
-      discountName =
-        invoiceData.discount_name ||
-        invoiceData.applied_promo_name ||
-        (promoMatch ? promoMatch[1].trim() : null) ||
-        meta?.promo_name ||
-        "";
+    totalAmount = Number(invoiceData.total_amount) || 0;
+    subtotal = Number(invoiceData.subtotal) || totalAmount;
+    discount = Number(invoiceData.discount) || 0;
 
-      transportFee = Number(invoiceData.transport_fee) || 0;
+    const promoMatch = rawNotesText?.match(/\[Promo:\s*([^\]]+)\]/i);
+    discountName =
+      (promoMatch ? promoMatch[1].trim() : null) ||
+      meta?.promo_name ||
+      meta?.applied_promo_name ||
+      "";
 
-      additionalCharge = Number(
-        invoiceData.additional_charge !== undefined && invoiceData.additional_charge !== null
-          ? invoiceData.additional_charge
-          : meta?.additional_charge !== undefined
-          ? meta.additional_charge
-          : Array.isArray(meta?.items)
-          ? meta.items.reduce((acc: number, it: any) => acc + (Number(it.additional_charge) || 0), 0)
-          : 0
-      );
+    transportFee = Number(invoiceData.transport_fee) || 0;
 
-      additionalChargeDesc =
-        invoiceData.additional_charge_description ||
-        meta?.additional_charge_description ||
-        (Array.isArray(meta?.items)
-          ? meta.items.map((it: any) => it.additional_charge_description).filter(Boolean).join(", ")
-          : "");
+    additionalCharge = Number(
+      invoiceData.additional_charge !== undefined && invoiceData.additional_charge !== null
+        ? invoiceData.additional_charge
+        : meta?.additional_charge !== undefined
+        ? meta.additional_charge
+        : Array.isArray(meta?.items)
+        ? meta.items.reduce((acc: number, it: any) => acc + (Number(it.additional_charge) || 0), 0)
+        : 0
+    );
 
-      const rawService = invoiceData.service_name || (invoiceData.bookings as any)?.service_name || "Layanan Massage";
-      serviceName = rawService;
+    additionalChargeDesc =
+      invoiceData.additional_charge_description ||
+      meta?.additional_charge_description ||
+      (Array.isArray(meta?.items)
+        ? meta.items.map((it: any) => it.additional_charge_description).filter(Boolean).join(", ")
+        : "");
 
-      const rawDate = invoiceData.booking_date || invoiceData.created_at;
-      if (rawDate) {
-        try {
-          formattedDate = new Date(rawDate).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          });
-        } catch {
-          // ignore
-        }
+    serviceName = invoiceData.service_name || "Layanan Massage";
+
+    const rawDate = invoiceData.booking_date || invoiceData.created_at;
+    if (rawDate) {
+      try {
+        formattedDate = new Date(rawDate).toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      } catch {
+        // ignore
       }
     }
   } catch (err) {
@@ -196,7 +183,7 @@ export default async function Image({
     qrCodeDataUrl = await QRCode.toDataURL(dynamicPayload, {
       errorCorrectionLevel: "M",
       margin: 1,
-      width: 340,
+      width: 380,
       color: {
         dark: "#000000",
         light: "#FFFFFF",
@@ -492,7 +479,7 @@ export default async function Image({
         </div>
 
         {/* ========================================================= */}
-        {/* RIGHT COLUMN: Full-Bleed Scaled QRIS Template             */}
+        {/* RIGHT COLUMN: Authentic Scaled Official QRIS Template     */}
         {/* ========================================================= */}
         <div
           style={{
@@ -503,141 +490,142 @@ export default async function Image({
             alignItems: "center",
             justifyContent: "space-between",
             backgroundColor: "#ffffff",
-            padding: "24px 34px 16px 34px",
+            padding: "20px 20px 22px 20px",
             position: "relative",
             overflow: "hidden",
           }}
         >
-          {/* Left Red Chevron Accent */}
+          {/* Authentic Geometric Indonesian Batik Pattern on Left and Right */}
           <svg
             style={{
               position: "absolute",
-              left: "-1px",
-              top: "165px",
-              width: "38px",
-              height: "100px",
+              left: "0px",
+              top: "0px",
+              width: "65px",
+              height: "630px",
+              opacity: 0.45,
+              pointerEvents: "none",
             }}
-            viewBox="0 0 38 100"
+            viewBox="0 0 65 630"
           >
-            <polygon points="0,0 36,50 0,100" fill="#e11d48" />
+            <pattern id="batik-pattern-l" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M20,0 L40,20 L20,40 L0,20 Z" fill="none" stroke="#94a3b8" strokeWidth="1.5" />
+              <rect x="16" y="16" width="8" height="8" fill="none" stroke="#94a3b8" strokeWidth="1.5" />
+              <path d="M0,0 L12,0 L12,12 L0,12 Z M40,0 L28,0 L28,12 L40,12 Z M40,40 L28,40 L28,28 L40,28 Z M0,40 L12,40 L12,28 L0,28 Z" fill="none" stroke="#cbd5e1" strokeWidth="1.2" />
+            </pattern>
+            <rect width="65" height="630" fill="url(#batik-pattern-l)" />
           </svg>
 
-          {/* Bottom-Right Red Ribbon Banner */}
           <svg
             style={{
               position: "absolute",
-              right: "-1px",
-              bottom: "-1px",
-              width: "155px",
-              height: "95px",
+              right: "0px",
+              top: "0px",
+              width: "65px",
+              height: "630px",
+              opacity: 0.45,
+              pointerEvents: "none",
             }}
-            viewBox="0 0 155 95"
+            viewBox="0 0 65 630"
           >
-            <polygon points="155,0 155,95 0,95" fill="#e11d48" />
+            <pattern id="batik-pattern-r" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M20,0 L40,20 L20,40 L0,20 Z" fill="none" stroke="#94a3b8" strokeWidth="1.5" />
+              <rect x="16" y="16" width="8" height="8" fill="none" stroke="#94a3b8" strokeWidth="1.5" />
+              <path d="M0,0 L12,0 L12,12 L0,12 Z M40,0 L28,0 L28,12 L40,12 Z M40,40 L28,40 L28,28 L40,28 Z M0,40 L12,40 L12,28 L0,28 Z" fill="none" stroke="#cbd5e1" strokeWidth="1.2" />
+            </pattern>
+            <rect width="65" height="630" fill="url(#batik-pattern-r)" />
           </svg>
 
-          {/* Content on top of the red bottom-right ribbon */}
+          {/* Left Red Chevron Triangle Accent with White Bevel Shadow */}
           <div
             style={{
               position: "absolute",
-              right: "8px",
-              bottom: "7px",
+              left: "0px",
+              top: "92px",
+              display: "flex",
+            }}
+          >
+            <svg width="68" height="210" viewBox="0 0 68 210">
+              {/* White bevel base layer */}
+              <polygon points="0,0 68,105 0,210" fill="#f8fafc" />
+              <polygon points="0,6 62,105 0,204" fill="#e2e8f0" />
+              {/* Red primary accent */}
+              <polygon points="0,10 56,105 0,200" fill="#e11937" />
+            </svg>
+          </div>
+
+          {/* Bottom-Right Clean Diagonal Red Corner Triangle */}
+          <div
+            style={{
+              position: "absolute",
+              right: "0px",
+              bottom: "0px",
+              display: "flex",
+            }}
+          >
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <polygon points="140,0 140,140 0,140" fill="#e11937" />
+            </svg>
+          </div>
+
+          {/* 1. Header: Merchant Name, NMID, & Large Prominent Dynamic Nominal (Shifted Downward Closer to QR) */}
+          <div
+            style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              color: "#ffffff",
-              width: "100px",
-            }}
-          >
-            <span style={{ fontSize: "7.5px", fontWeight: 700, letterSpacing: "0.02em" }}>
-              Cara pembayaran QRIS:
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "3px" }}>
-              <div style={{ width: "15px", height: "15px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: "9px", color: "#e11d48" }}>📱</span>
-              </div>
-              <div style={{ width: "15px", height: "15px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: "9px", color: "#e11d48" }}>📷</span>
-              </div>
-              <div style={{ width: "15px", height: "15px", borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: "9px", color: "#e11d48" }}>✓</span>
-              </div>
-            </div>
-            <span style={{ fontSize: "6.5px", marginTop: "2px", opacity: 0.9 }}>
-              Buka • Scan • Bayar
-            </span>
-          </div>
-
-          {/* Top QRIS + GPN Header Bar */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
               width: "100%",
-              paddingBottom: "10px",
-              borderBottom: "1.5px solid #f1f5f9",
+              marginTop: "24px",
+              marginBottom: "-2px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-              <span style={{ fontSize: "28px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" }}>
-                QRIS
-              </span>
-              <div style={{ display: "flex", flexDirection: "column", fontSize: "9.5px", fontWeight: 700, color: "#64748b", lineHeight: 1.1 }}>
-                <span>QR Code Standar</span>
-                <span>Pembayaran Nasional</span>
-              </div>
-            </div>
-
-            {/* GPN Bird Emblem */}
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-              <svg width="24" height="24" viewBox="0 0 100 100">
-                <path
-                  fill="#e11d48"
-                  d="M10,60 C30,30 60,20 90,10 C80,35 65,55 45,70 C35,78 20,85 10,60 Z"
-                />
-                <path
-                  fill="#dc2626"
-                  d="M30,50 C50,35 70,30 85,25 C75,45 60,60 40,65 Z"
-                />
-              </svg>
-              <span style={{ fontSize: "19px", fontWeight: 900, color: "#e11d48", fontStyle: "italic" }}>
-                GPN
-              </span>
-            </div>
-          </div>
-
-          {/* Merchant Name & NMID */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "4px" }}>
-            <span style={{ fontSize: "16.5px", fontWeight: 800, color: "#000000", textTransform: "uppercase" }}>
+            <span
+              style={{
+                fontSize: "23.5px",
+                fontWeight: 900,
+                color: "#000000",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+              }}
+            >
               {brandName}
             </span>
-            <span style={{ fontSize: "11.5px", color: "#64748b", fontWeight: 600, marginTop: "1px" }}>
+            <span
+              style={{
+                fontSize: "13px",
+                color: "#334155",
+                fontWeight: 600,
+                marginTop: "1.5px",
+                letterSpacing: "0.01em",
+              }}
+            >
               NMID: {nmid}
+            </span>
+            <span
+              style={{
+                fontSize: "30px",
+                fontWeight: 900,
+                color: "#0f172a",
+                marginTop: "3px",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {formattedTotal}
             </span>
           </div>
 
-          {/* Exact Nominal Text (Pitch Black) */}
-          <span
-            style={{
-              fontSize: "23px",
-              fontWeight: 900,
-              color: "#000000",
-              marginTop: "4px",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {formattedTotal}
-          </span>
-
-          {/* Dynamic QR Code Matrix */}
+          {/* 2. Centered Prominent Large Dynamic QR Code Matrix (Lifted Upwards) */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "2px",
-              marginTop: "2px",
+              padding: "4px",
+              backgroundColor: "#ffffff",
+              borderRadius: "4px",
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.04)",
+              zIndex: 10,
+              marginTop: "0px",
             }}
           >
             {qrCodeDataUrl ? (
@@ -645,36 +633,47 @@ export default async function Image({
                 src={qrCodeDataUrl}
                 alt="Dynamic QR Code"
                 style={{
-                  width: "275px",
-                  height: "275px",
+                  width: "375px",
+                  height: "375px",
                   objectFit: "contain",
                 }}
               />
             ) : (
-              <div style={{ width: "275px", height: "275px", backgroundColor: "#f8fafc" }} />
+              <div style={{ width: "375px", height: "375px", backgroundColor: "#f8fafc" }} />
             )}
           </div>
 
-          {/* Template Footer Area */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginTop: "2px" }}>
-            <span style={{ fontSize: "10.5px", fontWeight: 800, color: "#334155", letterSpacing: "0.04em" }}>
+          {/* 3. Footer: SATU QRIS UNTUK SEMUA (Lifted Upwards) */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              width: "100%",
+              marginBottom: "14px",
+              zIndex: 10,
+            }}
+          >
+            <span
+              style={{
+                fontSize: "11.5px",
+                fontWeight: 900,
+                color: "#0f172a",
+                letterSpacing: "0.06em",
+              }}
+            >
               SATU QRIS UNTUK SEMUA
             </span>
-            <span style={{ fontSize: "9px", color: "#94a3b8", marginTop: "1px" }}>
+            <span
+              style={{
+                fontSize: "9.5px",
+                color: "#475569",
+                fontWeight: 600,
+                marginTop: "2px",
+              }}
+            >
               Cek aplikasi penyelenggara di: www.aspi-qris.id
             </span>
-
-            {/* Bottom Left Print Info */}
-            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: "6px" }}>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "9px", color: "#64748b", fontWeight: 600 }}>
-                  Dicetak oleh: 93600914
-                </span>
-                <span style={{ fontSize: "8.5px", color: "#94a3b8" }}>
-                  Versi cetak: v0.0.2026.05.09
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
