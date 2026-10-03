@@ -11,24 +11,18 @@ import {
   Copy,
   Check,
   Phone,
-  Calendar,
-  Building,
-  User,
-  Wallet,
   ReceiptText,
-  CreditCard,
-  ShieldCheck,
-  CheckCircle2,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { useLocaleState } from "ra-core";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useBrandSettings, cleanWhatsAppNumber } from "@/lib/brand-settings";
 import { BrandLogo } from "@/components/brand-logo";
 import { cn, formatIDR } from "@/lib/utils";
 import { toast } from "sonner";
+import { PayoutSlipSkeleton } from "@/components/ui/skeleton";
+import { SerenaWatermark } from "@/components/serena-watermark";
 
 export interface BookingBreakdownItem {
   id: number | string;
@@ -97,82 +91,39 @@ export const PayoutSlipCard = ({
   const isEn = activeLocale === "en";
   const { settings } = useBrandSettings();
 
-  const [copiedBank, setCopiedBank] = React.useState(false);
   const [copiedText, setCopiedText] = React.useState(false);
 
   const brandName = settings.brand_name || "Serena Raga";
   const gross = Number(payout.gross_amount || 0);
   const rate = Number(payout.commission_rate || 60);
   const therapistFee = Number(payout.therapist_fee || (gross * rate) / 100);
-  const companyFee = Number(payout.company_fee || Math.max(0, gross - therapistFee));
   const bonus = Number(payout.bonus_amount || 0);
   const deduction = Number(payout.deduction_amount || 0);
   const netAmount = Number(payout.net_amount || therapistFee + bonus - deduction);
 
   const formatCurrency = formatIDR;
 
-  const cardRef = React.useRef<HTMLDivElement>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [scale, setScale] = React.useState(1);
-  const [wrapperHeight, setWrapperHeight] = React.useState<number | undefined>(undefined);
+  const hiddenDocRef = React.useRef<HTMLDivElement>(null);
+  const [slipImageUrl, setSlipImageUrl] = React.useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = React.useState(true);
   const [isDownloading, setIsDownloading] = React.useState(false);
 
-  const updateScale = React.useCallback(() => {
-    if (containerRef.current && cardRef.current) {
-      const containerWidth = containerRef.current.clientWidth;
-      const targetWidth = 540;
-      if (containerWidth < targetWidth && containerWidth > 0) {
-        const newScale = containerWidth / targetWidth;
-        setScale(newScale);
-        setWrapperHeight(cardRef.current.offsetHeight * newScale);
-      } else {
-        setScale(1);
-        setWrapperHeight(undefined);
-      }
-    }
-  }, []);
-
-  React.useEffect(() => {
-    updateScale();
-    window.addEventListener("resize", updateScale);
-
-    let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined" && cardRef.current) {
-      ro = new ResizeObserver(updateScale);
-      ro.observe(cardRef.current);
-      if (containerRef.current) ro.observe(containerRef.current);
-    }
-
-    return () => {
-      window.removeEventListener("resize", updateScale);
-      ro?.disconnect();
-    };
-  }, [updateScale]);
-
-  const handleDownloadPng = async () => {
-    if (!cardRef.current) return;
-
-    setIsDownloading(true);
-    const toastId = toast.loading(
-      isEn
-        ? "Generating high-resolution payout slip..."
-        : "Membuat slip bagi hasil gambar resolusi tajam..."
-    );
-
+  // Auto-generate high-DPI image of the payout slip on mount or state change
+  const generateImage = React.useCallback(async () => {
+    if (!hiddenDocRef.current) return;
     try {
-      // Short delay and ensure fonts are ready
       if (typeof document !== "undefined" && document.fonts) {
         await document.fonts.ready;
       }
-      await new Promise((resolve) => setTimeout(resolve, 120));
+      await new Promise((resolve) => setTimeout(resolve, 80));
 
-      const isDark = document.documentElement.classList.contains("dark");
+      const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
       const backgroundColor = isDark ? "#18181b" : "#ffffff";
 
-      // 3x HD scaling for ultra crisp & clean text rendering
-      const dataUrl = await toPng(cardRef.current, {
-        quality: 1.0,
-        pixelRatio: 3,
+      // 2.5x high-DPI scaling: razor-sharp typography while keeping file size lightweight (~120KB)
+      const dataUrl = await toPng(hiddenDocRef.current, {
+        quality: 0.98,
+        pixelRatio: 2.5,
         backgroundColor: backgroundColor,
         cacheBust: true,
         style: {
@@ -185,10 +136,58 @@ export const PayoutSlipCard = ({
           transform: "none",
           transformOrigin: "top left",
           width: "540px",
-          minWidth: "540px",
-          maxWidth: "540px",
         },
       });
+
+      setSlipImageUrl(dataUrl);
+    } catch (err) {
+      console.error("Failed to generate payout slip image on mount:", err);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    setIsGenerating(true);
+    generateImage();
+  }, [
+    generateImage,
+    payout.payout_number,
+    payout.net_amount,
+    payout.therapist_fee,
+    payout.therapist_name,
+    payout.period_start,
+    payout.period_end,
+    payout.total_bookings,
+    payout.notes,
+    isEn,
+  ]);
+
+  const handleDownloadPng = async () => {
+    setIsDownloading(true);
+    const toastId = toast.loading(
+      isEn
+        ? "Downloading high-resolution payout slip..."
+        : "Mengunduh gambar slip bagi hasil resolusi tinggi..."
+    );
+
+    try {
+      let dataUrl = slipImageUrl;
+      if (!dataUrl && hiddenDocRef.current) {
+        if (typeof document !== "undefined" && document.fonts) {
+          await document.fonts.ready;
+        }
+        const isDark = document.documentElement.classList.contains("dark");
+        const backgroundColor = isDark ? "#18181b" : "#ffffff";
+        dataUrl = await toPng(hiddenDocRef.current, {
+          quality: 0.98,
+          pixelRatio: 2.5,
+          backgroundColor: backgroundColor,
+          cacheBust: true,
+        });
+      }
+
+      if (!dataUrl) throw new Error("Image data URL not available");
 
       const safeTherapistName = (payout.therapist_name || "Terapis")
         .trim()
@@ -222,16 +221,7 @@ export const PayoutSlipCard = ({
     }
   };
 
-  const handleCopyBankAccount = () => {
-    if (payout.bank_account_number) {
-      navigator.clipboard.writeText(payout.bank_account_number);
-      setCopiedBank(true);
-      toast.success(isEn ? "Bank account number copied!" : "Nomor rekening berhasil disalin!");
-      setTimeout(() => setCopiedBank(false), 2000);
-    }
-  };
-
-  // Professional date & period range formatting (replaces internal 'custom' label)
+  // Professional date & period range formatting
   const periodDisplay = React.useMemo(() => {
     if (!payout.period_start) return { title: "-", subtitle: "" };
 
@@ -264,7 +254,6 @@ export const PayoutSlipCard = ({
         formattedRange = `${startFormatted} – ${endFormatted}`;
       }
 
-      // Determine clear, professional period subtitle
       let periodSubtitle = "";
       if (payout.period_type === "daily" || isSameDay) {
         periodSubtitle = isEn ? "Daily Payout" : "Rekap Harian";
@@ -325,32 +314,32 @@ export const PayoutSlipCard = ({
     : `https://wa.me/?text=${encodeURIComponent(generateWhatsAppMessage())}`;
 
   return (
-    <div className={cn("space-y-4 max-w-xl mx-auto w-full", className)}>
-      {/* Action Toolbar (Hidden when exporting or printing) */}
+    <div className={cn("space-y-3 sm:space-y-4 max-w-xl mx-auto w-full", className)}>
+      {/* Top Action Bar (Flat shadcn styling matching Dashboard) */}
       {showShareActions && (
-        <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-card border border-border rounded-xl shadow-none print:hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-card border border-border rounded-xl shadow-none print:hidden">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-            <ReceiptText className="w-4 h-4 text-primary" />
-            <span>{isEn ? "Payout Slip Actions:" : "Aksi Slip Bagi Hasil:"}</span>
+            <ReceiptText className="w-4 h-4 text-[#8b5e3c] dark:text-[#d49b6a]" />
+            <span>{isEn ? "Payout Actions:" : "Aksi Slip Bagi Hasil:"}</span>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleDownloadPng}
               disabled={isDownloading}
-              className="h-8 text-xs gap-1.5 shadow-none cursor-pointer"
+              className="h-7 sm:h-8 text-[11px] sm:text-xs gap-1 sm:gap-1.5 shadow-none border-border hover:border-[#8b5e3c]/30 hover:text-[#8b5e3c] dark:hover:text-[#d49b6a] cursor-pointer px-2 sm:px-3"
             >
               {isDownloading ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin text-[#8b5e3c] dark:text-[#d49b6a]" />
                   <span>{isEn ? "Downloading..." : "Mengunduh..."}</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>{isEn ? "Download PNG" : "Unduh Gambar (PNG)"}</span>
+                  <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
+                  <span>{isEn ? "Download PNG" : "Unduh PNG"}</span>
                 </>
               )}
             </Button>
@@ -359,16 +348,16 @@ export const PayoutSlipCard = ({
               variant="outline"
               size="sm"
               onClick={handleCopyWhatsAppText}
-              className="h-8 text-xs gap-1.5 shadow-none cursor-pointer"
+              className="h-7 sm:h-8 text-[11px] sm:text-xs gap-1 sm:gap-1.5 shadow-none border-border hover:border-[#8b5e3c]/30 hover:text-[#8b5e3c] dark:hover:text-[#d49b6a] cursor-pointer px-2 sm:px-3"
             >
               {copiedText ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-600">{isEn ? "Copied" : "Disalin"}</span>
+                  <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8b5e3c] dark:text-[#d49b6a]" />
+                  <span className="text-[#8b5e3c] dark:text-[#d49b6a]">{isEn ? "Copied" : "Disalin"}</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground" />
                   <span>{isEn ? "Copy Summary" : "Salin Rincian"}</span>
                 </>
               )}
@@ -377,272 +366,291 @@ export const PayoutSlipCard = ({
               <Button
                 type="button"
                 size="sm"
-                className="h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-none cursor-pointer"
+                className="h-7 sm:h-8 text-[11px] sm:text-xs gap-1 sm:gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-none cursor-pointer px-2.5 sm:px-3"
               >
-                <Phone className="w-3.5 h-3.5" />
-                <span>{isEn ? "Send WhatsApp" : "Kirim WhatsApp"}</span>
+                <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span>{isEn ? "Send WA" : "Kirim WA"}</span>
               </Button>
             </a>
           </div>
         </div>
       )}
 
-      {/* Official Payout Slip Card Document (Auto-Scaled on Mobile to prevent horizontal scroll while keeping Desktop Layout & Download Ratio) */}
-      <div
-        ref={containerRef}
-        className="w-full flex justify-center overflow-visible"
-        style={{ height: wrapperHeight ? `${wrapperHeight}px` : undefined }}
-      >
-        <div
-          style={{
-            width: "540px",
-            transform: scale < 1 ? `scale(${scale})` : undefined,
-            transformOrigin: "top center",
-          }}
-          className="shrink-0 transition-transform duration-100 ease-out"
-        >
-          <Card
-            ref={cardRef}
+      {/* ========================================================================= */}
+      {/* 1. VISIBLE RENDERED SLIP: Real <img> Tag with Right-Click Menu Support   */}
+      {/* ========================================================================= */}
+      <div className="w-full flex justify-center">
+        {slipImageUrl ? (
+          <div
             className={cn(
-              "bg-card overflow-hidden print:border-none print:shadow-none w-[540px] ring-0",
-              borderless
-                ? "border-0 shadow-none bg-transparent rounded-none ring-0"
-                : "border border-border rounded-xl shadow-none ring-0",
+              "w-full max-w-[540px] rounded-xl overflow-hidden border border-border bg-card shadow-none flex items-center justify-center p-0",
+              borderless && "border-0 shadow-none bg-transparent rounded-none",
               cardClassName
             )}
           >
-            <CardContent className="p-6 md:p-7 space-y-6">
-              {/* Header Section (Seamless without divider border) */}
-              <div className="flex flex-row items-start justify-between gap-4 pb-1">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <BrandLogo variant="full" className="h-8 w-auto text-foreground" />
-                  </div>
-                  <p className="text-[10px] tracking-[0.18em] font-semibold text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
-                    {settings.tagline === "Comfortable Home Massage & Spa" || !settings.tagline
-                      ? isEn
-                        ? "COMFORTABLE HOME MASSAGE"
-                        : "COMFORTABLE HOME MASSAGE"
-                      : settings.tagline.toUpperCase()}
-                  </p>
-                </div>
+            <img
+              src={slipImageUrl}
+              alt={`Slip Bagi Hasil ${payout.payout_number} - ${payout.therapist_name}`}
+              className="w-full h-auto object-contain block select-auto rounded-xl cursor-default"
+            />
+          </div>
+        ) : (
+          <PayoutSlipSkeleton showActions={false} className={cn("w-full max-w-[540px]", cardClassName)} />
+        )}
+      </div>
 
-                <div className="text-right space-y-0.5 shrink-0">
-                  <span className="inline-block px-2.5 py-0.5 bg-[#8b5e3c] text-white text-[10px] font-bold italic tracking-wider rounded-md shadow-xs">
-                    {isEn ? "PAYOUT SLIP" : "PAYOUT SLIP"}
-                  </span>
-                  <p className="text-[11px] text-muted-foreground pt-1 font-medium">
-                    {periodDisplay.title}
-                  </p>
+      {/* ========================================================================= */}
+      {/* 2. MASTER TEMPLATE: Offscreen Document used for Rasterizing High-DPI PNG  */}
+      {/* ========================================================================= */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: "0px",
+          width: "540px",
+          pointerEvents: "none",
+          zIndex: -100,
+          opacity: 0,
+        }}
+      >
+        <Card
+          ref={hiddenDocRef}
+          id="payout-slip-document"
+          className={cn(
+            "relative bg-card text-card-foreground overflow-hidden w-[540px] ring-0 border-0 shadow-none rounded-none",
+            cardClassName
+          )}
+        >
+          {/* Subtle Watermark Background */}
+          <SerenaWatermark />
+
+          <CardContent className="relative z-10 p-6 md:p-7 space-y-6">
+            {/* Header Section (Seamless without divider border) */}
+            <div className="flex flex-row items-start justify-between gap-4 pb-1">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <BrandLogo variant="full" className="h-8 w-auto text-foreground" />
                 </div>
+                <p className="text-[10px] tracking-[0.18em] font-semibold text-[#8b5e3c] dark:text-[#d49b6a] uppercase">
+                  {(settings.tagline || "Comfortable Home Massage").toUpperCase()}
+                </p>
               </div>
 
-              {/* Recipient Section (DIBERIKAN KEPADA:) */}
-              <div className="border-l-[3px] border-[#8b5e3c] dark:border-[#d49b6a] pl-3 py-0.5 space-y-0.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8b5e3c] dark:text-[#d49b6a]">
-                  {isEn ? "GIVEN TO:" : "DIBERIKAN KEPADA:"}
-                </p>
-                <h3 className="text-lg sm:text-xl font-bold uppercase text-foreground leading-snug tracking-tight">
-                  {payout.therapist_name.toLowerCase().startsWith("terapis") || payout.therapist_name.toLowerCase().startsWith("therapist")
-                    ? payout.therapist_name
-                    : `TERAPIS ${payout.therapist_name}`}
-                </h3>
-                <p className="text-xs text-muted-foreground pt-0.5">
-                  <span className="font-medium text-foreground">{payout.bank_name || "BCA"}</span> • {payout.bank_account_number || "-"}
-                  {payout.bank_account_name && payout.bank_account_name !== payout.therapist_name ? (
-                    <span className="opacity-80"> (a.n {payout.bank_account_name})</span>
-                  ) : null}
+              <div className="text-right space-y-0.5 shrink-0">
+                <span className="inline-block px-2.5 py-0.5 bg-[#8b5e3c] text-white text-[10px] font-bold italic tracking-wider rounded-md shadow-xs">
+                  PAYOUT SLIP
+                </span>
+                <p className="text-[11px] text-muted-foreground pt-1 font-medium">
+                  {periodDisplay.title}
                 </p>
               </div>
+            </div>
 
-              {/* Itemized Job List & Commission Calculation */}
-              <div className="space-y-2 w-full pt-1">
-                {/* Table Header Strip */}
-                <div className="border-b border-border/70 pb-1.5 flex justify-between items-center text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <span>{isEn ? "VISIT DETAILS / JOB" : "RINCIAN KUNJUNGAN / JOB"}</span>
-                  <span>{isEn ? "COMMISSION" : "KOMISI"}</span>
-                </div>
+            {/* Recipient Section (DIBERIKAN KEPADA:) */}
+            <div className="border-l-[3px] border-[#8b5e3c] dark:border-[#d49b6a] pl-3 py-0.5 space-y-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#8b5e3c] dark:text-[#d49b6a]">
+                {isEn ? "GIVEN TO:" : "DIBERIKAN KEPADA:"}
+              </p>
+              <h3 className="text-lg sm:text-xl font-bold uppercase text-foreground leading-snug tracking-tight">
+                {payout.therapist_name.toLowerCase().startsWith("terapis") || payout.therapist_name.toLowerCase().startsWith("therapist")
+                  ? payout.therapist_name
+                  : `TERAPIS ${payout.therapist_name}`}
+              </h3>
+              <p className="text-xs text-muted-foreground pt-0.5">
+                <span className="font-medium text-foreground">{payout.bank_name || "BCA"}</span> • {payout.bank_account_number || "-"}
+                {payout.bank_account_name && payout.bank_account_name !== payout.therapist_name ? (
+                  <span className="opacity-80"> (a.n {payout.bank_account_name})</span>
+                ) : null}
+              </p>
+            </div>
 
-                {/* Job Items */}
-                <div className="divide-y divide-dashed divide-border/60">
-                  {payout.bookings_breakdown && payout.bookings_breakdown.length > 0 ? (
-                    payout.bookings_breakdown.map((item, idx) => {
-                      const isPostDisc = item.is_post_discount !== false && Boolean(item.discount_amount && item.discount_amount > 0);
-                      const commBase =
-                        typeof item.commission_base === "number"
-                          ? item.commission_base
-                          : isPostDisc
-                          ? Math.max(0, item.total_price - (item.discount_amount || 0))
-                          : item.total_price;
+            {/* Itemized Job List & Commission Calculation */}
+            <div className="space-y-2 w-full pt-1">
+              {/* Table Header Strip */}
+              <div className="border-b border-border/70 pb-1.5 flex justify-between items-center text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">
+                <span>{isEn ? "VISIT DETAILS / JOB" : "RINCIAN KUNJUNGAN / JOB"}</span>
+                <span>{isEn ? "COMMISSION" : "KOMISI"}</span>
+              </div>
 
-                      const transportFee = Number(item.transport_fee || 0);
-                      const additionalCharge = Number(item.additional_charge || 0);
-                      const additionalChargeDesc = item.additional_charge_description?.trim();
+              {/* Job Items */}
+              <div className="divide-y divide-dashed divide-border/60">
+                {payout.bookings_breakdown && payout.bookings_breakdown.length > 0 ? (
+                  payout.bookings_breakdown.map((item, idx) => {
+                    const isPostDisc = item.is_post_discount !== false && Boolean(item.discount_amount && item.discount_amount > 0);
+                    const commBase =
+                      typeof item.commission_base === "number"
+                        ? item.commission_base
+                        : isPostDisc
+                        ? Math.max(0, item.total_price - (item.discount_amount || 0))
+                        : item.total_price;
 
-                      // Extract clean percentage or formatted amount for formula
-                      let discountFormulaPart = "";
-                      if (isPostDisc && item.discount_amount && item.discount_amount > 0) {
-                        const percentMatch = item.applied_promo_name?.match(/(\d+(?:\.\d+)?)\s*%/);
-                        if (percentMatch) {
-                          discountFormulaPart = `${percentMatch[1]}%`;
-                        } else if (item.total_price > 0) {
-                          const calculatedPercent = Math.round((item.discount_amount / item.total_price) * 100);
-                          if (calculatedPercent > 0 && Math.abs(calculatedPercent - (item.discount_amount / item.total_price) * 100) < 0.1) {
-                            discountFormulaPart = `${calculatedPercent}%`;
-                          } else {
-                            discountFormulaPart = formatCurrency(item.discount_amount);
-                          }
+                    const transportFee = Number(item.transport_fee || 0);
+                    const additionalCharge = Number(item.additional_charge || 0);
+                    const additionalChargeDesc = item.additional_charge_description?.trim();
+
+                    // Extract clean percentage or formatted amount for formula
+                    let discountFormulaPart = "";
+                    if (isPostDisc && item.discount_amount && item.discount_amount > 0) {
+                      const percentMatch = item.applied_promo_name?.match(/(\d+(?:\.\d+)?)\s*%/);
+                      if (percentMatch) {
+                        discountFormulaPart = `${percentMatch[1]}%`;
+                      } else if (item.total_price > 0) {
+                        const calculatedPercent = Math.round((item.discount_amount / item.total_price) * 100);
+                        if (calculatedPercent > 0 && Math.abs(calculatedPercent - (item.discount_amount / item.total_price) * 100) < 0.1) {
+                          discountFormulaPart = `${calculatedPercent}%`;
                         } else {
                           discountFormulaPart = formatCurrency(item.discount_amount);
                         }
+                      } else {
+                        discountFormulaPart = formatCurrency(item.discount_amount);
                       }
+                    }
 
-                      const transportFormulaPart = transportFee > 0 ? ` + ${formatCurrency(transportFee)} (Transport)` : "";
-                      const chargePartInside = additionalCharge > 0 ? ` + ${formatCurrency(additionalCharge)}` : "";
+                    const transportFormulaPart = transportFee > 0 ? ` + ${formatCurrency(transportFee)} (Transport)` : "";
+                    const chargePartInside = additionalCharge > 0 ? ` + ${formatCurrency(additionalCharge)}` : "";
 
-                      const formulaText = isPostDisc
-                        ? `( ${formatCurrency(item.total_price)} - ${discountFormulaPart}${chargePartInside} ) × ${payout.commission_rate}%${transportFormulaPart}`
-                        : additionalCharge > 0
-                        ? `( ${formatCurrency(commBase)} + ${formatCurrency(additionalCharge)} ) × ${payout.commission_rate}%${transportFormulaPart}`
-                        : `${formatCurrency(commBase)} × ${payout.commission_rate}%${transportFormulaPart}`;
+                    const formulaText = isPostDisc
+                      ? `( ${formatCurrency(item.total_price)} - ${discountFormulaPart}${chargePartInside} ) × ${payout.commission_rate}%${transportFormulaPart}`
+                      : additionalCharge > 0
+                      ? `( ${formatCurrency(commBase)} + ${formatCurrency(additionalCharge)} ) × ${payout.commission_rate}%${transportFormulaPart}`
+                      : `${formatCurrency(commBase)} × ${payout.commission_rate}%${transportFormulaPart}`;
 
-                      // Direct clean date/time formatting without redundant label prefix
-                      let formattedItemDate = item.booking_date || "";
-                      try {
-                        if (item.booking_date && item.booking_date.includes("-")) {
-                          const parsed = new Date(item.booking_date);
-                          if (!isNaN(parsed.getTime())) {
-                            formattedItemDate = format(parsed, "dd/MM/yyyy", { locale: isEn ? localeEn : localeId });
-                          }
+                    let formattedItemDate = item.booking_date || "";
+                    try {
+                      if (item.booking_date && item.booking_date.includes("-")) {
+                        const parsed = new Date(item.booking_date);
+                        if (!isNaN(parsed.getTime())) {
+                          formattedItemDate = format(parsed, "dd/MM/yyyy", { locale: isEn ? localeEn : localeId });
                         }
-                      } catch {
-                        formattedItemDate = item.booking_date || "";
                       }
+                    } catch {
+                      formattedItemDate = item.booking_date || "";
+                    }
 
-                      const dateTimeText = item.booking_time
-                        ? `${formattedItemDate} • ${item.booking_time}`
-                        : formattedItemDate;
+                    const dateTimeText = item.booking_time
+                      ? `${formattedItemDate} • ${item.booking_time}`
+                      : formattedItemDate;
 
-                      return (
-                        <div key={item.id ?? idx} className="py-2.5 flex flex-col gap-1">
-                          {/* Row 1: Client Name & Commission Amount */}
-                          <div className="flex items-baseline justify-between gap-3">
-                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                              <span className="font-bold text-sm text-foreground">
-                                {item.customer_name || (isEn ? "Client" : "Pelanggan")}
-                              </span>
-                              {item.applied_promo_name && (
-                                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                                  ( {item.applied_promo_name} )
-                                </span>
-                              )}
-                            </div>
-                            <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap text-right">
-                              {formatCurrency(item.therapist_fee)}
+                    return (
+                      <div key={item.id ?? idx} className="py-2.5 flex flex-col gap-1">
+                        {/* Row 1: Client Name & Commission Amount */}
+                        <div className="flex items-baseline justify-between gap-3">
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <span className="font-bold text-sm text-foreground">
+                              {item.customer_name || (isEn ? "Client" : "Pelanggan")}
                             </span>
-                          </div>
-
-                          {/* Row 2: Service Name & Add-on Badges (+Transport, +Charge) */}
-                          <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-muted-foreground leading-normal">
-                            <span className="font-medium text-foreground/85">
-                              {item.service_name || (isEn ? "Home Massage" : "Layanan Pijat")}
-                            </span>
-                            {transportFee > 0 && (
-                              <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300">
-                                +Transport {formatCurrency(transportFee)}
-                              </span>
-                            )}
-                            {additionalCharge > 0 && (
-                              <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-800 dark:text-blue-300">
-                                +Charge {formatCurrency(additionalCharge)}{additionalChargeDesc ? ` (${additionalChargeDesc})` : ""}
+                            {item.applied_promo_name && (
+                              <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                ( {item.applied_promo_name} )
                               </span>
                             )}
                           </div>
-
-                          {/* Row 3: Date, Time & Multiplier Breakdown (Clean & Concise) */}
-                          <p className="text-[10px] text-muted-foreground/80 leading-normal">
-                            {dateTimeText} • {formulaText}
-                          </p>
+                          <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap text-right">
+                            {formatCurrency(item.therapist_fee)}
+                          </span>
                         </div>
-                      );
-                    })
-                  ) : (
-                    /* Fallback when breakdown snapshot is empty */
-                    <div className="py-2.5 flex flex-col gap-1">
-                      <div className="flex justify-between items-start gap-4">
-                        <span className="font-bold text-sm text-foreground">
-                          {payout.total_bookings} {isEn ? "Completed Bookings" : "Pesanan Terlayani"}
-                        </span>
-                        <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
-                          {formatCurrency(therapistFee)}
-                        </span>
+
+                        {/* Row 2: Service Name & Add-on Badges (+Transport, +Charge) */}
+                        <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-muted-foreground leading-normal">
+                          <span className="font-medium text-foreground/85">
+                            {item.service_name || (isEn ? "Home Massage" : "Layanan Pijat")}
+                          </span>
+                          {transportFee > 0 && (
+                            <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300">
+                              +Transport {formatCurrency(transportFee)}
+                            </span>
+                          )}
+                          {additionalCharge > 0 && (
+                            <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-800 dark:text-blue-300">
+                              +Charge {formatCurrency(additionalCharge)}{additionalChargeDesc ? ` (${additionalChargeDesc})` : ""}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Row 3: Date, Time & Multiplier Breakdown */}
+                        <p className="text-[10px] text-muted-foreground/80 leading-normal">
+                          {dateTimeText} • {formulaText}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-muted-foreground leading-normal">
-                        {isEn ? "Home Massage Services" : "Layanan Pijat di Rumah"}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/80 leading-normal">
-                        {periodDisplay.title} • {formatCurrency(gross)} × {payout.commission_rate}%
-                      </p>
+                    );
+                  })
+                ) : (
+                  /* Fallback when breakdown snapshot is empty */
+                  <div className="py-2.5 flex flex-col gap-1">
+                    <div className="flex justify-between items-start gap-4">
+                      <span className="font-bold text-sm text-foreground">
+                        {payout.total_bookings} {isEn ? "Completed Bookings" : "Pesanan Terlayani"}
+                      </span>
+                      <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
+                        {formatCurrency(therapistFee)}
+                      </span>
                     </div>
-                  )}
-                </div>
-
-                {/* Additional Adjustments (Bonus & Deductions) if any */}
-                {(bonus > 0 || deduction > 0) && (
-                  <div className="pt-2 space-y-1 border-t border-dashed border-border/60">
-                    {bonus > 0 && (
-                      <div className="flex justify-between items-center text-[11px] font-semibold text-foreground">
-                        <span>{isEn ? "Bonus / Client Tips" : "Bonus / Tambahan Tips"}</span>
-                        <span>+{formatCurrency(bonus)}</span>
-                      </div>
-                    )}
-                    {deduction > 0 && (
-                      <div className="flex justify-between items-center text-[11px] font-semibold text-foreground">
-                        <span>{isEn ? "Deductions / Cash Advance" : "Potongan / Kasbon"}</span>
-                        <span>-{formatCurrency(deduction)}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Optional Payout Notes (e.g. notes for bonus, kasbon, or adjustment) */}
-                {payout.notes && payout.notes.trim() !== "" && (
-                  <div className="pt-1.5 space-y-0.5">
-                    <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground block">
-                      {isEn ? "NOTES / ADJUSTMENT DETAILS:" : "CATATAN / KETERANGAN PENYESUAIAN:"}
-                    </span>
-                    <p className="text-[10px] text-foreground font-normal leading-relaxed whitespace-pre-wrap">
-                      {payout.notes}
+                    <p className="text-[11px] text-muted-foreground leading-normal">
+                      {isEn ? "Home Massage Services" : "Layanan Pijat di Rumah"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/80 leading-normal">
+                      {periodDisplay.title} • {formatCurrency(gross)} × {payout.commission_rate}%
                     </p>
                   </div>
                 )}
+              </div>
 
-                {/* Prominent TAKE HOME PAY Banner (Matching user screenshot) */}
-                <div className="w-full bg-[#241c17] text-white px-4 py-3.5 rounded-xl rounded-bl-none flex items-center justify-between shadow-xs mt-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-0.5 h-4 bg-white/40 rounded-full" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-white">
-                      TAKE HOME PAY
-                    </span>
-                  </div>
-                  <span className="text-xl font-bold italic tracking-tight text-white">
-                    {formatCurrency(netAmount)}
+              {/* Additional Adjustments (Bonus & Deductions) if any */}
+              {(bonus > 0 || deduction > 0) && (
+                <div className="pt-2 space-y-1 border-t border-dashed border-border/60">
+                  {bonus > 0 && (
+                    <div className="flex justify-between items-center text-[11px] font-semibold text-foreground">
+                      <span>{isEn ? "Bonus / Client Tips" : "Bonus / Tambahan Tips"}</span>
+                      <span>+{formatCurrency(bonus)}</span>
+                    </div>
+                  )}
+                  {deduction > 0 && (
+                    <div className="flex justify-between items-center text-[11px] font-semibold text-foreground">
+                      <span>{isEn ? "Deductions / Cash Advance" : "Potongan / Kasbon"}</span>
+                      <span>-{formatCurrency(deduction)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Optional Payout Notes (e.g. notes for bonus, kasbon, or adjustment) */}
+              {payout.notes && payout.notes.trim() !== "" && (
+                <div className="pt-1.5 space-y-0.5">
+                  <span className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground block">
+                    {isEn ? "NOTES / ADJUSTMENT DETAILS:" : "CATATAN / KETERANGAN PENYESUAIAN:"}
+                  </span>
+                  <p className="text-[10px] text-foreground font-normal leading-relaxed whitespace-pre-wrap">
+                    {payout.notes}
+                  </p>
+                </div>
+              )}
+
+              {/* Prominent TAKE HOME PAY Banner */}
+              <div className="w-full bg-[#241c17] text-white px-4 py-3.5 rounded-xl rounded-bl-none flex items-center justify-between shadow-xs mt-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-0.5 h-4 bg-white/40 rounded-full" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-white">
+                    TAKE HOME PAY
                   </span>
                 </div>
+                <span className="text-xl font-bold italic tracking-tight text-white">
+                  {formatCurrency(netAmount)}
+                </span>
               </div>
+            </div>
 
-              {/* Minimalist Footer (Permanent Appreciation Note) */}
-              <div className="pt-3 border-t border-border/60 text-center space-y-1">
-                <p className="text-[11px] font-medium text-foreground">
-                  {isEn ? "Remuneration statement generated by Serena Raga Management." : "Slip rekap bagi hasil resmi diterbitkan oleh Manajemen Serena Raga."}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {isEn ? "Thank you for your exceptional wellness service & dedication." : "Terima kasih atas dedikasi dan pelayanan relaksasi terbaik Anda bersama Serena Raga."}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-      </div>
+            {/* Minimalist Footer */}
+            <div className="pt-3 border-t border-border/60 text-center space-y-1">
+              <p className="text-[11px] font-medium text-foreground">
+                {isEn ? "Remuneration statement generated by Serena Raga Management." : "Slip rekap bagi hasil resmi diterbitkan oleh Manajemen Serena Raga."}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {isEn ? "Thank you for your exceptional wellness service & dedication." : "Terima kasih atas dedikasi dan pelayanan relaksasi terbaik Anda bersama Serena Raga."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
