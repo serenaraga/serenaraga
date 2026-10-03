@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { supabase } from "@/lib/supabase";
 import QRCode from "qrcode";
 import { generateDynamicQRIS } from "@/lib/qris";
+import { formatIDR, localizePromoName, formatDeduplicatedDescription, resolveInvoiceLineItems } from "@/lib/utils";
 import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +14,6 @@ export const size = {
   height: 630,
 };
 export const contentType = "image/jpeg";
-
-function formatIDR(amount: number): string {
-  const rounded = Math.round(amount || 0);
-  return "Rp " + rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
 
 export default async function Image({
   params,
@@ -51,6 +47,7 @@ export default async function Image({
   let adminPhone = "+62 895-1835-9037";
   let brandName = "SERENA RAGA";
   let nmid = "ID1026517681023";
+  let meta: any = null;
   let staticQrisPayload =
     "00020101021126570011ID.DANA.WWW011893600915387201928302098720192830303UMI51440014ID.CO.QRIS.WWW0215ID10200234567890303UMI5204729953033605802ID5911SERENA RAGA6010YOGYAKARTA6105552816304D1A4";
 
@@ -110,7 +107,6 @@ export default async function Image({
     invoiceNo = invoiceData.invoice_number || `SR-${invoiceData.id}`;
     customerName = invoiceData.customer_name || "Pelanggan";
 
-    let meta: any = null;
     let rawNotesText = invoiceData.notes || "";
     if (rawNotesText.trim().startsWith("{") && rawNotesText.trim().endsWith("}")) {
       try {
@@ -151,6 +147,26 @@ export default async function Image({
 
     serviceName = invoiceData.service_name || "Layanan Massage";
 
+    // If meta is not present or has no items, try fetching booking notes if booking_id exists
+    if (!meta?.items && invoiceData.booking_id) {
+      try {
+        const { data: bData } = await supabase
+          .from("bookings")
+          .select("notes, service_name, total_price")
+          .eq("id", invoiceData.booking_id)
+          .maybeSingle();
+
+        if (bData?.notes && bData.notes.trim().startsWith("{")) {
+          const bMeta = JSON.parse(bData.notes.trim());
+          if (bMeta?.items && Array.isArray(bMeta.items)) {
+            meta = { ...bMeta, ...meta };
+          }
+        }
+      } catch (e) {
+        // non-blocking
+      }
+    }
+
     const rawDate = invoiceData.booking_date || invoiceData.created_at;
     if (rawDate) {
       try {
@@ -166,6 +182,21 @@ export default async function Image({
   } catch (err) {
     console.error("OpenGraph Image query error:", err);
   }
+
+  // Deduplicate additional charge descriptions across items
+  const effectiveAdditionalChargeDesc = formatDeduplicatedDescription(additionalChargeDesc);
+
+  // Standardize promo name localization
+  const displayDiscountName = discountName ? localizePromoName(discountName, false) : "";
+
+  // Resolve itemized services matching InvoiceCard
+  const resolvedItems = resolveInvoiceLineItems({
+    meta,
+    serviceName,
+    subtotal,
+    totalAmount,
+    fallbackName: "Layanan Home Massage",
+  });
 
   // 3. Generate dynamic QRIS string
   let dynamicPayload = staticQrisPayload;
@@ -339,42 +370,72 @@ export default async function Image({
             </span>
           </div>
 
-          {/* 3. Items Table */}
-          <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-            {/* Table Header */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                borderBottom: "1.5px solid #e7e5e4",
-                paddingBottom: "6px",
-              }}
-            >
-              <span style={{ fontSize: "11.5px", fontWeight: 800, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
-                ITEM & LAYANAN
-              </span>
-              <span style={{ fontSize: "11.5px", fontWeight: 800, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
-                HARGA
-              </span>
-            </div>
+            {/* Items Table */}
+            <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+              {/* Table Header */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderBottom: "1.5px solid #e7e5e4",
+                  paddingBottom: "5px",
+                }}
+              >
+                <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
+                  ITEM & LAYANAN
+                </span>
+                <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.06em", color: "#78716c", textTransform: "uppercase" }}>
+                  HARGA
+                </span>
+              </div>
 
-            {/* Item Row */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "10px 0",
-              }}
-            >
-              <span style={{ fontSize: "15px", fontWeight: 600, color: "#1c1917" }}>
-                {serviceName}
-              </span>
-              <span style={{ fontSize: "15.5px", fontWeight: 700, color: "#1c1917" }}>
-                {formattedSubtotal}
-              </span>
+              {/* Item Rows */}
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {resolvedItems.map((it, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: resolvedItems.length > 2 ? "3.5px 0" : "6px 0",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "baseline", gap: "6px", maxWidth: "420px" }}>
+                      {resolvedItems.length > 1 && (
+                        <span
+                          style={{
+                            fontSize: resolvedItems.length > 2 ? "12px" : "13.5px",
+                            fontWeight: 600,
+                            color: "#78716c",
+                          }}
+                        >
+                          {idx + 1}.
+                        </span>
+                      )}
+                      <span
+                        style={{
+                          fontSize: resolvedItems.length > 2 ? "13px" : "14.5px",
+                          fontWeight: 600,
+                          color: "#1c1917",
+                        }}
+                      >
+                        {it.name}
+                      </span>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: resolvedItems.length > 2 ? "13px" : "14.5px",
+                        fontWeight: 700,
+                        color: "#1c1917",
+                      }}
+                    >
+                      {formatIDR(it.price)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
           {/* 4. Calculation Breakdown */}
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -408,9 +469,9 @@ export default async function Image({
                     {formattedAdditionalCharge}
                   </span>
                 </div>
-                {additionalChargeDesc ? (
+                {effectiveAdditionalChargeDesc ? (
                   <span style={{ fontSize: "11px", color: "#78716c", paddingLeft: "8px" }}>
-                    ↳ {additionalChargeDesc}
+                    ↳ {effectiveAdditionalChargeDesc}
                   </span>
                 ) : null}
               </div>
@@ -426,9 +487,9 @@ export default async function Image({
                     -{formattedDiscount}
                   </span>
                 </div>
-                {discountName ? (
+                {displayDiscountName ? (
                   <span style={{ fontSize: "11px", color: "#059669", paddingLeft: "16px" }}>
-                    ↳ {discountName}
+                    ↳ {displayDiscountName}
                   </span>
                 ) : null}
               </div>

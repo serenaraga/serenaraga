@@ -160,8 +160,11 @@ export const PayoutSlipCard = ({
     );
 
     try {
-      // Short delay to ensure DOM and fonts settle
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Short delay and ensure fonts are ready
+      if (typeof document !== "undefined" && document.fonts) {
+        await document.fonts.ready;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 120));
 
       const isDark = document.documentElement.classList.contains("dark");
       const backgroundColor = isDark ? "#18181b" : "#ffffff";
@@ -182,6 +185,8 @@ export const PayoutSlipCard = ({
           transform: "none",
           transformOrigin: "top left",
           width: "540px",
+          minWidth: "540px",
+          maxWidth: "540px",
         },
       });
 
@@ -519,10 +524,10 @@ export const PayoutSlipCard = ({
                         : formattedItemDate;
 
                       return (
-                        <div key={item.id ?? idx} className="py-2.5 space-y-1">
+                        <div key={item.id ?? idx} className="py-2.5 flex flex-col gap-1">
                           {/* Row 1: Client Name & Commission Amount */}
-                          <div className="flex justify-between items-start gap-4">
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                               <span className="font-bold text-sm text-foreground">
                                 {item.customer_name || (isEn ? "Client" : "Pelanggan")}
                               </span>
@@ -531,29 +536,31 @@ export const PayoutSlipCard = ({
                                   ( {item.applied_promo_name} )
                                 </span>
                               )}
-                              {transportFee > 0 && (
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300">
-                                  +Transport {formatCurrency(transportFee)}
-                                </span>
-                              )}
-                              {additionalCharge > 0 && (
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-800 dark:text-blue-300">
-                                  +Charge {formatCurrency(additionalCharge)}{additionalChargeDesc ? ` (${additionalChargeDesc})` : ""}
-                                </span>
-                              )}
                             </div>
-                            <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap">
+                            <span className="font-bold text-sm text-foreground shrink-0 whitespace-nowrap text-right">
                               {formatCurrency(item.therapist_fee)}
                             </span>
                           </div>
 
-                          {/* Row 2: Service Name */}
-                          <p className="text-[11px] text-muted-foreground leading-tight">
-                            {item.service_name || (isEn ? "Home Massage" : "Layanan Pijat")}
-                          </p>
+                          {/* Row 2: Service Name & Add-on Badges (+Transport, +Charge) */}
+                          <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-muted-foreground leading-normal">
+                            <span className="font-medium text-foreground/85">
+                              {item.service_name || (isEn ? "Home Massage" : "Layanan Pijat")}
+                            </span>
+                            {transportFee > 0 && (
+                              <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300">
+                                +Transport {formatCurrency(transportFee)}
+                              </span>
+                            )}
+                            {additionalCharge > 0 && (
+                              <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-800 dark:text-blue-300">
+                                +Charge {formatCurrency(additionalCharge)}{additionalChargeDesc ? ` (${additionalChargeDesc})` : ""}
+                              </span>
+                            )}
+                          </div>
 
                           {/* Row 3: Date, Time & Multiplier Breakdown (Clean & Concise) */}
-                          <p className="text-[10px] text-muted-foreground/80 leading-tight">
+                          <p className="text-[10px] text-muted-foreground/80 leading-normal">
                             {dateTimeText} • {formulaText}
                           </p>
                         </div>
@@ -561,7 +568,7 @@ export const PayoutSlipCard = ({
                     })
                   ) : (
                     /* Fallback when breakdown snapshot is empty */
-                    <div className="py-2.5 space-y-1">
+                    <div className="py-2.5 flex flex-col gap-1">
                       <div className="flex justify-between items-start gap-4">
                         <span className="font-bold text-sm text-foreground">
                           {payout.total_bookings} {isEn ? "Completed Bookings" : "Pesanan Terlayani"}
@@ -570,10 +577,10 @@ export const PayoutSlipCard = ({
                           {formatCurrency(therapistFee)}
                         </span>
                       </div>
-                      <p className="text-[11px] text-muted-foreground leading-tight">
+                      <p className="text-[11px] text-muted-foreground leading-normal">
                         {isEn ? "Home Massage Services" : "Layanan Pijat di Rumah"}
                       </p>
-                      <p className="text-[10px] text-muted-foreground/80 leading-tight">
+                      <p className="text-[10px] text-muted-foreground/80 leading-normal">
                         {periodDisplay.title} • {formatCurrency(gross)} × {payout.commission_rate}%
                       </p>
                     </div>

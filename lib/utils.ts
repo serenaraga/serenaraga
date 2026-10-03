@@ -154,6 +154,117 @@ export function isCoupleService(service: any): boolean {
  * Format: 'inv_' + 16 cryptographic random alphanumeric characters
  * Example: 'inv_k8X9pL2vM4qR1zW7'
  */
+export interface InvoiceLineItem {
+  name: string;
+  price: number;
+}
+
+/**
+ * Resolves itemized breakdown from metadata items, runtime invoice items,
+ * composite service name (with " + "), or single fallback.
+ */
+export function resolveInvoiceLineItems(params: {
+  meta?: any;
+  items?: any[];
+  serviceName?: string | null;
+  subtotal?: number | null;
+  totalAmount?: number | null;
+  fallbackName?: string;
+}): InvoiceLineItem[] {
+  const { meta, items, serviceName, subtotal, totalAmount, fallbackName } = params;
+
+  // 1. From metadata JSON items
+  if (meta?.items && Array.isArray(meta.items) && meta.items.length > 0) {
+    const grouped: InvoiceLineItem[] = [];
+    const coupleMap = new Map<string, InvoiceLineItem>();
+
+    for (const it of meta.items) {
+      if (it.is_couple_package) {
+        const key = it.parent_package_name || it.name;
+        const existing = coupleMap.get(key);
+        if (existing) {
+          existing.price += Number(it.price || 0);
+        } else {
+          const entry = {
+            name: key,
+            price: Number(it.price || 0),
+          };
+          coupleMap.set(key, entry);
+          grouped.push(entry);
+        }
+      } else {
+        grouped.push({
+          name: it.name || it.service_name || "Layanan",
+          price: Number(it.price || 0),
+        });
+      }
+    }
+    return grouped;
+  }
+
+  // 2. From direct invoice items array if present in runtime
+  if (Array.isArray(items) && items.length > 0) {
+    const grouped: InvoiceLineItem[] = [];
+    const coupleMap = new Map<string, InvoiceLineItem>();
+
+    for (const it of items) {
+      if (it.is_couple && it.therapist_mode === "couple_split") {
+        const key = it.service_name || "Couple Package";
+        const totalPrice = (Number(it.price) || 0) + (Number(it.secondary_price) || 0);
+        grouped.push({
+          name: key,
+          price: totalPrice,
+        });
+      } else if (it.is_couple_package) {
+        const key = it.parent_package_name || it.name;
+        const existing = coupleMap.get(key);
+        if (existing) {
+          existing.price += Number(it.price || 0);
+        } else {
+          const entry = {
+            name: key,
+            price: Number(it.price || 0),
+          };
+          coupleMap.set(key, entry);
+          grouped.push(entry);
+        }
+      } else {
+        grouped.push({
+          name: it.service_name || it.name || "Layanan",
+          price: Number(it.price || 0),
+        });
+      }
+    }
+    return grouped;
+  }
+
+  // 3. From service_name containing " + " delimiter
+  if (serviceName && serviceName.includes(" + ")) {
+    const parts = serviceName.split(" + ").map((s) => s.trim()).filter(Boolean);
+    if (parts.length > 1) {
+      const sub = Number(subtotal || totalAmount || 0);
+      const estPrice = Math.round(sub / parts.length);
+      return parts.map((partName) => ({
+        name: partName,
+        price: estPrice,
+      }));
+    }
+  }
+
+  // 4. Single item fallback
+  return [
+    {
+      name: serviceName || fallbackName || "Layanan Home Massage",
+      price: Number(subtotal || totalAmount || 0),
+    },
+  ];
+}
+
+/**
+ * Generates a secure, unguessable public access token for customer invoice links (Midtrans/Stripe style)
+ * Format: 'inv_' + 16 cryptographic random alphanumeric characters
+ * Example: 'inv_k8X9pL2vM4qR1zW7'
+ */
 export function generateInvoicePublicToken(): string {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let token = "inv_";

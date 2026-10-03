@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useBrandSettings, cleanWhatsAppNumber } from "@/lib/brand-settings";
 import { BrandLogo } from "@/components/brand-logo";
-import { cn, formatIDR, localizePromoName, formatDeduplicatedDescription } from "@/lib/utils";
+import { cn, formatIDR, localizePromoName, formatDeduplicatedDescription, resolveInvoiceLineItems } from "@/lib/utils";
 import { toast } from "sonner";
 import { toPng } from "html-to-image";
 
@@ -350,92 +350,15 @@ export const InvoiceCard = ({
         .trim()
     : "";
 
-  const resolvedItems: Array<{ name: string; price: number }> = React.useMemo(() => {
-    // 1. From metadata JSON items
-    if (meta?.items && Array.isArray(meta.items) && meta.items.length > 0) {
-      const grouped: Array<{ name: string; price: number }> = [];
-      const coupleMap = new Map<string, { name: string; price: number }>();
-
-      for (const it of meta.items) {
-        if (it.is_couple_package) {
-          const key = it.parent_package_name || it.name;
-          const existing = coupleMap.get(key);
-          if (existing) {
-            existing.price += Number(it.price || 0);
-          } else {
-            const entry = {
-              name: key,
-              price: Number(it.price || 0),
-            };
-            coupleMap.set(key, entry);
-            grouped.push(entry);
-          }
-        } else {
-          grouped.push({
-            name: it.name || it.service_name || "Layanan",
-            price: Number(it.price || 0),
-          });
-        }
-      }
-      return grouped;
-    }
-
-    // 2. From direct invoice.items array if present in runtime
-    if (Array.isArray((invoice as any).items) && (invoice as any).items.length > 0) {
-      const grouped: Array<{ name: string; price: number }> = [];
-      const coupleMap = new Map<string, { name: string; price: number }>();
-
-      for (const it of (invoice as any).items) {
-        if (it.is_couple && it.therapist_mode === "couple_split") {
-          const key = it.service_name || "Couple Package";
-          const totalPrice = (Number(it.price) || 0) + (Number(it.secondary_price) || 0);
-          grouped.push({
-            name: key,
-            price: totalPrice,
-          });
-        } else if (it.is_couple_package) {
-          const key = it.parent_package_name || it.name;
-          const existing = coupleMap.get(key);
-          if (existing) {
-            existing.price += Number(it.price || 0);
-          } else {
-            const entry = {
-              name: key,
-              price: Number(it.price || 0),
-            };
-            coupleMap.set(key, entry);
-            grouped.push(entry);
-          }
-        } else {
-          grouped.push({
-            name: it.service_name || it.name || "Layanan",
-            price: Number(it.price || 0),
-          });
-        }
-      }
-      return grouped;
-    }
-
-    // 3. From service_name containing " + " delimiter
-    if (invoice.service_name && invoice.service_name.includes(" + ")) {
-      const parts = invoice.service_name.split(" + ").map((s) => s.trim()).filter(Boolean);
-      if (parts.length > 1) {
-        const sub = Number(invoice.subtotal || invoice.total_amount || 0);
-        const estPrice = Math.round(sub / parts.length);
-        return parts.map((partName) => ({
-          name: partName,
-          price: estPrice,
-        }));
-      }
-    }
-
-    // 4. Single item fallback
-    return [
-      {
-        name: invoice.service_name || (isEn ? "Home Massage Service" : "Layanan Pijat di Rumah"),
-        price: Number(invoice.subtotal || invoice.total_amount || 0),
-      },
-    ];
+  const resolvedItems = React.useMemo(() => {
+    return resolveInvoiceLineItems({
+      meta,
+      items: (invoice as any).items,
+      serviceName: invoice.service_name,
+      subtotal: invoice.subtotal,
+      totalAmount: invoice.total_amount,
+      fallbackName: isEn ? "Home Massage Service" : "Layanan Pijat di Rumah",
+    });
   }, [meta, invoice.service_name, invoice.subtotal, invoice.total_amount, (invoice as any).items, isEn]);
 
   const rawDiscountName =
