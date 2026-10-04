@@ -17,6 +17,7 @@ import {
   Trash2,
   ReceiptText,
   Share2,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { useBrandSettings, sendBookingWhatsAppReminder } from "@/lib/brand-settings";
 import { toast } from "sonner";
 
 export interface RowActionsProps {
@@ -44,6 +46,7 @@ export interface RowActionsProps {
   showDelete?: boolean;
   showCreateInvoice?: boolean;
   showMakePayout?: boolean;
+  showWhatsAppReminder?: boolean;
   customActions?: React.ReactNode;
   className?: string;
 }
@@ -58,6 +61,7 @@ export const RowActions = ({
   showDelete = true,
   showCreateInvoice = false,
   showMakePayout = false,
+  showWhatsAppReminder = false,
   customActions,
   className,
 }: RowActionsProps) => {
@@ -165,6 +169,8 @@ export const RowActions = ({
     navigate(path);
   };
 
+  const { settings } = useBrandSettings();
+
   const handleCreateInvoice = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (record?.id) {
@@ -179,7 +185,14 @@ export const RowActions = ({
     navigate(`/payouts/create?therapist_id=${record.id}`);
   };
 
+  const handleSendWhatsAppReminder = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!record) return;
+    await sendBookingWhatsAppReminder(record, settings, isEn);
+  };
+
   const isTherapist = resource === "therapists";
+  const isBooking = resource === "bookings";
   const hasLinkedHistory = typeof linkedCount === "number" && linkedCount > 0;
 
   return (
@@ -219,6 +232,16 @@ export const RowActions = ({
               >
                 <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>{isEn ? "Edit" : "Ubah Data"}</span>
+              </DropdownMenuItem>
+            )}
+
+            {(showWhatsAppReminder || isBooking) && (
+              <DropdownMenuItem
+                onClick={handleSendWhatsAppReminder}
+                className="cursor-pointer gap-2 text-emerald-600 dark:text-emerald-500 focus:text-emerald-600 dark:focus:text-emerald-500 font-medium"
+              >
+                <MessageCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-500" />
+                <span>{isEn ? "Send WA Reminder" : "Kirim Reminder WA"}</span>
               </DropdownMenuItem>
             )}
 

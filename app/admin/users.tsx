@@ -16,7 +16,14 @@ import { RowActions } from "@/components/row-actions";
 import { useRecordContext, useLocaleState, required } from "ra-core";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ShieldCheck, UserCheck, ShieldAlert, User, Key, Mail, Phone, Check } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { ShieldCheck, UserCheck, ShieldAlert, User, Key, Mail, Phone, Lock, Check } from "lucide-react";
 import { standardizePhoneNumber } from "@/lib/utils";
 
 /**
@@ -154,6 +161,135 @@ export const UserList = () => {
 };
 
 /**
+ * Shared Clean & Modern Staff Form Layout using Shadcn Cards
+ */
+const UserFormContent = ({ isEdit = false }: { isEdit?: boolean }) => {
+  const [locale] = useLocaleState();
+  const isEn = locale === "en";
+
+  return (
+    <div className="space-y-5 max-w-4xl w-full">
+      {/* 1. Card: Staff Identity & Login Account */}
+      <Card className="border border-border/70 shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border/40">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <User className="w-4 h-4" />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-semibold text-foreground">
+                {isEn ? "Staff Identity & Account Credentials" : "Identitas Staf & Akun Login"}
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                {isEn
+                  ? "Enter staff full name, login username, password, and system role."
+                  : "Masukkan nama lengkap staf, username login, kata sandi, serta hak akses sistem."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start w-full">
+            <TextInput
+              source="full_name"
+              label={isEn ? "Full Name" : "Nama Lengkap Staf"}
+              placeholder={isEn ? "e.g. Budi (Cashier Shift A)" : "Contoh: Budi (Kasir Shift Pagi)"}
+              validate={required(isEn ? "Full name is required" : "Nama lengkap wajib diisi")}
+            />
+            <TextInput
+              source="username"
+              label={isEn ? "Username / Login ID" : "Username / ID Login"}
+              placeholder={isEn ? "kasir1 / kasir1@serenaraga.com" : "kasir1 atau kasir1@serenaraga.com"}
+              validate={required(isEn ? "Username is required" : "Username login wajib diisi")}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start w-full pt-1">
+            <TextInput
+              source="password"
+              label={
+                isEdit
+                  ? isEn
+                    ? "New Password (Leave empty to keep)"
+                    : "Kata Sandi Baru (Kosongkan jika tidak diubah)"
+                  : isEn
+                  ? "Login Password"
+                  : "Kata Sandi Login"
+              }
+              type="password"
+              placeholder="••••••••"
+              validate={isEdit ? undefined : required(isEn ? "Password is required" : "Kata sandi wajib diisi")}
+            />
+            <SelectInput
+              source="role"
+              label={isEn ? "Role & Access Level" : "Role / Hak Akses"}
+              choices={[
+                {
+                  id: "cashier",
+                  name: isEn
+                    ? "Kasir (Bookings, Invoices & POS)"
+                    : "Kasir / Staf (Booking, Invoice & POS)",
+                },
+                {
+                  id: "admin",
+                  name: isEn
+                    ? "Administrator (Full Access & Settings)"
+                    : "Administrator (Akses Penuh & Pengaturan)",
+                },
+              ]}
+              validate={required(isEn ? "Role is required" : "Role wajib dipilih")}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2. Card: Contact Details & Account Status */}
+      <Card className="border border-border/70 shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border/40">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <Phone className="w-4 h-4" />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-semibold text-foreground">
+                {isEn ? "Contact Details & Account Status" : "Kontak Staf & Status Akun"}
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                {isEn
+                  ? "Active WhatsApp phone number, optional email, and login permission."
+                  : "Nomor WhatsApp aktif, email opsional, serta izin aktifasi login staf."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start w-full">
+            <PhoneInput
+              source="phone"
+              label={isEn ? "Phone / WhatsApp" : "No. Telepon / WhatsApp"}
+              placeholder="812-3456-7890"
+            />
+            <TextInput
+              source="email"
+              label={isEn ? "Email Address (Optional)" : "Email Staf (Opsional)"}
+              placeholder="budi@serenaraga.com"
+            />
+          </div>
+
+          <div className="pt-2 border-t border-border/40">
+            <BooleanInput
+              source="is_active"
+              label={isEn ? "Account Active (Permit login)" : "Akun Aktif (Dapat Login ke Sistem)"}
+              defaultValue={true}
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+/**
  * User Create View
  */
 export const UserCreate = () => {
@@ -163,50 +299,7 @@ export const UserCreate = () => {
   return (
     <Create title={isEn ? "Add New Staff Account" : "Tambah Akun Staf Baru"}>
       <SimpleForm defaultValues={{ role: "cashier", is_active: true }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          <TextInput
-            source="full_name"
-            label={isEn ? "Full Name" : "Nama Lengkap Staf"}
-            placeholder={isEn ? "e.g. Budi (Cashier Shift A)" : "Contoh: Budi (Kasir Shift Pagi)"}
-            validate={required()}
-          />
-          <TextInput
-            source="username"
-            label={isEn ? "Username / Login Email" : "Username / Email Login"}
-            placeholder={isEn ? "kasir1@serenaraga.com" : "kasir1@serenaraga.com atau kasir1"}
-            validate={required()}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          <TextInput
-            source="password"
-            label={isEn ? "Login Password" : "Kata Sandi Login"}
-            type="password"
-            placeholder="••••••••"
-            validate={required()}
-          />
-          <SelectInput
-            source="role"
-            label="Role / Peran"
-            choices={[
-              { id: "cashier", name: isEn ? "Kasir / Cashier (Bookings & Invoices only)" : "Kasir (Hanya Booking & Invoice)" },
-              { id: "admin", name: isEn ? "Administrator (Full Access)" : "Administrator (Akses Penuh)" },
-            ]}
-            validate={required()}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          <PhoneInput
-            source="phone"
-            label={isEn ? "Phone Number" : "No. Telepon / WhatsApp"}
-          />
-          <BooleanInput
-            source="is_active"
-            label={isEn ? "Active Account" : "Akun Aktif (Bisa Login)"}
-          />
-        </div>
+        <UserFormContent isEdit={false} />
       </SimpleForm>
     </Create>
   );
@@ -222,47 +315,7 @@ export const UserEdit = () => {
   return (
     <Edit title={isEn ? "Edit Staff Account" : "Ubah Data Akun Staf"}>
       <SimpleForm>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          <TextInput
-            source="full_name"
-            label={isEn ? "Full Name" : "Nama Lengkap Staf"}
-            validate={required()}
-          />
-          <TextInput
-            source="username"
-            label={isEn ? "Username / Login Email" : "Username / Email Login"}
-            validate={required()}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          <TextInput
-            source="password"
-            label={isEn ? "New Password (leave empty to keep current)" : "Kata Sandi Baru (Kosongkan jika tidak ingin diubah)"}
-            type="password"
-            placeholder="••••••••"
-          />
-          <SelectInput
-            source="role"
-            label="Role / Peran"
-            choices={[
-              { id: "cashier", name: isEn ? "Kasir / Cashier (Bookings & Invoices only)" : "Kasir (Hanya Booking & Invoice)" },
-              { id: "admin", name: isEn ? "Administrator (Full Access)" : "Administrator (Akses Penuh)" },
-            ]}
-            validate={required()}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-          <PhoneInput
-            source="phone"
-            label={isEn ? "Phone Number" : "No. Telepon / WhatsApp"}
-          />
-          <BooleanInput
-            source="is_active"
-            label={isEn ? "Active Account" : "Akun Aktif (Bisa Login)"}
-          />
-        </div>
+        <UserFormContent isEdit={true} />
       </SimpleForm>
     </Edit>
   );

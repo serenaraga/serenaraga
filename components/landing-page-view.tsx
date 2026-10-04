@@ -20,6 +20,7 @@ import {
   type BrandSettings,
 } from "@/lib/brand-settings";
 import { supabase } from "@/lib/supabase";
+import { LegalModal } from "@/components/legal-modal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -327,6 +328,10 @@ export function LandingPageView({
 
   // Dynamic state from database
   const [services, setServices] = React.useState<any[]>(DEFAULT_SERVICES);
+
+  // Legal Modal State (Terms & Privacy Policy)
+  const [legalModalOpen, setLegalModalOpen] = React.useState(false);
+  const [legalModalTab, setLegalModalTab] = React.useState<"terms" | "privacy">("terms");
 
   // Booking simulation state
   const [selectedService, setSelectedService] = React.useState<string>("Traditional Balinese Massage");
@@ -1760,12 +1765,45 @@ export function LandingPageView({
             })()}
           </div>
 
-          {/* Bottom Copyright */}
-          <div className="mt-8 pt-6 border-t border-stone-200/80 text-center text-xs text-stone-500 font-light" suppressHydrationWarning>
-            Copyright {new Date().getFullYear()} {settings.brand_name ? settings.brand_name.toUpperCase() : "SERENA RAGA"}. All rights reserved.
+          {/* Bottom Copyright & Legal Links */}
+          <div className="mt-8 pt-6 border-t border-stone-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-500 font-light" suppressHydrationWarning>
+            <span>
+              Copyright {new Date().getFullYear()} {settings.brand_name ? settings.brand_name.toUpperCase() : "SERENA RAGA"}. All rights reserved.
+            </span>
+            <div className="flex items-center gap-4 text-[11.5px] sm:text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setLegalModalTab("terms");
+                  setLegalModalOpen(true);
+                }}
+                className="text-stone-500 hover:text-stone-900 transition-colors underline-offset-4 hover:underline cursor-pointer"
+              >
+                {isEn ? "Terms of Service" : "Syarat & Ketentuan"}
+              </button>
+              <span className="text-stone-300 select-none">•</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setLegalModalTab("privacy");
+                  setLegalModalOpen(true);
+                }}
+                className="text-stone-500 hover:text-stone-900 transition-colors underline-offset-4 hover:underline cursor-pointer"
+              >
+                {isEn ? "Privacy Policy" : "Kebijakan Privasi"}
+              </button>
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* Interactive Official Terms & Privacy Policy Dialog */}
+      <LegalModal
+        open={legalModalOpen}
+        onOpenChange={setLegalModalOpen}
+        defaultTab={legalModalTab}
+        isEn={isEn}
+      />
     </div>
   );
 }

@@ -70,10 +70,12 @@ export const InvoiceCreate = () => {
     pagination: { page: 1, perPage: 200 },
   });
   const { data: services = [] } = useGetList("services", {
-    pagination: { page: 1, perPage: 50 },
+    pagination: { page: 1, perPage: 100 },
+    sort: { field: "name", order: "ASC" },
   });
   const { data: therapists = [] } = useGetList("therapists", {
-    pagination: { page: 1, perPage: 50 },
+    pagination: { page: 1, perPage: 100 },
+    sort: { field: "name", order: "ASC" },
   });
   const { data: customers = [] } = useGetList("customers", {
     pagination: { page: 1, perPage: 50 },

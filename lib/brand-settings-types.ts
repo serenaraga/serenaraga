@@ -98,7 +98,7 @@ export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   wa_invoice_message_template:
     "Halo {customer_name},\n\nTerima kasih telah menggunakan layanan *{brand_name} – {service_name}* 🤎\n\nBerikut rincian invoice {customer_name}:\n📄 No. Invoice: *{invoice_number}*\n📅 Jadwal: *{booking_date}, {booking_time} WIB*\n💰 Total: *{total_amount}*\n💳 Status: *{payment_status}*\n\n🧾 Nota digital:\n{invoice_url}\n\nSalam hangat,\n*{brand_name}*",
   wa_booking_message_template:
-    "Halo {customer_name},\n\nPesanan *{service_name}* di *{brand_name}* Anda telah dikonfirmasi!\n\n📅 *Tanggal:* {booking_date}\n⏰ *Jam:* {booking_time}\n📍 *Alamat:* {address}\n💆 *Terapis:* {therapist_name}\n\nMohon bersiap 10 menit sebelum waktu pelayanan.",
+    "Halo {customer_name}, reminder booking {brand_name}:\n📅 {booking_date} pukul {booking_time} WIB\n💆 {service_name}\n📍 {service_address}\n💆🏻‍♀️ Terapis: {therapist_name}\n\nTerima kasih telah mempercayakan relaksasi Anda kepada kami! 🙏",
   wa_support_default_message:
     "Halo Admin SerenaRaga! Saya ingin tanya layanan massage di rumah. Bisa bantu informasinya?",
   wa_service_book_message_template:

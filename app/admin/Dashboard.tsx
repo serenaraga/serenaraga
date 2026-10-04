@@ -48,6 +48,7 @@ import {
   Package,
   AlertCircle,
   CreditCard,
+  MessageCircle,
 } from "lucide-react";
 import {
   BarChart,
@@ -72,6 +73,7 @@ import {
 } from "@/components/ui/empty";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { cn, formatIDR } from "@/lib/utils";
+import { useBrandSettings, sendBookingWhatsAppReminder } from "@/lib/brand-settings";
 import {
   format,
   subDays,
@@ -88,6 +90,7 @@ export const Dashboard = () => {
   const translate = useTranslate();
   const [locale] = useLocaleState();
   const isEn = locale === "en";
+  const { settings } = useBrandSettings();
 
   // Filter state with "today" as default
   const [timeRange, setTimeRange] = React.useState<string>("today");
@@ -845,13 +848,38 @@ export const Dashboard = () => {
                         </div>
                       </div>
 
-                      <div className="text-right space-y-1 shrink-0">
-                        <div className="font-semibold text-xs text-foreground">
-                          {formatIDR(b.total_price)}
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        {cust?.phone && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              sendBookingWhatsAppReminder(
+                                {
+                                  ...b,
+                                  customers: cust,
+                                  services: srv,
+                                  therapists: therapists.find((t) => t.id === b.therapist_id),
+                                },
+                                settings,
+                                isEn
+                              )
+                            }
+                            className="h-7 w-7 text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-md cursor-pointer"
+                            title={isEn ? "Send WhatsApp reminder" : "Kirim reminder WhatsApp"}
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        <div className="text-right space-y-1">
+                          <div className="font-semibold text-xs text-foreground">
+                            {formatIDR(b.total_price)}
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground capitalize block">
+                            {b.status || "pending"}
+                          </span>
                         </div>
-                        <span className="text-xs font-medium text-muted-foreground capitalize">
-                          {b.status || "pending"}
-                        </span>
                       </div>
                     </div>
                   );

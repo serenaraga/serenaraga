@@ -20,6 +20,7 @@ import {
   useGetOne,
   useLocaleState,
   useTranslate,
+  required,
 } from "ra-core";
 import { useBrandSettings, cleanWhatsAppNumber } from "@/lib/brand-settings";
 import { formatIDR } from "@/lib/utils";
@@ -169,37 +170,139 @@ const bookingOptionText = (choice: any) => {
   return `Booking #${choice.id} (${choice.booking_date || ""} ${choice.booking_time || ""}) - ${choice.service_address || "Home"}`;
 };
 
-export const ReviewCreate = () => (
-  <Create>
-    <SimpleForm>
-      <TextInput source="customer_name" required />
-      <ReferenceInput source="booking_id" reference="bookings">
-        <SelectInput optionText={bookingOptionText} />
-      </ReferenceInput>
-      <ReferenceInput source="therapist_id" reference="therapists">
-        <SelectInput optionText="name" />
-      </ReferenceInput>
-      <NumberInput source="rating" defaultValue={5} min={1} max={5} required />
-      <TextInput source="comment" multiline rows={3} required />
-    </SimpleForm>
-  </Create>
-);
+/**
+ * Shared Clean & Modern Review Form Layout using Shadcn Cards
+ */
+const ReviewFormContent = () => {
+  const [locale] = useLocaleState();
+  const isEn = locale === "en";
 
-export const ReviewEdit = () => (
-  <Edit>
-    <SimpleForm>
-      <TextInput source="customer_name" />
-      <ReferenceInput source="booking_id" reference="bookings">
-        <SelectInput optionText={bookingOptionText} />
-      </ReferenceInput>
-      <ReferenceInput source="therapist_id" reference="therapists">
-        <SelectInput optionText="name" />
-      </ReferenceInput>
-      <NumberInput source="rating" min={1} max={5} required />
-      <TextInput source="comment" multiline rows={3} required />
-    </SimpleForm>
-  </Edit>
-);
+  return (
+    <div className="space-y-5 max-w-4xl w-full">
+      {/* 1. Card: Customer Feedback & Rating */}
+      <Card className="border border-border/70 shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border/40">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <Star className="w-4 h-4" />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-semibold text-foreground">
+                {isEn ? "Customer Feedback & Rating" : "Ulasan & Penilaian Pelanggan"}
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                {isEn
+                  ? "Record customer satisfaction score and written review experience."
+                  : "Catat skor kepuasan bintang pelanggan serta pesan testimoni layanan."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start w-full">
+            <TextInput
+              source="customer_name"
+              label={isEn ? "Customer Name" : "Nama Pelanggan"}
+              placeholder={isEn ? "e.g. Kak Lia" : "Contoh: Kak Lia"}
+              validate={required(isEn ? "Customer name is required" : "Nama pelanggan wajib diisi")}
+            />
+            <SelectInput
+              source="rating"
+              label={isEn ? "Star Rating" : "Skor Rating (Bintang)"}
+              defaultValue={5}
+              choices={[
+                { id: 5, name: "⭐⭐⭐⭐⭐ (5.0 - Sangat Puas)" },
+                { id: 4, name: "⭐⭐⭐⭐ (4.0 - Puas)" },
+                { id: 3, name: "⭐⭐⭐ (3.0 - Cukup)" },
+                { id: 2, name: "⭐⭐ (2.0 - Kurang)" },
+                { id: 1, name: "⭐ (1.0 - Kurang Sekali)" },
+              ]}
+              validate={required(isEn ? "Rating is required" : "Rating wajib dipilih")}
+            />
+          </div>
+
+          <div className="w-full pt-1">
+            <TextInput
+              source="comment"
+              label={isEn ? "Customer Comment / Testimony" : "Pesan Komentar / Testimoni Pelanggan"}
+              multiline
+              rows={3}
+              placeholder={
+                isEn
+                  ? "e.g. The therapist was very polite, massage was deeply relaxing..."
+                  : "Contoh: Terapis sangat ramah dan tepat waktu, pijatannya enak banget..."
+              }
+              validate={required(isEn ? "Comment is required" : "Komentar wajib diisi")}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2. Card: Linked Booking & Therapist */}
+      <Card className="border border-border/70 shadow-none bg-card">
+        <CardHeader className="pb-3 border-b border-border/40">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <UserCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <CardTitle className="text-sm font-semibold text-foreground">
+                {isEn ? "Linked Booking & Therapist" : "Relasi Booking & Terapis"}
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                {isEn
+                  ? "Connect this review to an existing booking appointment and therapist record."
+                  : "Hubungkan ulasan ini dengan data booking transaksi serta terapis yang bertugas."}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start w-full">
+            <ReferenceInput source="booking_id" reference="bookings">
+              <SelectInput
+                label={isEn ? "Linked Booking ID" : "Pemesanan / Booking Terkait"}
+                optionText={bookingOptionText}
+              />
+            </ReferenceInput>
+            <ReferenceInput source="therapist_id" reference="therapists">
+              <SelectInput
+                label={isEn ? "Assigned Therapist" : "Terapis yang Bertugas"}
+                optionText="name"
+              />
+            </ReferenceInput>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export const ReviewCreate = () => {
+  const [locale] = useLocaleState();
+  const isEn = locale === "en";
+
+  return (
+    <Create title={isEn ? "Add New Review" : "Tambah Ulasan Baru"}>
+      <SimpleForm defaultValues={{ rating: 5 }}>
+        <ReviewFormContent />
+      </SimpleForm>
+    </Create>
+  );
+};
+
+export const ReviewEdit = () => {
+  const [locale] = useLocaleState();
+  const isEn = locale === "en";
+
+  return (
+    <Edit title={isEn ? "Edit Review" : "Ubah Data Ulasan"}>
+      <SimpleForm>
+        <ReviewFormContent />
+      </SimpleForm>
+    </Edit>
+  );
+};
 
 // Comprehensive Rich Review Detail Show Component
 const ReviewShowContent = () => {

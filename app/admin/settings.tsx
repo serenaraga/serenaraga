@@ -34,7 +34,6 @@ import {
   DEFAULT_BRAND_SETTINGS,
 } from "@/lib/brand-settings";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbPage } from "@/components/breadcrumb";
-import { WhatsAppTemplateEditor } from "@/components/whatsapp-template-editor";
 import { QrisImageUploader } from "@/components/qris-image-uploader";
 
 export function BrandSettingsPage() {
@@ -46,8 +45,8 @@ export function BrandSettingsPage() {
   const [formData, setFormData] = React.useState<BrandSettings>(settings);
   const [isSaving, setIsSaving] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<
-    "contact" | "identity" | "payment" | "templates"
-  >("contact");
+    "business" | "payment" | "templates"
+  >("business");
 
   // Keep form in sync when settings are loaded from server
   const lastSyncedRef = React.useRef(settings);
@@ -181,28 +180,17 @@ export function BrandSettingsPage() {
         </div>
       </div>
 
-      {/* Segmented Sub-Navigation Tabs */}
+      {/* Segmented Sub-Navigation Tabs: 3 Focused Tabs */}
       <div className="flex items-center gap-1.5 border-b border-border/70 pb-2 overflow-x-auto text-xs no-scrollbar">
         <Button
           type="button"
-          variant={activeTab === "contact" ? "default" : "ghost"}
+          variant={activeTab === "business" ? "default" : "ghost"}
           size="sm"
-          onClick={() => setActiveTab("contact")}
-          className="h-8 gap-2 px-3.5 rounded-lg shrink-0 cursor-pointer"
-        >
-          <PhoneCall className="w-3.5 h-3.5" />
-          <span>{isEn ? "WhatsApp & Contacts" : "WhatsApp & Kontak"}</span>
-        </Button>
-
-        <Button
-          type="button"
-          variant={activeTab === "identity" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setActiveTab("identity")}
+          onClick={() => setActiveTab("business")}
           className="h-8 gap-2 px-3.5 rounded-lg shrink-0 cursor-pointer"
         >
           <Building2 className="w-3.5 h-3.5" />
-          <span>{isEn ? "Business Profile" : "Profil Bisnis & Brand"}</span>
+          <span>{isEn ? "Business Profile & Contacts" : "Profil Bisnis & Kontak"}</span>
         </Button>
 
         <Button
@@ -224,149 +212,27 @@ export function BrandSettingsPage() {
           className="h-8 gap-2 px-3.5 rounded-lg shrink-0 cursor-pointer"
         >
           <FileText className="w-3.5 h-3.5" />
-          <span>{isEn ? "Invoice & Message Templates" : "Template Nota & Pesan"}</span>
+          <span>{isEn ? "Message & Invoice Templates" : "Template Nota & Pesan"}</span>
         </Button>
       </div>
 
       {/* Main Clean Form Container */}
       <form onSubmit={handleSave} className="space-y-4">
-        {/* TAB 1: WhatsApp & Contacts */}
-        {activeTab === "contact" && (
-          <Card className="border border-border shadow-none bg-card">
-            <CardHeader className="pb-3 border-b border-border">
-              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                <MessageCircle className="w-4 h-4 text-primary" />
-                <span>{isEn ? "WhatsApp & Customer Support Contacts" : "Nomor WhatsApp & Layanan CS"}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="whatsapp_number" className="text-xs font-semibold">
-                    {isEn ? "Primary Admin WhatsApp" : "Nomor WhatsApp Utama Admin"}
-                    <span className="text-destructive ml-1">*</span>
-                  </Label>
-                  <Input
-                    id="whatsapp_number"
-                    placeholder="081234567890"
-                    value={formData.whatsapp_number}
-                    onChange={(e) => handleChange("whatsapp_number", e.target.value)}
-                    className="text-xs h-9 shadow-none"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone_number" className="text-xs font-semibold">
-                    {isEn ? "Alternative Phone / Hotline" : "Nomor Telepon / Hotline Cadangan"}
-                  </Label>
-                  <Input
-                    id="phone_number"
-                    placeholder="+62 895-1835-9037"
-                    value={formData.phone_number}
-                    onChange={(e) => handleChange("phone_number", e.target.value)}
-                    className="text-xs h-9 shadow-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs font-semibold">
-                    {isEn ? "Support Email" : "Email Dukungan"}
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="ragaserena@gmail.com"
-                    value={formData.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    className="text-xs h-9 shadow-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="operational_hours" className="text-xs font-semibold">
-                    {isEn ? "Operating Hours" : "Jam Operasional"}
-                  </Label>
-                  <Input
-                    id="operational_hours"
-                    placeholder="08:00 - 22:00 WIB (Setiap Hari)"
-                    value={formData.operational_hours}
-                    onChange={(e) => handleChange("operational_hours", e.target.value)}
-                    className="text-xs h-9 shadow-none"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5 pt-2 border-t border-border">
-                <Label htmlFor="wa_support_default_message" className="text-xs font-semibold">
-                  {isEn ? "General Customer Inbound Message (CS & Consultation)" : "Pesan Pembuka WhatsApp Konsultasi & Bantuan CS"}
-                </Label>
-                <Textarea
-                  id="wa_support_default_message"
-                  rows={2}
-                  placeholder={
-                    isEn
-                      ? "Hello Customer Support {brand_name}, I need help regarding my booking / services..."
-                      : "Halo Customer Service {brand_name}, saya butuh bantuan mengenai layanan..."
-                  }
-                  value={formData.wa_support_default_message}
-                  onChange={(e) => handleChange("wa_support_default_message", e.target.value)}
-                  className="text-xs shadow-none resize-none"
-                />
-                <p className="text-[11px] text-muted-foreground font-light">
-                  {isEn ? "Used for general inquiry & free consultation buttons." : "Digunakan untuk tombol konsultasi gratis dan bantuan umum."}
-                </p>
-              </div>
-
-              <div className="space-y-1.5 pt-2 border-t border-border">
-                <Label htmlFor="wa_service_book_message_template" className="text-xs font-semibold flex items-center justify-between">
-                  <span>{isEn ? "Services Catalog 'Book Treatment' Inbound Template" : "Template Pesan WhatsApp Tombol 'Book Treatment' (Katalog Layanan)"}</span>
-                  <span className="text-[10px] text-primary font-medium">{isEn ? "Services Page" : "Halaman Katalog"}</span>
-                </Label>
-                <Textarea
-                  id="wa_service_book_message_template"
-                  rows={6}
-                  placeholder="Halo {brand_name}, saya ingin memesan layanan pijat:&#10;&#10;✨ Treatment: *{service_name}*&#10;💆🏻‍♀️ Detail Treatment: *{detail_treatment}*&#10;💵 Tarif: *{price}*&#10;&#10;Mohon info ketersediaan jadwal terapis untuk lokasi saya. Terima kasih!"
-                  value={formData.wa_service_book_message_template || ""}
-                  onChange={(e) => handleChange("wa_service_book_message_template", e.target.value)}
-                  className="text-xs shadow-none resize-none leading-relaxed"
-                />
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[10px] text-muted-foreground">Placeholder:</span>
-                  {["{brand_name}", "{service_name}", "{detail_treatment}", "{price}", "{duration}"].map((tag) => (
-                    <code
-                      key={tag}
-                      onClick={() => {
-                        const current = formData.wa_service_book_message_template || "";
-                        handleChange("wa_service_book_message_template", current + tag);
-                      }}
-                      className="text-[10px] bg-muted hover:bg-muted/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors text-foreground"
-                    >
-                      {tag}
-                    </code>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* TAB 2: Business Profile */}
-        {activeTab === "identity" && (
+        {/* TAB 1: Business Profile & Contacts */}
+        {activeTab === "business" && (
           <Card className="border border-border shadow-none bg-card">
             <CardHeader className="pb-3 border-b border-border">
               <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-primary" />
-                <span>{isEn ? "Business Profile & Brand Identity" : "Profil Bisnis & Identitas Brand"}</span>
+                <span>{isEn ? "Business Profile & Contact Details" : "Profil Bisnis & Kontak Operasional"}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-4 text-xs">
+              {/* Brand Identity Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="brand_name" className="text-xs font-semibold">
-                    {isEn ? "Brand / Company Name" : "Nama Brand / Bisnis"}
+                    {isEn ? "Brand / Business Name" : "Nama Brand / Bisnis"}
                     <span className="text-destructive ml-1">*</span>
                   </Label>
                   <Input
@@ -439,15 +305,81 @@ export function BrandSettingsPage() {
                 </div>
               </div>
 
+              {/* Operational Contacts */}
+              <div className="pt-3 border-t border-border/60 space-y-3">
+                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <PhoneCall className="w-3.5 h-3.5 text-primary" />
+                  <span>{isEn ? "Operational Contact Numbers & Support" : "Kontak Operasional & Layanan Pelanggan"}</span>
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="whatsapp_number" className="text-xs font-semibold">
+                      {isEn ? "Primary Admin WhatsApp" : "Nomor WhatsApp Utama Admin"}
+                      <span className="text-destructive ml-1">*</span>
+                    </Label>
+                    <Input
+                      id="whatsapp_number"
+                      placeholder="081234567890"
+                      value={formData.whatsapp_number}
+                      onChange={(e) => handleChange("whatsapp_number", e.target.value)}
+                      className="text-xs h-9 shadow-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone_number" className="text-xs font-semibold">
+                      {isEn ? "Alternative Phone / Hotline" : "Nomor Telepon / Hotline Cadangan"}
+                    </Label>
+                    <Input
+                      id="phone_number"
+                      placeholder="+62 895-1835-9037"
+                      value={formData.phone_number}
+                      onChange={(e) => handleChange("phone_number", e.target.value)}
+                      className="text-xs h-9 shadow-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-xs font-semibold">
+                      {isEn ? "Support Email" : "Email Dukungan"}
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="ragaserena@gmail.com"
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      className="text-xs h-9 shadow-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="operational_hours" className="text-xs font-semibold">
+                      {isEn ? "Operating Hours" : "Jam Operasional"}
+                    </Label>
+                    <Input
+                      id="operational_hours"
+                      placeholder="08:00 - 22:00 WIB (Setiap Hari)"
+                      value={formData.operational_hours}
+                      onChange={(e) => handleChange("operational_hours", e.target.value)}
+                      className="text-xs h-9 shadow-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Social Media Channels */}
-              <div className="pt-3 border-t border-border/50 space-y-3">
+              <div className="pt-3 border-t border-border/60 space-y-3">
                 <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-primary" />
                   <span>{isEn ? "Official Social Media Accounts" : "Akun Media Sosial Resmi"}</span>
                 </span>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {/* Instagram */}
                   <div className="space-y-1.5">
                     <Label htmlFor="instagram_handle" className="text-xs font-semibold">
                       Instagram
@@ -461,7 +393,6 @@ export function BrandSettingsPage() {
                     />
                   </div>
 
-                  {/* TikTok */}
                   <div className="space-y-1.5">
                     <Label htmlFor="tiktok_handle" className="text-xs font-semibold">
                       TikTok
@@ -475,7 +406,6 @@ export function BrandSettingsPage() {
                     />
                   </div>
 
-                  {/* Facebook */}
                   <div className="space-y-1.5">
                     <Label htmlFor="facebook_url" className="text-xs font-semibold">
                       Facebook
@@ -489,7 +419,6 @@ export function BrandSettingsPage() {
                     />
                   </div>
 
-                  {/* Threads */}
                   <div className="space-y-1.5">
                     <Label htmlFor="threads_handle" className="text-xs font-semibold">
                       Threads
@@ -508,7 +437,7 @@ export function BrandSettingsPage() {
           </Card>
         )}
 
-        {/* TAB 3: Bank & Payment */}
+        {/* TAB 2: Bank & Payment */}
         {activeTab === "payment" && (
           <Card className="border border-border shadow-none bg-card">
             <CardHeader className="pb-3 border-b border-border">
@@ -575,58 +504,137 @@ export function BrandSettingsPage() {
           </Card>
         )}
 
-        {/* TAB 4: Invoice & WA Templates */}
+        {/* TAB 3: Invoice & WA Templates */}
         {activeTab === "templates" && (
           <Card className="border border-border shadow-none bg-card">
             <CardHeader className="pb-3 border-b border-border">
               <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
                 <FileText className="w-4 h-4 text-primary" />
-                <span>{isEn ? "Invoice Footer & Message Templates" : "Catatan Invoice & Template Pesan"}</span>
+                <span>{isEn ? "Invoice Footer & Message Templates" : "Format Nota & Template Pesan WhatsApp"}</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-4 text-xs">
-              <div className="space-y-1.5">
-                <Label htmlFor="invoice_footer_note" className="text-xs font-semibold">
-                  {isEn ? "Invoice Appreciation Note (Footer)" : "Kalimat Ucapan Terima Kasih (Footer Nota)"}
-                </Label>
-                <Input
-                  id="invoice_footer_note"
-                  placeholder="Terima kasih telah mempercayakan relaksasi Anda pada Serena Raga."
-                  value={formData.invoice_footer_note}
-                  onChange={(e) => handleChange("invoice_footer_note", e.target.value)}
-                  className="text-xs h-9 shadow-none"
-                />
+            <CardContent className="space-y-5 pt-4 text-xs">
+              {/* Section 1: Invoice Footer Notes */}
+              <div className="space-y-3 pb-2 border-b border-border/70">
+                <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-primary" />
+                  <span>{isEn ? "Digital Invoice Footers" : "Catatan Kaki Nota Digital (Footer)"}</span>
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="invoice_footer_note" className="text-xs font-semibold">
+                      {isEn ? "Appreciation Note" : "Kalimat Ucapan Terima Kasih"}
+                    </Label>
+                    <Input
+                      id="invoice_footer_note"
+                      placeholder="Terima kasih telah mempercayakan relaksasi Anda pada Serena Raga."
+                      value={formData.invoice_footer_note}
+                      onChange={(e) => handleChange("invoice_footer_note", e.target.value)}
+                      className="text-xs h-9 shadow-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="invoice_support_text" className="text-xs font-semibold">
+                      {isEn ? "Support & Official Notice" : "Keterangan Bukti Transaksi Resmi"}
+                    </Label>
+                    <Input
+                      id="invoice_support_text"
+                      placeholder="Dokumen ini merupakan bukti transaksi resmi. Layanan pelanggan WhatsApp {whatsapp}."
+                      value={formData.invoice_support_text}
+                      onChange={(e) => handleChange("invoice_support_text", e.target.value)}
+                      className="text-xs h-9 shadow-none"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="invoice_support_text" className="text-xs font-semibold">
-                  {isEn ? "Official Support Notice (Footer)" : "Keterangan Bukti Transaksi Resmi (Footer)"}
+              {/* Template 1: WhatsApp Share Invoice */}
+              <div className="space-y-2">
+                <Label htmlFor="wa_invoice_message_template" className="text-xs font-semibold flex items-center justify-between">
+                  <span>{isEn ? "WhatsApp Invoice Delivery Template" : "Template Pesan WhatsApp Kirim Nota ke Pelanggan"}</span>
+                  <span className="text-[10px] text-primary font-medium">{isEn ? "Send Invoice" : "Kirim Nota"}</span>
                 </Label>
-                <Input
-                  id="invoice_support_text"
-                  placeholder="Dokumen ini merupakan bukti transaksi resmi. Layanan pelanggan WhatsApp {whatsapp}."
-                  value={formData.invoice_support_text}
-                  onChange={(e) => handleChange("invoice_support_text", e.target.value)}
-                  className="text-xs h-9 shadow-none"
+                <Textarea
+                  id="wa_invoice_message_template"
+                  rows={6}
+                  placeholder="Halo {customer_name},&#10;&#10;Terima kasih telah menggunakan layanan *{brand_name} – {service_name}* 🤎&#10;&#10;Berikut rincian invoice {customer_name}:&#10;📄 No. Invoice: *{invoice_number}*&#10;📅 Jadwal: *{booking_date}, {booking_time} WIB*&#10;💰 Total: *{total_amount}*&#10;💳 Status: *{payment_status}*&#10;&#10;🧾 Nota digital:&#10;{invoice_url}&#10;&#10;Salam hangat,&#10;*{brand_name}*"
+                  value={formData.wa_invoice_message_template || ""}
+                  onChange={(e) => handleChange("wa_invoice_message_template", e.target.value)}
+                  className="text-xs shadow-none resize-none leading-relaxed"
                 />
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-muted-foreground">Placeholder:</span>
+                  {[
+                    "{customer_name}",
+                    "{brand_name}",
+                    "{service_name}",
+                    "{invoice_number}",
+                    "{booking_date}",
+                    "{booking_time}",
+                    "{total_amount}",
+                    "{payment_status}",
+                    "{invoice_url}",
+                  ].map((tag) => (
+                    <code
+                      key={tag}
+                      onClick={() => {
+                        const current = formData.wa_invoice_message_template || "";
+                        handleChange("wa_invoice_message_template", current + tag);
+                      }}
+                      className="text-[10px] bg-muted hover:bg-muted/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors text-foreground select-none"
+                    >
+                      {tag}
+                    </code>
+                  ))}
+                </div>
               </div>
 
-              <div className="space-y-3 pt-2 border-t border-border">
-                <Label htmlFor="wa_invoice_message_template" className="text-xs font-semibold">
-                  {isEn ? "WhatsApp Share Invoice Template" : "Template Pesan WhatsApp Kirim Nota ke Pelanggan"}
+              {/* Template 2: WhatsApp Booking Reminder */}
+              <div className="space-y-2 pt-3 border-t border-border/70">
+                <Label htmlFor="wa_booking_message_template_editor" className="text-xs font-semibold flex items-center justify-between">
+                  <span>{isEn ? "WhatsApp Booking Reminder Template" : "Template Pesan WhatsApp Reminder Booking Pelanggan"}</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-500 font-medium">{isEn ? "Booking Reminder" : "Pengingat Booking"}</span>
                 </Label>
-                <WhatsAppTemplateEditor
-                  value={formData.wa_invoice_message_template}
-                  onChange={(newVal) => handleChange("wa_invoice_message_template", newVal)}
-                  brandName={formData.brand_name || "Serena Raga"}
-                  isEn={isEn}
+                <Textarea
+                  id="wa_booking_message_template_editor"
+                  rows={6}
+                  placeholder="Halo {customer_name}, reminder booking {brand_name}:&#10;📅 {booking_date} pukul {booking_time} WIB&#10;💆 {service_name}&#10;📍 {service_address}&#10;💆🏻‍♀️ Terapis: {therapist_name}&#10;&#10;Terima kasih telah mempercayakan relaksasi Anda kepada kami! 🙏"
+                  value={formData.wa_booking_message_template || ""}
+                  onChange={(e) => handleChange("wa_booking_message_template", e.target.value)}
+                  className="text-xs shadow-none resize-none leading-relaxed"
                 />
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-muted-foreground">Placeholder:</span>
+                  {[
+                    "{customer_name}",
+                    "{brand_name}",
+                    "{service_name}",
+                    "{booking_date}",
+                    "{booking_time}",
+                    "{service_address}",
+                    "{therapist_name}",
+                  ].map((tag) => (
+                    <code
+                      key={tag}
+                      onClick={() => {
+                        const current = formData.wa_booking_message_template || "";
+                        handleChange("wa_booking_message_template", current + tag);
+                      }}
+                      className="text-[10px] bg-muted hover:bg-muted/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors text-foreground select-none"
+                    >
+                      {tag}
+                    </code>
+                  ))}
+                </div>
               </div>
 
-              <div className="space-y-3 pt-3 border-t border-border">
+              {/* Template 3: Services Catalog "Book Treatment" Inbound */}
+              <div className="space-y-2 pt-3 border-t border-border/70">
                 <Label htmlFor="wa_service_book_message_template_editor" className="text-xs font-semibold flex items-center justify-between">
-                  <span>{isEn ? "Services Catalog 'Book Treatment' Inbound Template" : "Template Pesan WhatsApp Tombol 'Book Treatment' (Halaman Services)"}</span>
-                  <span className="text-[10px] text-primary font-medium">{isEn ? "Customer Inbound" : "Pesan Masuk Pelanggan"}</span>
+                  <span>{isEn ? "Services Catalog 'Book Treatment' Inbound Template" : "Template Pesan WhatsApp Tombol 'Book Treatment' (Katalog Layanan)"}</span>
+                  <span className="text-[10px] text-primary font-medium">{isEn ? "Services Page" : "Halaman Layanan"}</span>
                 </Label>
                 <Textarea
                   id="wa_service_book_message_template_editor"
@@ -645,12 +653,35 @@ export function BrandSettingsPage() {
                         const current = formData.wa_service_book_message_template || "";
                         handleChange("wa_service_book_message_template", current + tag);
                       }}
-                      className="text-[10px] bg-muted hover:bg-muted/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors text-foreground"
+                      className="text-[10px] bg-muted hover:bg-muted/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors text-foreground select-none"
                     >
                       {tag}
                     </code>
                   ))}
                 </div>
+              </div>
+
+              {/* Template 4: General CS Support Inbound */}
+              <div className="space-y-1.5 pt-3 border-t border-border/70">
+                <Label htmlFor="wa_support_default_message" className="text-xs font-semibold flex items-center justify-between">
+                  <span>{isEn ? "General Customer Inbound Message (CS & Consultation)" : "Pesan Pembuka WhatsApp Konsultasi & Bantuan CS"}</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">{isEn ? "CS Support" : "Bantuan Umum"}</span>
+                </Label>
+                <Textarea
+                  id="wa_support_default_message"
+                  rows={2}
+                  placeholder={
+                    isEn
+                      ? "Hello Customer Support {brand_name}, I need help regarding my booking / services..."
+                      : "Halo Admin SerenaRaga! Saya ingin tanya layanan massage di rumah. Bisa bantu informasinya?"
+                  }
+                  value={formData.wa_support_default_message}
+                  onChange={(e) => handleChange("wa_support_default_message", e.target.value)}
+                  className="text-xs shadow-none resize-none"
+                />
+                <p className="text-[11px] text-muted-foreground font-light">
+                  {isEn ? "Used for general inquiry & consultation buttons across the site." : "Digunakan untuk tombol konsultasi gratis dan bantuan umum di website."}
+                </p>
               </div>
             </CardContent>
           </Card>

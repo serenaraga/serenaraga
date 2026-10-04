@@ -5,6 +5,7 @@ import { useLocaleState, useGetOne, useGetList, useRecordContext } from "ra-core
 import { Show } from "@/components/show";
 import { BadgeField } from "@/components/badge-field";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import {
   CalendarCheck,
@@ -13,9 +14,11 @@ import {
   UserCheck,
   MapPin,
   FileText,
+  MessageCircle,
 } from "lucide-react";
 import { calculateBookingFinancials } from "@/lib/financial-calculator";
 import { formatIDR } from "@/lib/utils";
+import { useBrandSettings, sendBookingWhatsAppReminder } from "@/lib/brand-settings";
 import { BookingFinancialCard } from "./booking-financial-card";
 
 /**
@@ -25,6 +28,7 @@ export const BookingShowContent = () => {
   const record = useRecordContext();
   const [locale] = useLocaleState();
   const isEn = locale === "en";
+  const { settings } = useBrandSettings();
 
   const { data: therapist, isPending: isTherapistPending } = useGetOne(
     "therapists",
@@ -115,6 +119,19 @@ export const BookingShowContent = () => {
 
   const finalDisplayPrice = fin.finalCustomerTotal || Number(record.total_price || service?.price || 0);
 
+  const handleSendReminder = () => {
+    sendBookingWhatsAppReminder(
+      {
+        ...record,
+        customers: customer,
+        services: service,
+        therapists: therapist,
+      },
+      settings,
+      isEn
+    );
+  };
+
   return (
     <div className="space-y-6 max-w-4xl w-full">
       {/* 1. Primary Card: Booking Overview & Schedule */}
@@ -138,6 +155,16 @@ export const BookingShowContent = () => {
               </div>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSendReminder}
+                className="h-7 text-xs font-medium gap-1.5 border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer shadow-none"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>{isEn ? "Send WA Reminder" : "Kirim Reminder WA"}</span>
+              </Button>
               <BadgeField source="status" />
               <BadgeField source="payment_status" />
             </div>
@@ -154,9 +181,17 @@ export const BookingShowContent = () => {
               {customer?.full_name || (isEn ? `Customer #${record.customer_id}` : `Pelanggan #${record.customer_id}`)}
             </span>
             {customer?.phone && (
-              <span className="text-muted-foreground block">
-                {customer.phone}
-              </span>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <span>{customer.phone}</span>
+                <button
+                  type="button"
+                  onClick={handleSendReminder}
+                  title={isEn ? "Send WhatsApp reminder" : "Kirim reminder WhatsApp"}
+                  className="p-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 transition-colors"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                </button>
+              </div>
             )}
           </div>
 

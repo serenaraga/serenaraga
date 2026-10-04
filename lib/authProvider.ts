@@ -45,17 +45,52 @@ export const authProvider: AuthProvider = {
       lowerIdentifier.startsWith("admin");
 
     try {
-      // 1. Query Supabase app_users table
+      // 1. Try secure PostgreSQL RPC authentication first (prevents exposing password hashes)
+      const { data: rpcUser, error: rpcError } = await supabase.rpc(
+        "rpc_authenticate_user",
+        {
+          p_identifier: rawIdentifier,
+          p_password: password,
+        }
+      );
+
+      if (!rpcError && rpcUser && rpcUser.id) {
+        if (rpcUser.is_active === false) {
+          throw new Error(
+            "Akun Anda telah dinonaktifkan. Silakan hubungi Administrator."
+          );
+        }
+
+        const session: AppUserSession = {
+          id: rpcUser.id,
+          fullName: rpcUser.full_name || "Admin Serena",
+          email: rpcUser.email || rpcUser.username,
+          username: rpcUser.username,
+          role: (rpcUser.role as "admin" | "cashier" | "manager") || "cashier",
+          avatar:
+            rpcUser.avatar_url ||
+            (rpcUser.role === "admin"
+              ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+              : "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80"),
+        };
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+        }
+
+        return Promise.resolve();
+      }
+
+      // 2. Fallback direct table query if RPC not yet created in Supabase
       const { data: users, error: dbError } = await supabase
         .from("app_users")
-        .select("*")
+        .select("id, username, email, full_name, password_hash, role, avatar_url, is_active")
         .or(
           `username.ilike.${rawIdentifier},email.ilike.${rawIdentifier},username.ilike.${rawIdentifier}.com,email.ilike.${rawIdentifier}.com,username.ilike.${lowerIdentifier}%,email.ilike.${lowerIdentifier}%`
         )
         .limit(5);
 
       if (!dbError && users && users.length > 0) {
-        // Find best matching user
         const dbUser =
           users.find(
             (u) =>
@@ -72,7 +107,6 @@ export const authProvider: AuthProvider = {
             );
           }
 
-          // Password check (Exact match or case-insensitive for admin)
           const dbPass = String(dbUser.password_hash || "").trim();
           const passMatch =
             dbPass === password ||

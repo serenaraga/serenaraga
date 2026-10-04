@@ -128,10 +128,16 @@ export const BookingRepeater: React.FC<BookingRepeaterProps> = ({
               Boolean(item.secondary_additional_charge_description)
             );
 
-            const serviceItems = services.map((s: any) => ({
-              value: String(s.id),
-              label: `${s.name} (${s.duration_minutes} mnt • ${formatIDR(s.price)})${isCoupleService(s) ? " [Couple]" : ""}`,
-            }));
+            const serviceItems = services
+              .filter(
+                (s: any) =>
+                  s.is_active !== false ||
+                  (item.service_id && Number(s.id) === Number(item.service_id))
+              )
+              .map((s: any) => ({
+                value: String(s.id),
+                label: `${s.name} (${s.duration_minutes} mnt • ${formatIDR(s.price)})${isCoupleService(s) ? " [Couple]" : ""}${s.is_active === false ? (isEn ? " (Inactive)" : " (Nonaktif)") : ""}`,
+              }));
 
             const therapistItems = therapists.map((t: any) => {
               const statusLabel =

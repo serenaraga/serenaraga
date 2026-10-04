@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale/id";
+import { enUS as localeEn } from "date-fns/locale/en-US";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
 import {
@@ -233,6 +237,192 @@ export function buildWhatsAppServiceBookingMessage({
     .replace(/\{detail\}/gi, detail)
     .replace(/\{duration\}/gi, durationText || "")
     .replace(/\{price\}/gi, priceText || "");
+}
+
+/**
+ * Generate outbound reminder booking message for customer
+ */
+export function buildWhatsAppBookingReminderMessage({
+  template,
+  customerName,
+  brandName,
+  serviceName,
+  bookingDate,
+  bookingTime,
+  serviceAddress,
+  therapistName,
+}: {
+  template?: string;
+  customerName?: string;
+  brandName?: string;
+  serviceName?: string;
+  bookingDate?: string;
+  bookingTime?: string;
+  serviceAddress?: string;
+  therapistName?: string;
+}): string {
+  const brand = brandName || "Serena Raga";
+  const customer = customerName || "Pelanggan";
+  const service = serviceName || "-";
+  const date = bookingDate || "-";
+  const rawTime = bookingTime || "-";
+  const time = rawTime.replace(/\s*WIB/gi, "").trim();
+  const address = serviceAddress || "-";
+  const therapist = therapistName || "-";
+
+  const defaultTemplate =
+    "Halo {customer_name}, reminder booking {brand_name}:\n📅 {booking_date} pukul {booking_time} WIB\n💆 {service_name}\n📍 {service_address}\n💆🏻‍♀️ Terapis: {therapist_name}\n\nTerima kasih telah mempercayakan relaksasi Anda kepada kami! 🙏";
+
+  const targetTemplate =
+    template && template.trim() ? template : defaultTemplate;
+
+  return targetTemplate
+    .replace(/\{customer_name\}/gi, customer)
+    .replace(/\{customer\}/gi, customer)
+    .replace(/\{brand_name\}/gi, brand)
+    .replace(/\{brand\}/gi, brand)
+    .replace(/\{service_name\}/gi, service)
+    .replace(/\{service\}/gi, service)
+    .replace(/\{booking_date\}/gi, date)
+    .replace(/\{date\}/gi, date)
+    .replace(/\{booking_time\}/gi, time)
+    .replace(/\{time\}/gi, time)
+    .replace(/\{service_address\}/gi, address)
+    .replace(/\{address\}/gi, address)
+    .replace(/\{therapist_name\}/gi, therapist)
+    .replace(/\{therapist\}/gi, therapist);
+}
+
+/**
+ * Direct action to open WhatsApp with custom booking reminder message
+ */
+export async function sendBookingWhatsAppReminder(
+  booking: any,
+  brandSettings?: BrandSettings,
+  isEn?: boolean
+) {
+  if (!booking) return;
+
+  const settings = brandSettings || getCachedBrandSettings();
+
+  // 1. Resolve customer
+  let customerName = booking.customers?.full_name || booking.customer_name;
+  let customerPhone = booking.customers?.phone || booking.customer_phone;
+  let customerAddress = booking.customers?.address || booking.customer_address;
+
+  // 2. Resolve service
+  let serviceName = booking.services?.name || booking.service_name;
+
+  // 3. Resolve therapist
+  let therapistName = booking.therapists?.name || booking.therapist_name;
+
+  // If any relation is missing, fetch from Supabase in parallel
+  const fetches: PromiseLike<any>[] = [];
+  if (!customerPhone && booking.customer_id) {
+    fetches.push(
+      supabase
+        .from("customers")
+        .select("full_name, phone, address")
+        .eq("id", booking.customer_id)
+        .maybeSingle()
+        .then(({ data }: any) => {
+          if (data) {
+            customerName = customerName || data.full_name;
+            customerPhone = customerPhone || data.phone;
+            customerAddress = customerAddress || data.address;
+          }
+        })
+    );
+  }
+  if (!serviceName && booking.service_id) {
+    fetches.push(
+      supabase
+        .from("services")
+        .select("name")
+        .eq("id", booking.service_id)
+        .maybeSingle()
+        .then(({ data }: any) => {
+          if (data?.name) serviceName = data.name;
+        })
+    );
+  }
+  if (!therapistName && booking.therapist_id) {
+    fetches.push(
+      supabase
+        .from("therapists")
+        .select("name")
+        .eq("id", booking.therapist_id)
+        .maybeSingle()
+        .then(({ data }: any) => {
+          if (data?.name) therapistName = data.name;
+        })
+    );
+  }
+
+  if (fetches.length > 0) {
+    try {
+      await Promise.all(fetches);
+    } catch (e) {
+      console.warn("Error fetching relational data for WA reminder:", e);
+    }
+  }
+
+  // Multi-item / couple therapist check from special_requests or relational_items if available
+  if (booking.special_requests) {
+    try {
+      const trimmed = String(booking.special_requests).trim();
+      if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+          const names = parsed.items.map((it: any) => it.therapist).filter(Boolean);
+          if (names.length > 0) {
+            therapistName = Array.from(new Set(names)).join(", ");
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (!customerPhone) {
+    toast.error(
+      isEn
+        ? "Customer phone number is not available."
+        : "Nomor WhatsApp pelanggan belum terdaftar."
+    );
+    return;
+  }
+
+  // Format date
+  let formattedDate = booking.booking_date || "-";
+  if (booking.booking_date) {
+    try {
+      formattedDate = format(new Date(booking.booking_date), "d MMM yyyy", {
+        locale: isEn ? localeEn : localeId,
+      });
+    } catch (e) {}
+  }
+
+  const cleanPhone = cleanWhatsAppNumber(customerPhone);
+  const message = buildWhatsAppBookingReminderMessage({
+    template: settings.wa_booking_message_template,
+    customerName: customerName || (isEn ? "Customer" : "Pelanggan"),
+    brandName: settings.brand_name || "Serena Raga",
+    serviceName: serviceName || (isEn ? "Massage Service" : "Layanan Treatment"),
+    bookingDate: formattedDate,
+    bookingTime: booking.booking_time
+      ? String(booking.booking_time).replace(/\s*WIB/i, "").trim()
+      : "-",
+    serviceAddress: booking.service_address || customerAddress || "-",
+    therapistName: therapistName || "-",
+  });
+
+  const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  window.open(url, "_blank");
+  toast.success(
+    isEn
+      ? "Opening WhatsApp chat with booking reminder..."
+      : "Membuka WhatsApp untuk mengirim reminder booking..."
+  );
 }
 
 /**
