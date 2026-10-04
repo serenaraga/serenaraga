@@ -24,6 +24,45 @@ export {
 const STORAGE_KEY = "serenaraga_brand_settings";
 
 /**
+ * Normalize any escaped newlines (e.g. literal "\\n" or "\\r\\n") into actual line breaks
+ */
+export function normalizeTemplateNewlines(text?: string | null): string {
+  if (!text) return "";
+  return text.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+}
+
+/**
+ * Sanitize and normalize brand settings object, ensuring all multiline templates have true linebreaks
+ */
+export function normalizeBrandSettings(raw?: Partial<BrandSettings> | null): BrandSettings {
+  if (!raw) return { ...DEFAULT_BRAND_SETTINGS };
+  const merged: BrandSettings = {
+    ...DEFAULT_BRAND_SETTINGS,
+    ...raw,
+  };
+
+  if (merged.wa_invoice_message_template) {
+    merged.wa_invoice_message_template = normalizeTemplateNewlines(merged.wa_invoice_message_template);
+  }
+  if (merged.wa_booking_message_template) {
+    merged.wa_booking_message_template = normalizeTemplateNewlines(merged.wa_booking_message_template);
+  }
+  if (merged.wa_service_book_message_template) {
+    merged.wa_service_book_message_template = normalizeTemplateNewlines(merged.wa_service_book_message_template);
+  }
+  if (merged.wa_support_default_message) {
+    merged.wa_support_default_message = normalizeTemplateNewlines(merged.wa_support_default_message);
+  }
+  if (merged.wa_crm_reminder_template) {
+    merged.wa_crm_reminder_template = normalizeTemplateNewlines(merged.wa_crm_reminder_template);
+  }
+  if (merged.wa_crm_promo_template) {
+    merged.wa_crm_promo_template = normalizeTemplateNewlines(merged.wa_crm_promo_template);
+  }
+  return merged;
+}
+
+/**
  * Standardize any phone number input to clean E.164-style '+628...' format (e.g. +6281234567890).
  * Handles inputs like:
  * - '08123456789' -> '+628123456789'
@@ -225,7 +264,9 @@ export function buildWhatsAppServiceBookingMessage({
   const defaultTemplate =
     "Halo {brand_name}, saya ingin memesan layanan pijat:\n\n✨ Treatment: *{service_name}*\n💆🏻‍♀️ Detail Treatment: *{detail_treatment}*\n💵 Tarif: *{price}*\n\nMohon info ketersediaan jadwal terapis untuk lokasi saya. Terima kasih!";
 
-  const targetTemplate = template && template.trim() ? template : defaultTemplate;
+  const targetTemplate = normalizeTemplateNewlines(
+    template && template.trim() ? template : defaultTemplate
+  );
 
   return targetTemplate
     .replace(/\{brand_name\}/gi, brand)
@@ -273,8 +314,9 @@ export function buildWhatsAppBookingReminderMessage({
   const defaultTemplate =
     "Halo {customer_name}, reminder booking {brand_name}:\n📅 {booking_date} pukul {booking_time} WIB\n💆 {service_name}\n📍 {service_address}\n💆🏻‍♀️ Terapis: {therapist_name}\n\nTerima kasih telah mempercayakan relaksasi Anda kepada kami! 🙏";
 
-  const targetTemplate =
-    template && template.trim() ? template : defaultTemplate;
+  const targetTemplate = normalizeTemplateNewlines(
+    template && template.trim() ? template : defaultTemplate
+  );
 
   return targetTemplate
     .replace(/\{customer_name\}/gi, customer)
@@ -426,22 +468,229 @@ export async function sendBookingWhatsAppReminder(
 }
 
 /**
+ * Generate outbound CRM routine relaxation reminder message
+ */
+export function buildWhatsAppCrmReminderMessage({
+  template,
+  customerName,
+  brandName,
+  favoriteService,
+  favoriteTherapist,
+  lastOrderDate,
+  daysAgo,
+  promoCode,
+  discountValue,
+}: {
+  template?: string;
+  customerName?: string;
+  brandName?: string;
+  favoriteService?: string;
+  favoriteTherapist?: string;
+  lastOrderDate?: string;
+  daysAgo?: string;
+  promoCode?: string;
+  discountValue?: string;
+}): string {
+  const brand = brandName || "Serena Raga";
+  const customer = customerName || "Pelanggan";
+  const service = favoriteService || "Traditional Body Massage";
+  const therapist = favoriteTherapist || "terapis profesional kami";
+  const lastDate = lastOrderDate || "-";
+  const days = daysAgo || "beberapa waktu";
+  const code = promoCode || "WELCOMEBACK";
+  const discount = discountValue || "10%";
+
+  const defaultTemplate =
+    "Halo Kak {customer_name}, apa kabar? 🤎\n\nSudah {days_ago} sejak treatment terakhir Kakak bersama *{brand_name}*. Tubuh yang lelah butuh dimanjakan kembali dengan treatment favorit Kakak *{favorite_service}* bersama terapis *{favorite_therapist}*.\n\nKami ada penawaran spesial promo voucher *{promo_code}* diskon *{discount_value}* untuk Kakak ✨\n\nApakah ingin kami jadwalkan sesi pijat nyaman di rumah hari ini atau besok? Silakan balas pesan WhatsApp ini untuk reservasi ya! 🙏";
+
+  const targetTemplate = normalizeTemplateNewlines(
+    template && template.trim() ? template : defaultTemplate
+  );
+
+  return targetTemplate
+    .replace(/\{customer_name\}/gi, customer)
+    .replace(/\{customer\}/gi, customer)
+    .replace(/\{brand_name\}/gi, brand)
+    .replace(/\{brand\}/gi, brand)
+    .replace(/\{days_ago\}/gi, days)
+    .replace(/\{days_since_last_order\}/gi, days)
+    .replace(/\{promo_code\}/gi, code)
+    .replace(/\{discount_value\}/gi, discount)
+    .replace(/\{favorite_service\}/gi, service)
+    .replace(/\{service_name\}/gi, service)
+    .replace(/\{favorite_therapist\}/gi, therapist)
+    .replace(/\{therapist_name\}/gi, therapist)
+    .replace(/\{last_order_date\}/gi, lastDate);
+}
+
+/**
+ * Generate outbound CRM loyalty promo / voucher message
+ */
+export function buildWhatsAppCrmPromoMessage({
+  template,
+  customerName,
+  brandName,
+  promoCode,
+  discountValue,
+}: {
+  template?: string;
+  customerName?: string;
+  brandName?: string;
+  promoCode?: string;
+  discountValue?: string;
+}): string {
+  const brand = brandName || "Serena Raga";
+  const customer = customerName || "Pelanggan";
+  const code = promoCode || "LOYAL10";
+  const discount = discountValue || "10% OFF";
+
+  const defaultTemplate =
+    "Halo Kak {customer_name}! ✨\n\nSebagai apresiasi atas kesetiaan Kakak di *{brand_name}*, kami memberikan penawaran spesial voucher *{promo_code}* diskon *{discount_value}* untuk pemesanan treatment Kakak berikutnya.\n\nKlaim voucher ini sekarang dengan membalas pesan WhatsApp ini ya. Terima kasih telah mempercayakan relaksasi Kakak kepada kami! 💆🏻‍♀️🤎";
+
+  const targetTemplate = normalizeTemplateNewlines(
+    template && template.trim() ? template : defaultTemplate
+  );
+
+  return targetTemplate
+    .replace(/\{customer_name\}/gi, customer)
+    .replace(/\{customer\}/gi, customer)
+    .replace(/\{brand_name\}/gi, brand)
+    .replace(/\{brand\}/gi, brand)
+    .replace(/\{promo_code\}/gi, code)
+    .replace(/\{discount_value\}/gi, discount);
+}
+
+/**
+ * Direct action to open WhatsApp with CRM routine reminder
+ */
+export function sendCrmWhatsAppReminder({
+  customer,
+  metrics,
+  promoCode,
+  discountValue,
+  brandSettings,
+  isEn,
+}: {
+  customer: any;
+  metrics: any;
+  promoCode?: string;
+  discountValue?: string;
+  brandSettings?: BrandSettings;
+  isEn?: boolean;
+}) {
+  if (!customer?.phone) {
+    toast.error(
+      isEn
+        ? "Customer phone number is not available."
+        : "Nomor WhatsApp pelanggan belum terdaftar."
+    );
+    return;
+  }
+
+  const settings = brandSettings || getCachedBrandSettings();
+  const cleanPhone = cleanWhatsAppNumber(customer.phone);
+
+  let formattedLastDate = "-";
+  if (metrics.lastOrderDate) {
+    try {
+      formattedLastDate = format(new Date(metrics.lastOrderDate), "d MMMM yyyy", {
+        locale: isEn ? localeEn : localeId,
+      });
+    } catch (e) {}
+  }
+
+  const daysAgoText =
+    metrics.daysSinceLastOrder !== null && metrics.daysSinceLastOrder !== undefined
+      ? isEn
+        ? `${metrics.daysSinceLastOrder} days`
+        : `${metrics.daysSinceLastOrder} hari`
+      : isEn
+      ? "a while"
+      : "beberapa waktu";
+
+  const message = buildWhatsAppCrmReminderMessage({
+    template: settings.wa_crm_reminder_template,
+    customerName: customer.full_name || (isEn ? "Customer" : "Pelanggan"),
+    brandName: settings.brand_name || "Serena Raga",
+    favoriteService: metrics.favoriteService || (isEn ? "Traditional Body Massage" : "Pijat Tradisional"),
+    favoriteTherapist: metrics.favoriteTherapist || (isEn ? "our top therapist" : "terapis terbaik kami"),
+    lastOrderDate: formattedLastDate,
+    daysAgo: daysAgoText,
+    promoCode: promoCode || "WELCOMEBACK",
+    discountValue: discountValue || "10%",
+  });
+
+  const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  window.open(url, "_blank");
+  toast.success(
+    isEn
+      ? "Opening WhatsApp with CRM relaxation reminder..."
+      : "Membuka WhatsApp untuk mengirim reminder relaksasi CRM..."
+  );
+}
+
+/**
+ * Direct action to open WhatsApp with CRM loyalty voucher offer
+ */
+export function sendCrmWhatsAppPromo({
+  customer,
+  promoCode,
+  discountValue,
+  brandSettings,
+  isEn,
+}: {
+  customer: any;
+  promoCode?: string;
+  discountValue?: string;
+  brandSettings?: BrandSettings;
+  isEn?: boolean;
+}) {
+  if (!customer?.phone) {
+    toast.error(
+      isEn
+        ? "Customer phone number is not available."
+        : "Nomor WhatsApp pelanggan belum terdaftar."
+    );
+    return;
+  }
+
+  const settings = brandSettings || getCachedBrandSettings();
+  const cleanPhone = cleanWhatsAppNumber(customer.phone);
+
+  const message = buildWhatsAppCrmPromoMessage({
+    template: settings.wa_crm_promo_template,
+    customerName: customer.full_name || (isEn ? "Customer" : "Pelanggan"),
+    brandName: settings.brand_name || "Serena Raga",
+    promoCode: promoCode || "LOYAL10",
+    discountValue: discountValue || "10% OFF",
+  });
+
+  const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  window.open(url, "_blank");
+  toast.success(
+    isEn
+      ? "Opening WhatsApp with CRM loyalty promo..."
+      : "Membuka WhatsApp untuk mengirim penawaran promo CRM..."
+  );
+}
+
+/**
  * Get brand settings synchronously from cache/localStorage with fallback to defaults
  */
 export function getCachedBrandSettings(): BrandSettings {
   if (typeof window === "undefined") {
-    return DEFAULT_BRAND_SETTINGS;
+    return normalizeBrandSettings(DEFAULT_BRAND_SETTINGS);
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return { ...DEFAULT_BRAND_SETTINGS, ...parsed };
+      return normalizeBrandSettings({ ...DEFAULT_BRAND_SETTINGS, ...parsed });
     }
   } catch (e) {
     // Ignore storage parse errors
   }
-  return DEFAULT_BRAND_SETTINGS;
+  return normalizeBrandSettings(DEFAULT_BRAND_SETTINGS);
 }
 
 /**
@@ -473,7 +722,7 @@ export async function saveBrandSettings(
     const payload: any = { ...newSettings };
     delete payload.featured_services;
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("brand_settings")
       .upsert(
         { id: targetId, ...payload, updated_at: new Date().toISOString() },
@@ -482,15 +731,36 @@ export async function saveBrandSettings(
       .select()
       .maybeSingle();
 
+    if (error && (error.code === "PGRST204" || error.message?.includes("schema cache") || error.message?.includes("column"))) {
+      console.warn("Supabase schema cache does not have new CRM columns yet. Stripping CRM columns from SQL upsert and caching locally:", error.message);
+      const safePayload = { ...payload };
+      delete safePayload.wa_crm_reminder_template;
+      delete safePayload.wa_crm_promo_template;
+
+      const fallbackRes = await supabase
+        .from("brand_settings")
+        .upsert(
+          { id: targetId, ...safePayload, updated_at: new Date().toISOString() },
+          { onConflict: "id" }
+        )
+        .select()
+        .maybeSingle();
+
+      if (!fallbackRes.error) {
+        data = fallbackRes.data;
+        error = null;
+      }
+    }
+
     if (error) {
       console.error("Supabase brand_settings save error:", error);
       return { success: false, error };
     }
 
-    const savedData: BrandSettings = {
+    const savedData: BrandSettings = normalizeBrandSettings({
       ...newSettings,
       ...(data as Partial<BrandSettings> || {}),
-    };
+    });
 
     // 3. Update localStorage and broadcast
     if (typeof window !== "undefined") {
@@ -529,15 +799,15 @@ export async function fetchBrandSettingsServer(): Promise<BrandSettings> {
       .maybeSingle();
 
     if (!error && data) {
-      return {
+      return normalizeBrandSettings({
         ...DEFAULT_BRAND_SETTINGS,
         ...data,
-      };
+      });
     }
   } catch (e) {
     console.warn("fetchBrandSettingsServer error:", e);
   }
-  return DEFAULT_BRAND_SETTINGS;
+  return normalizeBrandSettings(DEFAULT_BRAND_SETTINGS);
 }
 
 // In-memory singleton store for BrandSettings across the entire app
@@ -569,10 +839,10 @@ function areSettingsEqual(a: any, b: any): boolean {
 export function setGlobalBrandSettings(next: Partial<BrandSettings> | null | undefined) {
   if (!next) return;
 
-  const candidate: BrandSettings = {
+  const candidate: BrandSettings = normalizeBrandSettings({
     ...currentSettings,
     ...next,
-  };
+  });
 
   // Skip update if there is no actual change in content
   if (areSettingsEqual(currentSettings, candidate)) {
@@ -605,10 +875,10 @@ async function initGlobalBrandSettings(): Promise<void> {
 
       if (!error && data) {
         // Direct merge: DB data is source of truth, defaults only fill missing fields
-        const merged: BrandSettings = {
+        const merged: BrandSettings = normalizeBrandSettings({
           ...DEFAULT_BRAND_SETTINGS,
           ...data,
-        };
+        });
         setGlobalBrandSettings(merged);
       }
     } catch (e) {

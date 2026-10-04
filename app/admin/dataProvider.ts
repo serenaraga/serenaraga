@@ -119,12 +119,19 @@ export const dataProvider: DataProvider = {
     const { page = 1, perPage = 10 } = params.pagination || {};
     const { field = "id", order = "DESC" } = params.sort || {};
     const filter = params.filter || {};
+    const isVirtualCustomerSort =
+      resource === "customers" &&
+      ["retention_status", "health_status", "status", "tier", "total_spent", "orders_count"].includes(field);
 
     let query = supabase
       .from(table)
-      .select("*", { count: "exact" })
-      .order(field, { ascending: order === "ASC" })
-      .range((page - 1) * perPage, page * perPage - 1);
+      .select("*", { count: "exact" });
+
+    if (!isVirtualCustomerSort) {
+      query = query
+        .order(field, { ascending: order === "ASC" })
+        .range((page - 1) * perPage, page * perPage - 1);
+    }
 
     // Apply filters
     for (const [key, value] of Object.entries(filter)) {
@@ -291,6 +298,88 @@ export const dataProvider: DataProvider = {
       }
       console.error(`Error in getList on ${resource}:`, error);
       throw error;
+    }
+
+    if (isVirtualCustomerSort && data && data.length > 0) {
+      const { field = "retention_status", order = "ASC" } = params.sort || {};
+      // Fetch paid invoices to compute latest order timestamp and retention status
+      const { data: paidInvoices = [] } = await supabase
+        .from("invoices")
+        .select("customer_id, customer_phone, total_amount, created_at, booking_date")
+        .eq("payment_status", "paid");
+
+      const enriched = data.map((cust: any) => {
+        const cleanPhone = cust.phone?.replace(/\D/g, "") || "";
+        const matched = (paidInvoices || []).filter((inv: any) => {
+          const invPhone = inv.customer_phone?.replace(/\D/g, "") || "";
+          return (
+            (cust.id && Number(inv.customer_id) === Number(cust.id)) ||
+            (cleanPhone.length >= 8 && invPhone && invPhone.endsWith(cleanPhone.slice(-8)))
+          );
+        });
+
+        const totalSpent = matched.reduce((sum: number, i: any) => sum + Number(i.total_amount || 0), 0);
+        const ordersCount = matched.length + (Number(cust.manual_orders_count) || 0);
+
+        let tierWeight = 1; // new
+        if (ordersCount >= 10) tierWeight = 4; // gold
+        else if (ordersCount >= 5) tierWeight = 3; // silver
+        else if (ordersCount >= 1) tierWeight = 2; // regular
+
+        let daysSinceLastOrder = 999999;
+        let retentionWeight = 4000; // new
+        if (matched.length > 0) {
+          matched.sort(
+            (a: any, b: any) =>
+              new Date(b.created_at || b.booking_date || 0).getTime() -
+              new Date(a.created_at || a.booking_date || 0).getTime()
+          );
+          const lastDate = matched[0].created_at || matched[0].booking_date;
+          if (lastDate) {
+            daysSinceLastOrder = Math.max(0, Math.floor((Date.now() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)));
+            if (daysSinceLastOrder <= 30) {
+              retentionWeight = 100 + daysSinceLastOrder; // active
+            } else if (daysSinceLastOrder <= 60) {
+              retentionWeight = 200 + daysSinceLastOrder; // dormant
+            } else {
+              retentionWeight = 300 + daysSinceLastOrder; // lost
+            }
+          }
+        } else if (ordersCount > 0) {
+          retentionWeight = 250; // legacy offline -> dormant
+        }
+
+        return {
+          ...cust,
+          _totalSpent: totalSpent,
+          _ordersCount: ordersCount,
+          _tierWeight: tierWeight,
+          _retentionWeight: retentionWeight,
+          _daysSinceLastOrder: daysSinceLastOrder,
+        };
+      });
+
+      enriched.sort((a: any, b: any) => {
+        let diff = 0;
+        if (field === "retention_status" || field === "health_status" || field === "status") {
+          diff = a._retentionWeight - b._retentionWeight;
+        } else if (field === "tier") {
+          diff = a._tierWeight - b._tierWeight;
+        } else if (field === "total_spent") {
+          diff = a._totalSpent - b._totalSpent;
+        } else if (field === "orders_count") {
+          diff = a._ordersCount - b._ordersCount;
+        }
+        return order === "ASC" ? diff : -diff;
+      });
+
+      const totalCount = enriched.length;
+      const paginated = enriched.slice((page - 1) * perPage, page * perPage);
+
+      return {
+        data: paginated,
+        total: totalCount,
+      };
     }
 
     return {

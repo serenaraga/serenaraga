@@ -23,6 +23,8 @@ export interface BrandSettings {
   wa_booking_message_template: string;
   wa_support_default_message: string;
   wa_service_book_message_template?: string;
+  wa_crm_reminder_template?: string;
+  wa_crm_promo_template?: string;
   landing_services_section?: FeaturedServiceCard[];
   featured_services?: FeaturedServiceCard[];
 }
@@ -103,6 +105,10 @@ export const DEFAULT_BRAND_SETTINGS: BrandSettings = {
     "Halo Admin SerenaRaga! Saya ingin tanya layanan massage di rumah. Bisa bantu informasinya?",
   wa_service_book_message_template:
     "Halo {brand_name}, saya ingin memesan layanan pijat:\n\n✨ Treatment: *{service_name}*\n💆🏻‍♀️ Detail Treatment: *{detail_treatment}*\n💵 Tarif: *{price}*\n\nMohon info ketersediaan jadwal terapis untuk lokasi saya. Terima kasih!",
+  wa_crm_reminder_template:
+    "Halo Kak {customer_name}, apa kabar? 🤎\n\nSudah {days_ago} sejak treatment terakhir Kakak bersama *{brand_name}*. Tubuh yang lelah butuh dimanjakan kembali dengan treatment favorit Kakak *{favorite_service}* bersama terapis *{favorite_therapist}*.\n\nKami ada penawaran spesial promo voucher *{promo_code}* diskon *{discount_value}* untuk Kakak ✨\n\nApakah ingin kami jadwalkan sesi pijat nyaman di rumah hari ini atau besok? Silakan balas pesan WhatsApp ini untuk reservasi ya! 🙏",
+  wa_crm_promo_template:
+    "Halo Kak {customer_name}! ✨\n\nSebagai apresiasi atas kesetiaan Kakak di *{brand_name}*, kami memberikan penawaran spesial voucher *{promo_code}* diskon *{discount_value}* untuk pemesanan treatment Kakak berikutnya.\n\nKlaim voucher ini sekarang dengan membalas pesan WhatsApp ini ya. Terima kasih telah mempercayakan relaksasi Kakak kepada kami! 💆🏻‍♀️🤎",
   landing_services_section: DEFAULT_FEATURED_SERVICES,
   featured_services: DEFAULT_FEATURED_SERVICES,
 };

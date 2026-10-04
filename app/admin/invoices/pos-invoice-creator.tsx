@@ -32,6 +32,7 @@ import {
   TicketPercent,
   Crown,
   Medal,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -488,15 +489,36 @@ export const InvoiceCreate = () => {
     return cleanPhone.length >= 8 && previousInvoicesCount === 0;
   }, [cleanPhone, previousInvoicesCount]);
 
-  // Recommended Promotion for this customer with multi-tier loyalty support
+  const isDormantCustomer = React.useMemo(() => {
+    if (!cleanPhone || cleanPhone.length < 6 || previousInvoicesCount === 0) return false;
+    const paidInvoices = invoices.filter((inv) => {
+      const invPhone = inv.customer_phone?.replace(/\D/g, "") || "";
+      const isPaid = inv.payment_status === "paid";
+      return (
+        isPaid &&
+        ((invPhone && invPhone.endsWith(cleanPhone.slice(-8))) ||
+          (formData.customer_id && inv.customer_id === formData.customer_id))
+      );
+    });
+    if (paidInvoices.length === 0) return false;
+    const latestDate = paidInvoices[0]?.created_at || paidInvoices[0]?.booking_date;
+    if (!latestDate) return false;
+    const diffMs = Date.now() - new Date(latestDate).getTime();
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    return days >= 30;
+  }, [cleanPhone, previousInvoicesCount, invoices, formData.customer_id]);
+
+  // Recommended Promotion for this customer with multi-tier loyalty & win-back support
   const recommendedPromo = React.useMemo(() => {
     if (!allActivePromotions || allActivePromotions.length === 0) return null;
 
+    // 1. First-Time Customer Check (0 previous orders)
     if (isFirstTimeCustomer) {
       const firstPromo = allActivePromotions.find((p: any) => p.scope === "first_order");
       if (firstPromo) return firstPromo;
     }
 
+    // 2. Loyalty Milestone Check (e.g. Completed >= 10 orders -> Order ke-11)
     if (previousInvoicesCount > 0) {
       const loyaltyPromos = allActivePromotions
         .filter(
@@ -509,6 +531,13 @@ export const InvoiceCreate = () => {
       if (loyaltyPromos.length > 0) return loyaltyPromos[0];
     }
 
+    // 3. Win-Back Inactive Customer Check (>= 30 days since last order)
+    if (isDormantCustomer) {
+      const winbackPromo = allActivePromotions.find((p: any) => p.scope === "dormant_winback");
+      if (winbackPromo) return winbackPromo;
+    }
+
+    // 4. Minimum Order Spend Check
     const subtotal = Number(formData.subtotal || 0);
     const minOrderPromo = allActivePromotions.find(
       (p: any) =>
@@ -517,8 +546,9 @@ export const InvoiceCreate = () => {
     );
     if (minOrderPromo) return minOrderPromo;
 
+    // 5. General Promotion
     return allActivePromotions.find((p: any) => p.scope === "all") || null;
-  }, [isFirstTimeCustomer, previousInvoicesCount, allActivePromotions, formData.subtotal]);
+  }, [isFirstTimeCustomer, previousInvoicesCount, isDormantCustomer, allActivePromotions, formData.subtotal]);
 
   // Apply a promotion
   const handleApplyPromo = (promo: any) => {
@@ -1066,6 +1096,18 @@ export const InvoiceCreate = () => {
                                   <Sparkles className="w-2.5 h-2.5" />
                                   {isEn ? "First-Time Customer" : "Pelanggan Pertama"}
                                 </span>
+                              ) : recommendedPromo.scope === "loyalty_milestone" ? (
+                                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                  <Crown className="w-2.5 h-2.5" />
+                                  {isEn
+                                    ? `Loyalty Reward (Order #${previousInvoicesCount + 1})`
+                                    : `Promo Loyalitas (Order ke-${previousInvoicesCount + 1})`}
+                                </span>
+                              ) : recommendedPromo.scope === "dormant_winback" ? (
+                                <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400">
+                                  <RotateCcw className="w-2.5 h-2.5" />
+                                  {isEn ? "Win-Back Offer" : "Promo Win-Back"}
+                                </span>
                               ) : previousInvoicesCount >= 10 ? (
                                 <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
                                   <Crown className="w-2.5 h-2.5" />
@@ -1089,13 +1131,17 @@ export const InvoiceCreate = () => {
                               ? isEn
                                 ? "This WhatsApp number has no previous orders. 1-click apply eligible first-timer discount."
                                 : "Nomor WhatsApp ini belum pernah memiliki riwayat order. Rekomendasi diskon 1-klik siap digunakan."
-                              : previousInvoicesCount >= 5
-                                ? isEn
-                                  ? `Customer has completed ${previousInvoicesCount} orders. Eligible for loyalty discount.`
-                                  : `Pelanggan sudah menyelesaikan ${previousInvoicesCount} order. Berhak mendapatkan promo loyalitas.`
-                                : isEn
-                                  ? "Eligible promotional discount available for this order."
-                                  : "Tersedia promo diskon yang sesuai untuk pesanan ini."}
+                              : recommendedPromo.scope === "loyalty_milestone"
+                              ? isEn
+                                ? `Customer has completed ${previousInvoicesCount} paid orders. Eligible for loyalty milestone reward on this order #${previousInvoicesCount + 1}!`
+                                : `Pelanggan telah menyelesaikan ${previousInvoicesCount} order lunas. Berhak mendapatkan diskon reward loyalitas pada order ke-${previousInvoicesCount + 1} ini!`
+                              : recommendedPromo.scope === "dormant_winback"
+                              ? isEn
+                                ? "Customer has been inactive for more than 30 days. Win-back discount recommended."
+                                : "Pelanggan sudah lebih dari 30 hari belum memesan kembali. Diskon win-back direkomendasikan."
+                              : isEn
+                              ? "Eligible promotional discount available for this order."
+                              : "Tersedia promo diskon yang sesuai untuk pesanan ini."}
                           </p>
                         </div>
                       </div>

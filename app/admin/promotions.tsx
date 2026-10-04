@@ -38,6 +38,7 @@ import {
   DollarSign,
   CheckCircle2,
   XCircle,
+  RotateCcw,
 } from "lucide-react";
 import { formatIDR, localizePromoName } from "@/lib/utils";
 
@@ -48,6 +49,7 @@ export const getPromotionTypeChoices = (isEn: boolean) => [
 
 export const getPromotionScopeChoices = (isEn: boolean) => [
   { id: "first_order", name: isEn ? "First-Time Customer Only" : "Pelanggan Baru (First-Time Order Only)" },
+  { id: "dormant_winback", name: isEn ? "Win-Back Inactive Customer (≥30 Days Inactive)" : "Pelanggan Tidak Aktif / Win-Back (≥30 Hari Belum Order)" },
   { id: "loyalty_milestone", name: isEn ? "Loyal Customer Milestone (Min. X Orders)" : "Pelanggan Setia / Loyal (Min. X Order Selesai)" },
   { id: "min_order", name: isEn ? "Minimum Order Spend (IDR)" : "Minimum Pembelian (Min. Belanja IDR)" },
   { id: "code", name: isEn ? "Voucher Code Only" : "Khusus Kode Voucher Saja" },
@@ -93,6 +95,9 @@ const ScopeBadgeField = ({ source = "scope" }: { source?: string }) => {
   if (scope === "first_order") {
     icon = <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
     label = isEn ? "First Customer (5%)" : "Pelanggan Baru (5%)";
+  } else if (scope === "dormant_winback") {
+    icon = <RotateCcw className="w-3.5 h-3.5 text-orange-500 shrink-0" />;
+    label = isEn ? "Win-Back (≥30 Days)" : "Win-Back (≥30 Hari)";
   } else if (scope === "loyalty_milestone") {
     icon = <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
     label = isEn

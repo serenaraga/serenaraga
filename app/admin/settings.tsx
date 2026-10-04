@@ -32,6 +32,8 @@ import {
   cleanWhatsAppNumber,
   BrandSettings,
   DEFAULT_BRAND_SETTINGS,
+  normalizeBrandSettings,
+  normalizeTemplateNewlines,
 } from "@/lib/brand-settings";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbPage } from "@/components/breadcrumb";
 import { QrisImageUploader } from "@/components/qris-image-uploader";
@@ -42,7 +44,7 @@ export function BrandSettingsPage() {
   const navigate = useNavigate();
   const { settings, updateSettings, resetToDefault } = useBrandSettings();
 
-  const [formData, setFormData] = React.useState<BrandSettings>(settings);
+  const [formData, setFormData] = React.useState<BrandSettings>(() => normalizeBrandSettings(settings));
   const [isSaving, setIsSaving] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<
     "business" | "payment" | "templates"
@@ -53,14 +55,14 @@ export function BrandSettingsPage() {
   React.useEffect(() => {
     if (JSON.stringify(lastSyncedRef.current) !== JSON.stringify(settings)) {
       lastSyncedRef.current = settings;
-      setFormData(settings);
+      setFormData(normalizeBrandSettings(settings));
     }
   }, [settings]);
 
   const handleChange = (field: keyof BrandSettings, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: field.startsWith("wa_") ? normalizeTemplateNewlines(value) : value,
     }));
   };
 
@@ -682,6 +684,82 @@ export function BrandSettingsPage() {
                 <p className="text-[11px] text-muted-foreground font-light">
                   {isEn ? "Used for general inquiry & consultation buttons across the site." : "Digunakan untuk tombol konsultasi gratis dan bantuan umum di website."}
                 </p>
+              </div>
+
+              {/* Template 5: WhatsApp CRM Follow-up & Routine Massage Reminder */}
+              <div className="space-y-2 pt-3 border-t border-border/70">
+                <Label htmlFor="wa_crm_reminder_template_editor" className="text-xs font-semibold flex items-center justify-between">
+                  <span>{isEn ? "WhatsApp CRM Follow-up & Routine Reminder Template" : "Template Pesan WhatsApp CRM Reminder Relaksasi Rutin"}</span>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-500 font-medium">{isEn ? "CRM Follow-up" : "Follow-up CRM"}</span>
+                </Label>
+                <Textarea
+                  id="wa_crm_reminder_template_editor"
+                  rows={6}
+                  placeholder="Halo Kak {customer_name}, apa kabar? 🤎&#10;&#10;Sudah {days_ago} sejak treatment terakhir Kakak bersama *{brand_name}*. Tubuh yang lelah butuh dimanjakan kembali dengan treatment favorit Kakak *{favorite_service}* bersama terapis *{favorite_therapist}*.&#10;&#10;Kami ada penawaran spesial promo voucher *{promo_code}* diskon *{discount_value}* untuk Kakak ✨&#10;&#10;Apakah ingin kami jadwalkan sesi pijat nyaman di rumah hari ini atau besok? Silakan balas pesan WhatsApp ini untuk reservasi ya! 🙏"
+                  value={formData.wa_crm_reminder_template || ""}
+                  onChange={(e) => handleChange("wa_crm_reminder_template", e.target.value)}
+                  className="text-xs shadow-none resize-none leading-relaxed"
+                />
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-muted-foreground">Placeholder:</span>
+                  {[
+                    "{customer_name}",
+                    "{brand_name}",
+                    "{days_ago}",
+                    "{favorite_service}",
+                    "{favorite_therapist}",
+                    "{promo_code}",
+                    "{discount_value}",
+                    "{last_order_date}",
+                  ].map((tag) => (
+                    <code
+                      key={tag}
+                      onClick={() => {
+                        const current = formData.wa_crm_reminder_template || "";
+                        handleChange("wa_crm_reminder_template", current + tag);
+                      }}
+                      className="text-[10px] bg-muted hover:bg-muted/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors text-foreground select-none"
+                    >
+                      {tag}
+                    </code>
+                  ))}
+                </div>
+              </div>
+
+              {/* Template 6: WhatsApp CRM Loyalty Promo & Special Offer */}
+              <div className="space-y-2 pt-3 border-t border-border/70">
+                <Label htmlFor="wa_crm_promo_template_editor" className="text-xs font-semibold flex items-center justify-between">
+                  <span>{isEn ? "WhatsApp CRM Loyalty Promo & Voucher Template" : "Template Pesan WhatsApp CRM Penawaran Promo & Voucher VIP"}</span>
+                  <span className="text-[10px] text-purple-600 dark:text-purple-500 font-medium">{isEn ? "Loyalty Offer" : "Promo Loyalitas"}</span>
+                </Label>
+                <Textarea
+                  id="wa_crm_promo_template_editor"
+                  rows={6}
+                  placeholder="Halo Kak {customer_name}! ✨&#10;&#10;Sebagai apresiasi atas kesetiaan Kakak di *{brand_name}*, kami memberikan penawaran spesial voucher *{promo_code}* diskon *{discount_value}* untuk pemesanan treatment Kakak berikutnya.&#10;&#10;Klaim voucher ini sekarang dengan membalas pesan WhatsApp ini ya. Terima kasih telah mempercayakan relaksasi Kakak kepada kami! 💆🏻‍♀️🤎"
+                  value={formData.wa_crm_promo_template || ""}
+                  onChange={(e) => handleChange("wa_crm_promo_template", e.target.value)}
+                  className="text-xs shadow-none resize-none leading-relaxed"
+                />
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-muted-foreground">Placeholder:</span>
+                  {[
+                    "{customer_name}",
+                    "{brand_name}",
+                    "{promo_code}",
+                    "{discount_value}",
+                  ].map((tag) => (
+                    <code
+                      key={tag}
+                      onClick={() => {
+                        const current = formData.wa_crm_promo_template || "";
+                        handleChange("wa_crm_promo_template", current + tag);
+                      }}
+                      className="text-[10px] bg-muted hover:bg-muted/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors text-foreground select-none"
+                    >
+                      {tag}
+                    </code>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
