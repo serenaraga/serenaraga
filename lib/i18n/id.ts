@@ -468,6 +468,9 @@ export const indonesianMessages: TranslationMessages = {
         created_at: "Dibuat Pada",
       },
     },
+    financial: {
+      name: "Buku Kas |||| Buku Kas",
+    },
     settings: {
       name: "Pengaturan |||| Pengaturan",
     },

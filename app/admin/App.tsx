@@ -28,6 +28,7 @@ import {
 } from "./promotions";
 import { InvoiceList, InvoiceCreate, InvoiceShow } from "./invoices";
 import { PayoutCreate, PayoutShow } from "./payouts";
+import { FinancialList, FinancialSettingsPage } from "./financial";
 import { BrandSettingsPage } from "./settings";
 import { LandingPageSettingsPage } from "./landing-page-settings";
 import { UserList, UserCreate, UserEdit } from "./users";
@@ -89,6 +90,14 @@ const App = () => (
           recordRepresentation="invoice_number"
           icon={ReceiptText}
         />,
+        isAdmin ? (
+          <Resource
+            key="financial"
+            name="financial"
+            list={FinancialList}
+            icon={Wallet}
+          />
+        ) : null,
         <Resource
           key="customers"
           name="customers"
@@ -202,6 +211,7 @@ const App = () => (
         <CustomRoutes key="custom-admin-routes">
           <Route path="/therapists/milestones" element={<TherapistMilestonesPage />} />
           <Route path="/settings/landing-page" element={<LandingPageSettingsPage />} />
+          <Route path="/financial/settings" element={<FinancialSettingsPage />} />
         </CustomRoutes>,
       ];
     }}

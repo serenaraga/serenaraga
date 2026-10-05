@@ -637,65 +637,65 @@ const CustomerSummaryCards = () => {
   }, [customers, invoices, loadingCust, loadingInv]);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
       <Card className="border border-border/70 shadow-none bg-card">
-        <CardContent className="p-3.5 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-muted-foreground block font-medium">
+        <CardContent className="p-2 sm:p-2.5 flex items-center justify-between gap-1.5">
+          <div className="min-w-0">
+            <span className="text-[10px] text-muted-foreground block font-medium truncate leading-tight">
               {isEn ? "Total Customers" : "Total Pelanggan"}
             </span>
-            <span className="text-xl font-bold text-foreground tracking-tight">{stats.total}</span>
+            <span className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-none mt-0.5 block">{stats.total}</span>
           </div>
-          <div className="p-2 rounded-lg bg-primary/10 text-primary">
-            <User className="w-4 h-4" />
+          <div className="p-1 sm:p-1.5 rounded-md bg-muted text-muted-foreground shrink-0">
+            <User className="w-3.5 h-3.5" />
           </div>
         </CardContent>
       </Card>
 
       <Card className="border border-border/70 shadow-none bg-card">
-        <CardContent className="p-3.5 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-muted-foreground block font-medium">
-              {isEn ? "Active (<30 Days)" : "Pelanggan Aktif (<30 hr)"}
+        <CardContent className="p-2 sm:p-2.5 flex items-center justify-between gap-1.5">
+          <div className="min-w-0">
+            <span className="text-[10px] text-muted-foreground block font-medium truncate leading-tight">
+              {isEn ? "Active (<30 Days)" : "Pelanggan Aktif"}
             </span>
-            <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">
+            <span className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-none mt-0.5 block">
               {stats.active}
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            <UserCheck className="w-4 h-4" />
+          <div className="p-1 sm:p-1.5 rounded-md bg-muted text-muted-foreground shrink-0">
+            <UserCheck className="w-3.5 h-3.5" />
           </div>
         </CardContent>
       </Card>
 
       <Card className="border border-border/70 shadow-none bg-card">
-        <CardContent className="p-3.5 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-muted-foreground block font-medium">
-              {isEn ? "VIP Loyalty Members" : "Member VIP (Gold/Silver)"}
+        <CardContent className="p-2 sm:p-2.5 flex items-center justify-between gap-1.5">
+          <div className="min-w-0">
+            <span className="text-[10px] text-muted-foreground block font-medium truncate leading-tight">
+              {isEn ? "VIP Members" : "Member VIP"}
             </span>
-            <span className="text-xl font-bold text-amber-600 dark:text-amber-400 tracking-tight">
+            <span className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-none mt-0.5 block">
               {stats.vip}
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-            <Crown className="w-4 h-4" />
+          <div className="p-1 sm:p-1.5 rounded-md bg-muted text-muted-foreground shrink-0">
+            <Crown className="w-3.5 h-3.5" />
           </div>
         </CardContent>
       </Card>
 
       <Card className="border border-border/70 shadow-none bg-card">
-        <CardContent className="p-3.5 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] text-muted-foreground block font-medium">
-              {isEn ? "Dormant / Needs Follow-Up" : "Dormant / Perlu Sapaan"}
+        <CardContent className="p-2 sm:p-2.5 flex items-center justify-between gap-1.5">
+          <div className="min-w-0">
+            <span className="text-[10px] text-muted-foreground block font-medium truncate leading-tight">
+              {isEn ? "Dormant" : "Dormant / Sapaan"}
             </span>
-            <span className="text-xl font-bold text-rose-600 dark:text-rose-400 tracking-tight">
+            <span className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-none mt-0.5 block">
               {stats.dormant}
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-            <Clock className="w-4 h-4" />
+          <div className="p-1 sm:p-1.5 rounded-md bg-muted text-muted-foreground shrink-0">
+            <Clock className="w-3.5 h-3.5" />
           </div>
         </CardContent>
       </Card>

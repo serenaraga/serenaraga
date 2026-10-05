@@ -568,6 +568,161 @@ function PayoutSlipSkeleton({
   );
 }
 
+/**
+ * Reusable Financial Ledger Page Skeleton matching the Serena Raga Cashbook layout
+ */
+function FinancialLedgerSkeleton({ isEn = false }: { isEn?: boolean }) {
+  return (
+    <div className="space-y-3.5 pb-16 animate-in fade-in-50 duration-200">
+      {/* Top Breadcrumb & Header Skeleton */}
+      <div className="flex justify-between items-center flex-wrap gap-3 my-1">
+        <Skeleton className="h-7 sm:h-8 w-36 sm:w-44 rounded-md" />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Skeleton className="h-8 w-24 rounded-md" />
+          <Skeleton className="h-8 w-24 rounded-md" />
+          <Skeleton className="h-8 w-36 rounded-md" />
+          <Skeleton className="h-8 w-28 rounded-md" />
+        </div>
+      </div>
+
+      {/* Account Balances Grid Skeleton */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="border border-border/70 rounded-xl bg-card p-2 sm:p-2.5 flex items-center justify-between gap-1.5 shadow-none"
+          >
+            <div className="space-y-1 flex-1 min-w-0">
+              <Skeleton className="h-2.5 w-14" />
+              <Skeleton className="h-3.5 sm:h-4 w-20" />
+            </div>
+            <Skeleton className="h-6 w-6 rounded-md shrink-0" />
+          </div>
+        ))}
+      </div>
+
+      {/* Journal Table Skeleton */}
+      <div className="rounded-xl border border-border/70 bg-card overflow-hidden shadow-none">
+        {/* Filter Bar */}
+        <div className="p-3 border-b border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-muted/10">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-4 w-8 rounded-full" />
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <Skeleton className="h-8 w-full sm:w-64 rounded-md" />
+            <Skeleton className="h-8 w-full sm:w-36 rounded-md" />
+            <Skeleton className="h-8 w-full sm:w-36 rounded-md" />
+            <Skeleton className="h-8 w-full sm:w-20 rounded-md" />
+          </div>
+        </div>
+
+        {/* Table Rows */}
+        <div className="divide-y divide-border/40">
+          {/* Header row */}
+          <div className="flex items-center gap-4 p-3 bg-muted/20">
+            <Skeleton className="h-3.5 w-24" />
+            <Skeleton className="h-3.5 w-20" />
+            <Skeleton className="h-3.5 w-16" />
+            <Skeleton className="h-3.5 w-28" />
+            <Skeleton className="h-3.5 w-24" />
+            <Skeleton className="h-3.5 flex-1 min-w-[120px]" />
+            <Skeleton className="h-3.5 w-20 ml-auto" />
+            <Skeleton className="h-3.5 w-10 text-center" />
+          </div>
+          {/* 6 Data rows */}
+          {Array.from({ length: 6 }).map((_, r) => (
+            <div key={r} className="flex items-center gap-4 p-3">
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-3.5 w-20" />
+              <Skeleton className="h-4 w-16 rounded-full" />
+              <Skeleton className="h-3.5 w-28" />
+              <Skeleton className="h-3.5 w-24" />
+              <Skeleton className="h-3.5 flex-1 min-w-[120px]" />
+              <Skeleton className="h-4 w-24 ml-auto" />
+              <Skeleton className="h-6 w-6 rounded-md mx-auto" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Reusable Financial Settings Page Skeleton
+ */
+function FinancialSettingsSkeleton({ isEn = false }: { isEn?: boolean }) {
+  return (
+    <div className="space-y-4 pb-16 animate-in fade-in-50 duration-200">
+      {/* Header */}
+      <div className="flex justify-between items-center flex-wrap gap-3 my-2">
+        <Skeleton className="h-8 w-64 rounded-md" />
+        <Skeleton className="h-8 w-36 rounded-md" />
+      </div>
+
+      {/* Section 1: Accounts */}
+      <div className="rounded-xl border border-border bg-card shadow-none">
+        <div className="p-4 sm:p-5 border-b border-border/60 flex items-center justify-between">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-8 w-32 rounded-md" />
+        </div>
+        <div className="divide-y divide-border/40">
+          <div className="flex items-center gap-4 p-3.5 bg-muted/20">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-3.5 w-24" />
+            <Skeleton className="h-3.5 w-40" />
+            <Skeleton className="h-3.5 w-28" />
+            <Skeleton className="h-3.5 w-20" />
+            <Skeleton className="h-3.5 w-16 ml-auto" />
+          </div>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-3.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-3.5 w-40" />
+              <Skeleton className="h-3.5 w-28" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <div className="flex items-center gap-1.5 ml-auto">
+                <Skeleton className="h-7 w-7 rounded-md" />
+                <Skeleton className="h-7 w-7 rounded-md" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Section 2: Categories Tabs */}
+      <div className="rounded-xl border border-border bg-card shadow-none">
+        <div className="p-4 sm:p-5 border-b border-border/60 flex items-center justify-between">
+          <Skeleton className="h-5 w-44" />
+          <Skeleton className="h-8 w-32 rounded-md" />
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="flex gap-2 border-b border-border pb-2">
+            <Skeleton className="h-8 w-36 rounded-md" />
+            <Skeleton className="h-8 w-36 rounded-md" />
+          </div>
+          <div className="divide-y divide-border/40 pt-1">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-3">
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Skeleton className="h-7 w-7 rounded-md" />
+                  <Skeleton className="h-7 w-7 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export {
   Skeleton,
   AvatarSkeleton,
@@ -579,4 +734,6 @@ export {
   InvoiceCardSkeleton,
   PayoutSlipSkeleton,
   QrisCardSkeleton,
+  FinancialLedgerSkeleton,
+  FinancialSettingsSkeleton,
 };

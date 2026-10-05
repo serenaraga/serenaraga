@@ -3,6 +3,10 @@ import { supabase } from "@/lib/supabase";
 import { recalculateTherapistRating, syncAllTherapistsRatings } from "@/lib/therapist-rating";
 import { standardizePhoneNumber } from "@/lib/brand-settings";
 import { generateInvoicePublicToken } from "@/lib/utils";
+import {
+  syncInvoicePaymentToFinancialLedger,
+  deleteFinancialTransactionByReference,
+} from "@/lib/financial-ledger";
 
 export { supabase };
 
@@ -278,6 +282,18 @@ export const dataProvider: DataProvider = {
           } else if (resource === "promotions") {
             query = query.or(
               `name.ilike.%${value}%,code.ilike.%${value}%,description.ilike.%${value}%,scope.ilike.%${value}%`
+            );
+          } else if (resource === "financial_transactions") {
+            query = query.or(
+              `description.ilike.%${value}%,transaction_number.ilike.%${value}%,reference_number.ilike.%${value}%,category_name.ilike.%${value}%,notes.ilike.%${value}%,created_by.ilike.%${value}%`
+            );
+          } else if (resource === "financial_accounts") {
+            query = query.or(
+              `name.ilike.%${value}%,bank_name.ilike.%${value}%,holder_name.ilike.%${value}%,account_number.ilike.%${value}%`
+            );
+          } else if (resource === "financial_categories") {
+            query = query.or(
+              `name.ilike.%${value}%,type.ilike.%${value}%`
             );
           }
         } else if (typeof value === "string") {
@@ -899,11 +915,23 @@ export const dataProvider: DataProvider = {
       );
     }
 
-    // Auto-sync relational items for invoices
+    // Auto-sync relational items and financial ledger for invoices
     if (resource === "invoices" && data?.id) {
       syncInvoiceItems(data.id, createdInvoiceItems || invoiceRawItems || dataToInsert.notes).catch((e) =>
         console.warn("Relational invoice_items sync error:", e)
       );
+      if (data?.invoice_number) {
+        syncInvoicePaymentToFinancialLedger({
+          invoice_number: data.invoice_number,
+          customer_name: data.customer_name,
+          service_name: data.service_name,
+          total_amount: Number(data.total_amount || 0),
+          payment_method: data.payment_method,
+          payment_status: data.payment_status,
+          booking_date: data.booking_date,
+          booking_id: data.booking_id,
+        }).catch((e) => console.warn("Auto-sync invoice to ledger error on create:", e));
+      }
     }
 
     // Recalculate therapist rating after new review
@@ -1077,11 +1105,23 @@ export const dataProvider: DataProvider = {
       );
     }
 
-    // Auto-sync relational items for invoices on update
+    // Auto-sync relational items and financial ledger for invoices on update
     if (resource === "invoices" && params.id) {
       syncInvoiceItems(params.id, invoiceRawItems || dataToUpdate.notes).catch((e) =>
         console.warn("Relational invoice_items sync error on update:", e)
       );
+      if (data?.invoice_number) {
+        syncInvoicePaymentToFinancialLedger({
+          invoice_number: data.invoice_number,
+          customer_name: data.customer_name,
+          service_name: data.service_name,
+          total_amount: Number(data.total_amount || 0),
+          payment_method: data.payment_method,
+          payment_status: data.payment_status,
+          booking_date: data.booking_date,
+          booking_id: data.booking_id,
+        }).catch((e) => console.warn("Auto-sync invoice to ledger error on update:", e));
+      }
     }
 
     // Recalculate therapist rating if review updated
@@ -1117,6 +1157,13 @@ export const dataProvider: DataProvider = {
 
   delete: async (resource, params) => {
     const table = getTableName(resource);
+
+    // Clean up financial ledger transaction when invoice is deleted
+    if (resource === "invoices" && (params.previousData as any)?.invoice_number) {
+      deleteFinancialTransactionByReference((params.previousData as any).invoice_number).catch((e) =>
+        console.warn("Delete financial txn by reference error:", e)
+      );
+    }
 
     // Referential Integrity Guard for master data entities
     if (resource === "therapists") {
@@ -1215,6 +1262,24 @@ export const dataProvider: DataProvider = {
         throw new Error(
           `Beberapa data terpilih memiliki ${linkedCount} riwayat transaksi aktif. Penghapusan massal dibatalkan demi integritas data audit.`
         );
+      }
+    }
+
+    // Clean up financial ledger transactions when invoices are bulk deleted
+    if (resource === "invoices" && params.ids && params.ids.length > 0) {
+      try {
+        const { data: invs } = await supabase
+          .from("invoices")
+          .select("invoice_number")
+          .in("id", params.ids);
+        if (invs && invs.length > 0) {
+          const invNums = invs.map((i) => i.invoice_number).filter(Boolean);
+          if (invNums.length > 0) {
+            await supabase.from("financial_transactions").delete().in("reference_number", invNums);
+          }
+        }
+      } catch (e) {
+        console.warn("Bulk delete financial txns error:", e);
       }
     }
 

@@ -305,6 +305,9 @@ export const englishMessages: TranslationMessages = {
         created_at: "Created At",
       },
     },
+    financial: {
+      name: "Financial |||| Financial",
+    },
     settings: {
       name: "Settings |||| Settings",
     },
